@@ -3,7 +3,7 @@
 ## Proposed layout
 
 ```text
-agent-arcade/
+docs/
   AGENTS.md
   PRD.md
   ARCHITECTURE.md
@@ -62,6 +62,11 @@ agent-arcade/
       workflow.json
       README.md
 
+  tests/
+    e2e/
+      specs/                 # WebdriverIO E2E test specs
+      wdio.conf.js           # tauri-driver + WebdriverIO config
+
   docs/
     decisions/
     architecture/
@@ -95,6 +100,9 @@ SQLite access, repositories, and migration-related concerns.
 
 ### `crates/simulation`
 Reserved for future modeling of latency/cost/risk without polluting core execution early.
+
+### `tests/e2e`
+End-to-end tests using `tauri-driver` + WebdriverIO against a real compiled Tauri build. See [`docs/TESTING.md`](TESTING.md) for setup and usage.
 
 ---
 

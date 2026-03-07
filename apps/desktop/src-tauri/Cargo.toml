@@ -1,0 +1,23 @@
+[package]
+name = "agent-arcade"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "agent_arcade_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[dependencies]
+tauri = { version = "2", features = [] }
+tauri-plugin-shell = "2"
+serde = { workspace = true }
+serde_json = { workspace = true }
+tokio = { workspace = true }
+tracing = { workspace = true }
+workflow-model = { path = "../../../crates/workflow-model" }
+event-model = { path = "../../../crates/event-model" }
+core-engine = { path = "../../../crates/core-engine" }
+persistence = { path = "../../../crates/persistence" }
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }

@@ -415,7 +415,20 @@ Mitigation:
 
 ---
 
-## 14. Future expansion points
+## 14. Testing architecture
+
+See [`docs/TESTING.md`](TESTING.md) for the full testing strategy.
+
+Summary:
+- **Rust unit tests** (`cargo test`) cover the core engine, state machines, event model, and persistence
+- **Frontend component tests** (Vitest + React Testing Library) cover React components and hooks with mocked Tauri APIs
+- **E2E tests** (`tauri-driver` + WebdriverIO) cover full app flows against a real Tauri build
+
+Playwright is **not used** — it cannot drive Tauri's native webview. Use `tauri-driver` + WebdriverIO for E2E coverage.
+
+---
+
+## 15. Future expansion points
 
 Deferred, but architecture should not block them:
 - external runtime monitoring mode

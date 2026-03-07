@@ -26,6 +26,9 @@ The canvas should feel dynamic and active during execution.
 ### Pillar 4 — Controlled
 The user should always feel they are driving the system, not chasing it.
 
+### Pillar 5 — Developer-native
+The product must feel like it was built by developers for developers. Do not over-polish or sand off technical edges. Visible system state, readable config files, and keyboard-driven workflows signal to experienced developers that this tool respects how they work. Refer to tools like `lazygit`, `k9s`, and Insomnia as reference points — technically capable, aesthetically purposeful, never dumbed down.
+
 ---
 
 ## 3. UX priorities
@@ -252,6 +255,25 @@ Motion should explain state, not decorate it.
 - text-heavy details must remain readable at normal desktop sizes
 - animations should be subtle enough to avoid fatigue
 - complex views must allow focus on one selected node or event at a time
+
+---
+
+## 13. Keyboard-first design
+
+Keyboard-driven workflows are a priority, not an afterthought. Experienced developers navigate primarily by keyboard. The UI must support this from the start.
+
+### Required keyboard behaviors
+- global keybinding for switching between views (Builder, Live Run, Replay, Library)
+- canvas navigation without the mouse (arrow keys, zoom shortcuts)
+- node selection, inspection, and connection from keyboard
+- run start/stop/pause from keyboard
+- human review approve/reject from keyboard
+- timeline scrubbing in Replay View from keyboard
+
+### Design stance
+If a power user cannot perform a complete workflow — build, run, inspect, replay — without reaching for the mouse for more than edge cases, the keyboard support is insufficient.
+
+Reference tools: `lazygit`, `k9s`, VS Code command palette.
 
 ---
 

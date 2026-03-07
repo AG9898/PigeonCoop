@@ -1,7 +1,7 @@
 # Product Requirements Document (PRD)
 
 ## Product
-Agent Arcade
+PigeonCoop
 
 ## Version
 Draft v1
@@ -13,7 +13,7 @@ Approved planning baseline
 
 ## 1. Product summary
 
-Agent Arcade is a local-first desktop application for designing, running, monitoring, and replaying agent workflows through a game-inspired 2D interface. The initial version is aimed at developers who want a more visual, inspectable, and engaging way to manage agentic workflows tied to a local repository or project workspace.
+PigeonCoop is a local-first desktop application for designing, running, monitoring, and replaying agent workflows through a game-inspired 2D interface. The initial version is aimed at developers who want a more visual, inspectable, and engaging way to manage agentic workflows tied to a local repository or project workspace.
 
 The product acts as a practical bridge between a workflow builder, a CLI task wrapper, and a replay/debugger.
 
@@ -270,7 +270,32 @@ Not all required in first build, but supported by design:
 
 ---
 
-## 16. Release philosophy
+## 16. Distribution and installation
+
+### Target install experience
+A developer should be able to install and reach their first meaningful run in under 2 minutes.
+
+### Primary distribution channels
+- **GitHub Releases** — attach native OS installers as release artifacts on every tagged release
+- **Homebrew** (macOS) — `brew install agent-arcade`
+- **winget** (Windows) — `winget install agent-arcade`
+- **AUR** (Arch Linux) — community-maintainable formula
+
+Package manager support is a trust signal as much as a convenience. It should be set up early, not deferred to post-launch.
+
+### What is not used for distribution
+- npm/npx — inappropriate for a native binary + webview desktop app; adds Node.js as a hard runtime dependency on end users for no functional benefit
+- Electron-style bundling — Tauri's native webview approach is intentional; do not replace it
+
+### Future CLI companion
+A headless `agent-arcade-cli` for CI/scripting use cases could be distributed via npm as a separate package. This is out of scope for v1 but the Rust core crate structure already supports it.
+
+### First-run experience requirement
+On first launch, the app must immediately offer the demo workflow (`plan-execute-critique-approve`). The user should be able to select a workspace and run it without building anything from scratch. The path from install to first replay must be obvious and short.
+
+---
+
+## 17. Release philosophy
 
 Ship a narrow but coherent v1 that works well for local workflows, CLI-backed execution, live monitoring, and replay.
 

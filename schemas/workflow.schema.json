@@ -1,0 +1,72 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "workflow.schema.json",
+  "title": "WorkflowDefinition",
+  "description": "Static definition of an Agent Arcade workflow. Never mutated at runtime.",
+  "type": "object",
+  "required": ["workflow_id", "name", "version", "nodes", "edges"],
+  "properties": {
+    "workflow_id": { "type": "string", "format": "uuid" },
+    "name": { "type": "string" },
+    "version": { "type": "integer", "minimum": 1 },
+    "metadata": { "type": "object" },
+    "nodes": {
+      "type": "array",
+      "items": { "$ref": "#/definitions/NodeDefinition" }
+    },
+    "edges": {
+      "type": "array",
+      "items": { "$ref": "#/definitions/EdgeDefinition" }
+    },
+    "default_constraints": { "type": "object" },
+    "created_at": { "type": "string", "format": "date-time" },
+    "updated_at": { "type": "string", "format": "date-time" }
+  },
+  "definitions": {
+    "NodeDefinition": {
+      "type": "object",
+      "required": ["node_id", "node_type", "label"],
+      "properties": {
+        "node_id": { "type": "string", "format": "uuid" },
+        "node_type": {
+          "type": "string",
+          "enum": ["start", "end", "agent", "tool", "router", "memory", "human_review"]
+        },
+        "label": { "type": "string" },
+        "config": { "type": "object" },
+        "input_contract": { "type": "object" },
+        "output_contract": { "type": "object" },
+        "memory_access": { "type": "object" },
+        "retry_policy": {
+          "type": "object",
+          "properties": {
+            "max_retries": { "type": "integer", "minimum": 0 },
+            "max_runtime_ms": { "type": "integer", "minimum": 0 }
+          }
+        },
+        "display": {
+          "type": "object",
+          "properties": {
+            "x": { "type": "number" },
+            "y": { "type": "number" }
+          }
+        }
+      }
+    },
+    "EdgeDefinition": {
+      "type": "object",
+      "required": ["edge_id", "source_node_id", "target_node_id", "condition_kind"],
+      "properties": {
+        "edge_id": { "type": "string", "format": "uuid" },
+        "source_node_id": { "type": "string", "format": "uuid" },
+        "target_node_id": { "type": "string", "format": "uuid" },
+        "condition_kind": {
+          "type": "string",
+          "enum": ["always", "on_success", "on_failure", "expression"]
+        },
+        "condition_payload": {},
+        "label": { "type": "string" }
+      }
+    }
+  }
+}

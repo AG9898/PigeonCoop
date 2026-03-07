@@ -1,0 +1,9 @@
+[package]
+name = "simulation"
+version = "0.1.0"
+edition = "2021"
+
+# Deferred to v1.1 — reserved for latency/cost/risk modeling
+[dependencies]
+serde = { workspace = true }
+workflow-model = { path = "../workflow-model" }
