@@ -396,6 +396,28 @@ SQLite is the primary local datastore.
 - Migration tracking: `migrations` table records applied version + timestamp; re-running is safe (idempotent)
 - Tables created on first launch: `migrations`, `workflows`, `workflow_versions`, `runs`, `events`, `settings`, `artifacts`
 
+### Implementation notes (PERSIST-002)
+- Workflow repository: `crates/persistence/src/repositories/workflows.rs`
+- Functions: `save_workflow`, `get_workflow_by_id`, `list_workflows`, `save_workflow_version`, `get_workflow_version`
+- `save_workflow` upserts the `workflows` metadata row and inserts/replaces a `workflow_versions` row
+- `get_workflow_by_id` returns the highest-version snapshot for a given workflow UUID
+- `list_workflows` returns the latest version of each distinct workflow, ordered by `created_at DESC`
+- `save_workflow_version` inserts a versioned snapshot independently (used when bumping version without changing the `workflows` row)
+- `get_workflow_version` retrieves an exact `(workflow_id, version)` pair
+- `WorkflowDefinition` is serialized as JSON into the `definition_json` blob column
+- Error type: `RepoError` (wraps `rusqlite::Error` and `serde_json::Error`)
+
+### Implementation notes (PERSIST-004)
+- Event log repository: `crates/persistence/src/repositories/events.rs`
+- Exposed as `EventRepository<'db>` — a struct holding `&Db`
+- `append_event`: insert-only, assigns monotonically increasing `sequence` per `run_id`
+- `list_events_for_run(run_id, offset, limit)`: paginated, ordered by `sequence ASC`
+- `get_event_by_id(event_id)`: single event lookup by UUID
+- `list_events_for_node(run_id, node_id)`: filtered by node, ordered by `sequence ASC`
+- No update or delete methods — append-only by design; duplicate `event_id` fails with PK violation
+- Sequence is per-run (not global); each run starts at 1
+- Error type: `EventRepoError` (wraps `rusqlite::Error` and `serde_json::Error`)
+
 ---
 
 ## 12. Proposed repository/module structure
