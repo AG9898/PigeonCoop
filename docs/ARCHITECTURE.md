@@ -212,7 +212,7 @@ Primary model:
 - optional pause/resume
 
 ### 7.2 Run lifecycle
-Suggested enum:
+Implemented as `RunStatus` in `crates/workflow-model/src/run.rs`. Variants:
 - `Created`
 - `Validating`
 - `Ready`
@@ -222,8 +222,22 @@ Suggested enum:
 - `Failed`
 - `Cancelled`
 
+State transitions are enforced by `crates/core-engine/src/state_machine/mod.rs` via `try_transition(current: &RunStatus, input: RunTransitionInput) -> Result<(RunStatus, RunEventKind), TransitionError>`. Valid transitions:
+- `Created` → `Validating` (BeginValidation → emits `run.validation_started`)
+- `Validating` → `Ready` (ValidationPassed → emits `run.validation_passed`)
+- `Validating` → `Failed` (ValidationFailed → emits `run.validation_failed`)
+- `Ready` → `Running` (Start → emits `run.started`)
+- `Running` → `Paused` (Pause → emits `run.paused`)
+- `Paused` → `Running` (Resume → emits `run.resumed`)
+- `Running` → `Succeeded` (Succeed → emits `run.succeeded`)
+- `Running` → `Failed` (Fail → emits `run.failed`)
+- `Running` → `Cancelled` (Cancel → emits `run.cancelled`)
+- `Paused` → `Cancelled` (Cancel → emits `run.cancelled`)
+
+All other transitions return `TransitionError::InvalidTransition`. The function is pure (no I/O or side effects).
+
 ### 7.3 Node lifecycle
-Suggested enum:
+Implemented as `NodeStatus` in `crates/workflow-model/src/run.rs`. Variants:
 - `Draft`
 - `Validated`
 - `Ready`
@@ -234,6 +248,24 @@ Suggested enum:
 - `Failed`
 - `Cancelled`
 - `Skipped`
+
+Per-node state is captured in `NodeSnapshot` (same file): `node_id`, `status`, `attempt`, `started_at`, `ended_at`, `output`.
+
+Node state transitions are enforced by `crates/core-engine/src/state_machine/node.rs` via `try_node_transition(current: &NodeStatus, attempt: u32, input: NodeTransitionInput) -> Result<(NodeStatus, u32, NodeEventKind), NodeTransitionError>`. The returned `u32` is the new attempt count (incremented only on `ScheduleRetry`). Valid transitions:
+- `Ready` → `Queued` (Queue → emits `node.queued`)
+- `Queued` → `Running` (Start → emits `node.started`)
+- `Running` → `Waiting` (WaitForReview → emits `node.waiting`)
+- `Waiting` → `Running` (Resume → emits `node.started`)
+- `Running` → `Succeeded` (Succeed → emits `node.succeeded`)
+- `Running` → `Failed` (Fail → emits `node.failed`)
+- `Failed` → `Queued` (ScheduleRetry → emits `node.retry_scheduled`, increments attempt)
+- `Running` → `Cancelled` (Cancel → emits `node.cancelled`)
+- `Queued` → `Cancelled` (Cancel → emits `node.cancelled`)
+- `Waiting` → `Cancelled` (Cancel → emits `node.cancelled`)
+- `Ready` → `Skipped` (Skip → emits `node.skipped`)
+- `Queued` → `Skipped` (Skip → emits `node.skipped`)
+
+All other transitions return `NodeTransitionError::InvalidTransition`. The function is pure (no I/O or side effects).
 
 ### 7.4 Guardrails
 At minimum support:
@@ -355,6 +387,14 @@ SQLite is the primary local datastore.
 - store config and payloads as JSON blobs where useful
 - preserve append-oriented event history
 - support efficient lookup by run id and workflow id
+
+### Implementation notes (PERSIST-001)
+- Driver: `rusqlite` (bundled, no system SQLite required)
+- Connection wrapper: `Db` in `crates/persistence/src/sqlite/mod.rs`
+- Entry points: `Db::open(path)` for file databases, `Db::open_in_memory()` for tests
+- Migrations: versioned SQL files in `crates/persistence/migrations/`, embedded via `include_str!`
+- Migration tracking: `migrations` table records applied version + timestamp; re-running is safe (idempotent)
+- Tables created on first launch: `migrations`, `workflows`, `workflow_versions`, `runs`, `events`, `settings`, `artifacts`
 
 ---
 

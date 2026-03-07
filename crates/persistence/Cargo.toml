@@ -12,5 +12,4 @@ thiserror = { workspace = true }
 tokio = { workspace = true }
 workflow-model = { path = "../workflow-model" }
 event-model = { path = "../event-model" }
-# SQLite driver added when implementing persistence layer
-# rusqlite = { version = "0.31", features = ["bundled"] }
+rusqlite = { workspace = true }
