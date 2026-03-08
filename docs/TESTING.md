@@ -158,15 +158,26 @@ Each test layer covers it differently:
 
 ## 5. CI guidance
 
-Recommended pipeline stages:
+The live CI pipeline is defined in `.github/workflows/ci.yml` and runs automatically on every push and PR to `main`.
+
+| Job | Command | Notes |
+|-----|---------|-------|
+| Rust tests | `cargo test --workspace --exclude agent-arcade` | All unit tests across pure Rust crates |
+| Frontend tests | `npm test -- --run` | Vitest single-run from `apps/desktop/` |
+
+### Why `--exclude agent-arcade`
+
+`apps/desktop/src-tauri` (`agent-arcade`) is a thin binary shell with no unit tests. Its `tauri::generate_context!()` macro reads `tauri.conf.json` at **compile time** and requires native system libraries (`libwebkit2gtk`, `libgtk-3`, etc.) to build. Excluding it keeps CI fast and dependency-free. All testable logic lives in the other crates.
+
+### Future: E2E in CI
+
+E2E tests are not yet wired into CI. When added, they will run as a separate job on PR only, using a virtual display (Xvfb on Linux) and a compiled debug binary.
 
 ```
-cargo test           # Rust unit tests — fast, always run
-npm test             # Frontend component tests — fast, always run
-tauri-driver + wdio  # E2E tests — slower, run on PR / pre-merge
+cargo test --workspace --exclude agent-arcade   # unit — always, fast
+npm test -- --run                               # component — always, fast
+tauri-driver + wdio                             # E2E — PR only, requires binary
 ```
-
-E2E tests require a compiled Tauri binary; run them in a headful CI environment or use a virtual display (Xvfb on Linux).
 
 ---
 

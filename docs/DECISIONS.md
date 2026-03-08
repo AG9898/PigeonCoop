@@ -68,6 +68,20 @@ The target user is a technical developer. The product must feel like it was buil
 
 **Unblocks:** FOUND-003, MODEL-005.
 
+### 2026-03-07 — CI pipeline scope: exclude src-tauri from cargo test
+
+**Context:** Adding a CI pipeline required deciding which crates to include in `cargo test --workspace`.
+
+**Decision:** Exclude `apps/desktop/src-tauri` (`agent-arcade`) from the workspace test run using `--exclude agent-arcade`. The CI `rust` job runs `cargo test --workspace --exclude agent-arcade`.
+
+**Rationale:** The `src-tauri` crate is a thin binary shell — it wires up the Tauri window and IPC routes. It has no unit tests. Its `tauri::generate_context!()` macro reads `tauri.conf.json` at compile time and requires native system libraries (`libwebkit2gtk`, `libgtk-3`, etc.) to compile on Linux. Including it would add a heavy system-deps install step to every CI run with no test coverage gain. All testable business logic lives in the other crates.
+
+**Alternatives considered:**
+- Include `src-tauri` with system deps installed — adds ~2–3 min to every CI run for zero additional test coverage
+- Separate CI job for Tauri compilation check only — viable but premature; can be added when the crate has meaningful logic worth validating
+
+**Follow-up:** When E2E tests are added (TEST-001), a separate CI job will compile the full Tauri binary with system deps and run `tauri-driver` + WebdriverIO against it. That job will run on PR only, not on every push.
+
 ---
 
 ## Open decisions

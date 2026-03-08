@@ -3,6 +3,10 @@
 ## Proposed layout
 
 ```text
+.github/
+  workflows/
+    ci.yml               # CI: cargo test (--exclude agent-arcade) + npm test
+
 docs/
   AGENTS.md
   PRD.md
@@ -25,6 +29,7 @@ docs/
         styles/
       src-tauri/
         Cargo.toml
+        tauri.conf.json      # Tauri app config (read at compile time by generate_context!())
         src/
           main.rs
           commands/
