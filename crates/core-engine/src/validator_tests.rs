@@ -10,6 +10,10 @@ mod tests {
     use workflow_model::workflow::{WorkflowDefinition, CURRENT_SCHEMA_VERSION};
     use workflow_model::node::{NodeDefinition, NodeKind, RetryPolicy, NodeDisplay};
     use workflow_model::edge::{EdgeDefinition, ConditionKind};
+    use workflow_model::node_config::{
+        NodeConfig, StartNodeConfig, EndNodeConfig, AgentNodeConfig,
+        ToolNodeConfig, RouterNodeConfig, MemoryNodeConfig, HumanReviewNodeConfig,
+    };
     use crate::validation::{WorkflowValidator, ValidationError};
 
     // -----------------------------------------------------------------------
@@ -17,11 +21,35 @@ mod tests {
     // -----------------------------------------------------------------------
 
     fn make_node(kind: NodeKind) -> NodeDefinition {
+        let config = match &kind {
+            NodeKind::Start => NodeConfig::Start(StartNodeConfig {}),
+            NodeKind::End => NodeConfig::End(EndNodeConfig {}),
+            NodeKind::Agent => NodeConfig::Agent(AgentNodeConfig {
+                prompt: "test".into(),
+                provider_hint: None,
+            }),
+            NodeKind::Tool => NodeConfig::Tool(ToolNodeConfig {
+                command: "echo test".into(),
+                shell: None,
+                timeout_ms: None,
+            }),
+            NodeKind::Router => NodeConfig::Router(RouterNodeConfig { rules: vec![] }),
+            NodeKind::Memory => NodeConfig::Memory(MemoryNodeConfig {
+                key: "test".into(),
+                scope: "run_shared".into(),
+                operation: "read".into(),
+            }),
+            NodeKind::HumanReview => NodeConfig::HumanReview(HumanReviewNodeConfig {
+                prompt: None,
+                reason: None,
+                available_actions: None,
+            }),
+        };
         NodeDefinition {
             node_id: Uuid::new_v4(),
             node_type: kind,
             label: "test-node".into(),
-            config: serde_json::Value::Null,
+            config,
             input_contract: serde_json::Value::Null,
             output_contract: serde_json::Value::Null,
             memory_access: serde_json::Value::Null,

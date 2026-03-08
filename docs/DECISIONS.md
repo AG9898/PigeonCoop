@@ -182,16 +182,23 @@ The raw stdout is always captured in `AdapterOutput.stdout` regardless of `outpu
 
 ## ADR: NodeConfig is a typed enum — never treat it as a JSON map
 
-**Context:** `NodeDefinition.config` was originally a raw `serde_json::Value`. It was refactored to `NodeConfig`, a strongly-typed enum discriminated by `node_type`. The `CliAdapter` continued calling `.get("command")` as if `config` were still a JSON map, causing a compile error (`E0599: no method named 'get' found for enum NodeConfig`).
+**Context:** `NodeDefinition.config` was originally a raw `serde_json::Value`. It was refactored to `NodeConfig`, a strongly-typed enum discriminated by `node_type`. The `CliAdapter` continued calling `.get("command")` as if `config` were still a JSON map, causing a compile error (`E0599: no method named 'get' found for enum NodeConfig`). A follow-up fix corrected `CliAdapter::extract_command` and the primary test constructor but missed two additional failure sites, producing a second round of CI failures (`E0308: mismatched types`):
+1. A test body that *mutated* a node's config field after construction (`node.config = serde_json::Value::Null`).
+2. `NodeDefinition` test helper functions in other crates (`mock/mod.rs`, `core-engine/src/validator_tests.rs`) that were not updated.
 
-**Decision:** All code that reads node configuration must pattern-match on the `NodeConfig` enum variant, not treat it as a dynamic map. The `CliAdapter::extract_command` method now matches `NodeConfig::Tool(cfg)` and reads `cfg.command` directly.
+**Decision:** All code that reads or writes `node.config` must use the `NodeConfig` enum — no `serde_json::Value` assignment or method call is valid anywhere on that field.
 
 **Rule for future adapters and engine code:**
 - To read tool config: `match &node.config { NodeConfig::Tool(cfg) => cfg.command.clone(), _ => Err(...) }`
 - To read agent config: `match &node.config { NodeConfig::Agent(cfg) => &cfg.prompt, _ => Err(...) }`
 - Never call `.get(...)`, `.as_str()`, or any `serde_json::Value` method on `NodeConfig`.
 
-**Test helpers** that construct `NodeDefinition` must use `NodeConfig::Tool(ToolNodeConfig { command: ..., shell: None, timeout_ms: None })`, not `serde_json::json!({"command": ...})`.
+**Rule for test code — covers all three failure patterns:**
+1. **Constructors:** use typed variants, e.g. `NodeConfig::Tool(ToolNodeConfig { command: "echo test".into(), shell: None, timeout_ms: None })`, not `serde_json::json!({"command": ...})` or `serde_json::Value::Null`.
+2. **Post-construction mutation:** assigning `node.config = serde_json::Value::Null` to simulate a bad config is not valid. Use a mismatched variant instead, e.g. `node.config = NodeConfig::Start(StartNodeConfig {})` on a Tool node.
+3. **Cross-crate helpers:** when `NodeDefinition` is constructed in test helpers across multiple crates (`runtime-adapters`, `core-engine`, etc.), every helper must be updated — not just the one in the crate where the type change originates.
+
+**Search guidance:** when changing any field type on `NodeDefinition`, run a workspace-wide search for the field name (`config:`) in test modules across all crates before declaring the fix complete.
 
 **Tradeoffs:** Slightly more verbose match arms vs. the old map lookup, but compile-time safety eliminates the entire class of "wrong field name" bugs.
 

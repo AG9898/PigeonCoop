@@ -116,13 +116,18 @@ mod tests {
     use uuid::Uuid;
     use workflow_model::memory::MemoryScope;
     use workflow_model::node::{NodeDisplay, NodeKind, RetryPolicy};
+    use workflow_model::node_config::{NodeConfig, ToolNodeConfig};
 
     fn dummy_node() -> NodeDefinition {
         NodeDefinition {
             node_id: Uuid::new_v4(),
             node_type: NodeKind::Tool,
             label: "test".into(),
-            config: serde_json::Value::Null,
+            config: NodeConfig::Tool(ToolNodeConfig {
+                command: "echo test".into(),
+                shell: None,
+                timeout_ms: None,
+            }),
             input_contract: serde_json::Value::Null,
             output_contract: serde_json::Value::Null,
             memory_access: serde_json::Value::Null,

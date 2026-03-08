@@ -340,7 +340,9 @@ mod tests {
     async fn prepare_fails_missing_command_field() {
         let adapter = CliAdapter::new();
         let mut node = node_with_command("echo hello");
-        node.config = serde_json::Value::Null;
+        node.config = workflow_model::node_config::NodeConfig::Start(
+            workflow_model::node_config::StartNodeConfig {},
+        );
         let err = adapter.prepare(&node, "/tmp").await.unwrap_err();
         assert!(matches!(err, AdapterError::PreparationFailed(_)));
     }
