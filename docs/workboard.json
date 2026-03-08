@@ -121,9 +121,16 @@
         "crates/persistence/Cargo.toml",
         "crates/simulation/Cargo.toml"
       ],
-      "docs": ["docs/REPO_STRUCTURE.md", "docs/ARCHITECTURE.md"],
-      "notes": ["Done. Verified via Cargo.toml and directory layout."],
-      "commands": ["cargo build"],
+      "docs": [
+        "docs/REPO_STRUCTURE.md",
+        "docs/ARCHITECTURE.md"
+      ],
+      "notes": [
+        "Done. Verified via Cargo.toml and directory layout."
+      ],
+      "commands": [
+        "cargo build"
+      ],
       "estimate": "S"
     },
     {
@@ -150,9 +157,16 @@
         "apps/desktop/src/__tests__/setup.ts",
         "apps/desktop/src/__mocks__/@tauri-apps/api/core.ts"
       ],
-      "docs": ["docs/TESTING.md"],
-      "notes": ["Done. reactflow ^11 included. Tauri API mock in place."],
-      "commands": ["cd apps/desktop && npm install", "npm test"],
+      "docs": [
+        "docs/TESTING.md"
+      ],
+      "notes": [
+        "Done. reactflow ^11 included. Tauri API mock in place."
+      ],
+      "commands": [
+        "cd apps/desktop && npm install",
+        "npm test"
+      ],
       "estimate": "S"
     },
     {
@@ -169,13 +183,20 @@
         "schemas/run-event.schema.json covers the RunEvent envelope fields"
       ],
       "depends_on": [],
-      "blocked_by": ["DEC-001"],
+      "blocked_by": [
+        "DEC-001"
+      ],
       "files": [
         "schemas/workflow.schema.json",
         "schemas/run-event.schema.json"
       ],
-      "docs": ["docs/EVENT_SCHEMA.md", "docs/ARCHITECTURE.md"],
-      "notes": ["Schema exists but may need updating as typed event payloads are finalized."],
+      "docs": [
+        "docs/EVENT_SCHEMA.md",
+        "docs/ARCHITECTURE.md"
+      ],
+      "notes": [
+        "Schema exists but may need updating as typed event payloads are finalized."
+      ],
       "commands": [],
       "estimate": "S"
     },
@@ -193,14 +214,20 @@
         "All six node types present in the file match the v1 node taxonomy",
         "All edges use correct condition_kind values"
       ],
-      "depends_on": ["FOUND-003"],
+      "depends_on": [
+        "FOUND-003"
+      ],
       "blocked_by": [],
       "files": [
         "examples/plan-execute-critique-approve/workflow.json",
         "examples/plan-execute-critique-approve/README.md"
       ],
-      "docs": ["docs/ARCHITECTURE.md"],
-      "notes": ["Fully populated. Used as the integration test target for all test layers."],
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ],
+      "notes": [
+        "Fully populated. Used as the integration test target for all test layers."
+      ],
       "commands": [],
       "estimate": "XS"
     },
@@ -222,9 +249,15 @@
       ],
       "depends_on": [],
       "blocked_by": [],
-      "files": [".github/workflows/ci.yml"],
-      "docs": ["docs/TESTING.md"],
-      "notes": ["E2E requires a headful environment or Xvfb. Consider running E2E only on PRs to main."],
+      "files": [
+        ".github/workflows/ci.yml"
+      ],
+      "docs": [
+        "docs/TESTING.md"
+      ],
+      "notes": [
+        "E2E requires a headful environment or Xvfb. Consider running E2E only on PRs to main."
+      ],
       "commands": [],
       "estimate": "M"
     },
@@ -250,8 +283,12 @@
         "crates/workflow-model/src/edge.rs",
         "crates/workflow-model/src/lib.rs"
       ],
-      "docs": ["docs/ARCHITECTURE.md"],
-      "notes": ["Done. Input/output contracts stored as serde_json::Value — may need typed structs later per DEC-005."],
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ],
+      "notes": [
+        "Done. Input/output contracts stored as serde_json::Value \u2014 may need typed structs later per DEC-005."
+      ],
       "commands": [],
       "estimate": "S"
     },
@@ -270,9 +307,15 @@
       ],
       "depends_on": [],
       "blocked_by": [],
-      "files": ["crates/workflow-model/src/memory.rs"],
-      "docs": ["docs/ARCHITECTURE.md"],
-      "notes": ["Done."],
+      "files": [
+        "crates/workflow-model/src/memory.rs"
+      ],
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ],
+      "notes": [
+        "Done."
+      ],
       "commands": [],
       "estimate": "XS"
     },
@@ -284,21 +327,27 @@
       "priority": "high",
       "type": "implementation",
       "summary": "Implement the RunInstance struct representing one execution of a workflow.",
-      "description": "Add RunInstance to crates/workflow-model or crates/core-engine with fields: run_id, workflow_id, workflow_version, status (RunStatus enum), workspace_root, created_at, started_at, ended_at, active_nodes, constraints, summary. Implement RunStatus enum with all lifecycle variants from ARCHITECTURE.md §7.2.",
+      "description": "Add RunInstance to crates/workflow-model or crates/core-engine with fields: run_id, workflow_id, workflow_version, status (RunStatus enum), workspace_root, created_at, started_at, ended_at, active_nodes, constraints, summary. Implement RunStatus enum with all lifecycle variants from ARCHITECTURE.md \u00a77.2.",
       "acceptance_criteria": [
         "RunInstance serializes/deserializes to JSON",
         "RunStatus enum includes: Created, Validating, Ready, Running, Paused, Succeeded, Failed, Cancelled",
         "RunInstance can be constructed from a WorkflowDefinition reference"
       ],
-      "depends_on": ["MODEL-001"],
+      "depends_on": [
+        "MODEL-001"
+      ],
       "blocked_by": [],
       "files": [
         "crates/workflow-model/src/run.rs",
         "crates/workflow-model/src/lib.rs"
       ],
-      "docs": ["docs/ARCHITECTURE.md"],
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ],
       "notes": [],
-      "commands": ["cargo test -p workflow-model"],
+      "commands": [
+        "cargo test -p workflow-model"
+      ],
       "estimate": "S"
     },
     {
@@ -311,17 +360,21 @@
       "summary": "Implement NodeStatus lifecycle enum and NodeSnapshot for tracking per-node run state.",
       "description": "Add NodeStatus enum (Draft, Validated, Ready, Queued, Running, Waiting, Succeeded, Failed, Cancelled, Skipped) and NodeSnapshot struct (node_id, status, attempt, started_at, ended_at, output) to the model crate. These are needed by the state machine and persistence layers.",
       "acceptance_criteria": [
-        "NodeStatus has all 10 lifecycle variants from ARCHITECTURE.md §7.3",
+        "NodeStatus has all 10 lifecycle variants from ARCHITECTURE.md \u00a77.3",
         "NodeSnapshot serializes correctly",
         "NodeSnapshot can be stored and retrieved from persistence"
       ],
-      "depends_on": ["MODEL-003"],
+      "depends_on": [
+        "MODEL-003"
+      ],
       "blocked_by": [],
       "files": [
         "crates/workflow-model/src/run.rs",
         "crates/workflow-model/src/lib.rs"
       ],
-      "docs": ["docs/ARCHITECTURE.md"],
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ],
       "notes": [],
       "commands": [],
       "estimate": "S"
@@ -341,14 +394,24 @@
         "Existing example workflow.json still deserializes correctly after the change",
         "Config structs are documented with their required fields"
       ],
-      "depends_on": ["MODEL-001", "DEC-005"],
-      "blocked_by": ["DEC-005"],
+      "depends_on": [
+        "MODEL-001",
+        "DEC-005"
+      ],
+      "blocked_by": [
+        "DEC-005"
+      ],
       "files": [
         "crates/workflow-model/src/node.rs",
         "crates/workflow-model/src/node_config.rs"
       ],
-      "docs": ["docs/ARCHITECTURE.md", "AGENTS.md"],
-      "notes": ["Blocked on DEC-005 (structured output requirements for agent CLI nodes)."],
+      "docs": [
+        "docs/ARCHITECTURE.md",
+        "AGENTS.md"
+      ],
+      "notes": [
+        "Blocked on DEC-005 (structured output requirements for agent CLI nodes)."
+      ],
       "commands": [],
       "estimate": "M"
     },
@@ -367,13 +430,18 @@
         "Example workflow.json still deserializes with the typed struct",
         "Engine can read and enforce these values"
       ],
-      "depends_on": ["MODEL-003"],
+      "depends_on": [
+        "MODEL-003"
+      ],
       "blocked_by": [],
       "files": [
         "crates/workflow-model/src/constraints.rs",
         "crates/workflow-model/src/workflow.rs"
       ],
-      "docs": ["docs/ARCHITECTURE.md", "docs/PRD.md"],
+      "docs": [
+        "docs/ARCHITECTURE.md",
+        "docs/PRD.md"
+      ],
       "notes": [],
       "commands": [],
       "estimate": "S"
@@ -392,12 +460,24 @@
         "Round-trip JSON serialization is tested for all major types",
         "Edge and boundary cases for enums are covered"
       ],
-      "depends_on": ["MODEL-001", "MODEL-002", "MODEL-003", "MODEL-004", "MODEL-006"],
+      "depends_on": [
+        "MODEL-001",
+        "MODEL-002",
+        "MODEL-003",
+        "MODEL-004",
+        "MODEL-006"
+      ],
       "blocked_by": [],
-      "files": ["crates/workflow-model/src/tests/"],
-      "docs": ["docs/TESTING.md"],
+      "files": [
+        "crates/workflow-model/src/tests/"
+      ],
+      "docs": [
+        "docs/TESTING.md"
+      ],
       "notes": [],
-      "commands": ["cargo test -p workflow-model"],
+      "commands": [
+        "cargo test -p workflow-model"
+      ],
       "estimate": "S"
     },
     {
@@ -410,14 +490,20 @@
       "summary": "Base RunEvent envelope struct with all required envelope fields is implemented.",
       "description": "crates/event-model/src/event.rs has RunEvent with event_id, run_id, workflow_id, node_id (Option), event_type (String), timestamp, payload (serde_json::Value), causation_id (Option), correlation_id (Option).",
       "acceptance_criteria": [
-        "RunEvent serializes to JSON matching the shape in EVENT_SCHEMA.md §2",
+        "RunEvent serializes to JSON matching the shape in EVENT_SCHEMA.md \u00a72",
         "All optional fields are correctly typed as Option"
       ],
       "depends_on": [],
       "blocked_by": [],
-      "files": ["crates/event-model/src/event.rs"],
-      "docs": ["docs/EVENT_SCHEMA.md"],
-      "notes": ["Done. event_type is currently a String; consider typed enum in EVENT-002."],
+      "files": [
+        "crates/event-model/src/event.rs"
+      ],
+      "docs": [
+        "docs/EVENT_SCHEMA.md"
+      ],
+      "notes": [
+        "Done. event_type is currently a String; consider typed enum in EVENT-002."
+      ],
       "commands": [],
       "estimate": "XS"
     },
@@ -436,10 +522,17 @@
         "Events serialize/deserialize correctly",
         "RunEvent can carry a typed payload variant"
       ],
-      "depends_on": ["EVENT-001", "MODEL-003"],
+      "depends_on": [
+        "EVENT-001",
+        "MODEL-003"
+      ],
       "blocked_by": [],
-      "files": ["crates/event-model/src/run_events.rs"],
-      "docs": ["docs/EVENT_SCHEMA.md"],
+      "files": [
+        "crates/event-model/src/run_events.rs"
+      ],
+      "docs": [
+        "docs/EVENT_SCHEMA.md"
+      ],
       "notes": [],
       "commands": [],
       "estimate": "S"
@@ -452,16 +545,23 @@
       "priority": "high",
       "type": "implementation",
       "summary": "Implement typed payload structs for all node lifecycle events.",
-      "description": "Populate crates/event-model/src/node_events.rs with payload structs for: node.queued, node.started, node.waiting, node.succeeded, node.failed, node.cancelled, node.skipped, node.retry_scheduled. Include fields shown in EVENT_SCHEMA.md §4.1 (node_type, attempt, input_refs, workspace_root).",
+      "description": "Populate crates/event-model/src/node_events.rs with payload structs for: node.queued, node.started, node.waiting, node.succeeded, node.failed, node.cancelled, node.skipped, node.retry_scheduled. Include fields shown in EVENT_SCHEMA.md \u00a74.1 (node_type, attempt, input_refs, workspace_root).",
       "acceptance_criteria": [
         "All 8 node lifecycle event types are implemented",
         "node.started payload includes node_type, attempt, input_refs, workspace_root",
         "Events serialize/deserialize correctly"
       ],
-      "depends_on": ["EVENT-001", "MODEL-004"],
+      "depends_on": [
+        "EVENT-001",
+        "MODEL-004"
+      ],
       "blocked_by": [],
-      "files": ["crates/event-model/src/node_events.rs"],
-      "docs": ["docs/EVENT_SCHEMA.md"],
+      "files": [
+        "crates/event-model/src/node_events.rs"
+      ],
+      "docs": [
+        "docs/EVENT_SCHEMA.md"
+      ],
       "notes": [],
       "commands": [],
       "estimate": "S"
@@ -474,17 +574,23 @@
       "priority": "high",
       "type": "implementation",
       "summary": "Implement typed payload structs for command execution events.",
-      "description": "Populate crates/event-model/src/command_events.rs with payload structs for: command.prepared, command.started, command.stdout, command.stderr, command.completed, command.failed. Payloads must include command string, shell, cwd, timeout_ms, exit_code, duration_ms, stdout/stderr bytes per EVENT_SCHEMA.md §4.2 and §4.3.",
+      "description": "Populate crates/event-model/src/command_events.rs with payload structs for: command.prepared, command.started, command.stdout, command.stderr, command.completed, command.failed. Payloads must include command string, shell, cwd, timeout_ms, exit_code, duration_ms, stdout/stderr bytes per EVENT_SCHEMA.md \u00a74.2 and \u00a74.3.",
       "acceptance_criteria": [
         "All 6 command event types are implemented",
         "command.started payload includes command, shell, cwd, timeout_ms",
         "command.completed payload includes exit_code, duration_ms, stdout_bytes, stderr_bytes",
         "Events serialize/deserialize correctly"
       ],
-      "depends_on": ["EVENT-001"],
+      "depends_on": [
+        "EVENT-001"
+      ],
       "blocked_by": [],
-      "files": ["crates/event-model/src/command_events.rs"],
-      "docs": ["docs/EVENT_SCHEMA.md"],
+      "files": [
+        "crates/event-model/src/command_events.rs"
+      ],
+      "docs": [
+        "docs/EVENT_SCHEMA.md"
+      ],
       "notes": [],
       "commands": [],
       "estimate": "S"
@@ -497,16 +603,22 @@
       "priority": "high",
       "type": "implementation",
       "summary": "Implement typed payload structs for routing events.",
-      "description": "Populate crates/event-model/src/routing_events.rs with payload structs for: edge.routed, router.evaluated, router.branch_selected, router.no_match. branch_selected payload must include router_node_id, selected_edge_ids, reason per EVENT_SCHEMA.md §4.4.",
+      "description": "Populate crates/event-model/src/routing_events.rs with payload structs for: edge.routed, router.evaluated, router.branch_selected, router.no_match. branch_selected payload must include router_node_id, selected_edge_ids, reason per EVENT_SCHEMA.md \u00a74.4.",
       "acceptance_criteria": [
         "All 4 routing event types are implemented",
-        "router.branch_selected payload matches EVENT_SCHEMA.md §4.4",
+        "router.branch_selected payload matches EVENT_SCHEMA.md \u00a74.4",
         "Events serialize/deserialize correctly"
       ],
-      "depends_on": ["EVENT-001"],
+      "depends_on": [
+        "EVENT-001"
+      ],
       "blocked_by": [],
-      "files": ["crates/event-model/src/routing_events.rs"],
-      "docs": ["docs/EVENT_SCHEMA.md"],
+      "files": [
+        "crates/event-model/src/routing_events.rs"
+      ],
+      "docs": [
+        "docs/EVENT_SCHEMA.md"
+      ],
       "notes": [],
       "commands": [],
       "estimate": "S"
@@ -525,13 +637,17 @@
         "All 5 agent event types are implemented",
         "Events serialize/deserialize correctly"
       ],
-      "depends_on": ["EVENT-001"],
+      "depends_on": [
+        "EVENT-001"
+      ],
       "blocked_by": [],
       "files": [
         "crates/event-model/src/memory_events.rs",
         "crates/event-model/src/agent_events.rs"
       ],
-      "docs": ["docs/EVENT_SCHEMA.md"],
+      "docs": [
+        "docs/EVENT_SCHEMA.md"
+      ],
       "notes": [],
       "commands": [],
       "estimate": "S"
@@ -544,20 +660,24 @@
       "priority": "medium",
       "type": "implementation",
       "summary": "Implement typed payload structs for human review events and guardrail/budget events.",
-      "description": "Populate crates/event-model/src/human_review_events.rs with: review.required, review.approved, review.rejected, review.edited, review.retry_requested. review.required payload must include reason, blocking, available_actions per EVENT_SCHEMA.md §4.5. Add guardrail events: guardrail.warning, guardrail.exceeded, budget.updated.",
+      "description": "Populate crates/event-model/src/human_review_events.rs with: review.required, review.approved, review.rejected, review.edited, review.retry_requested. review.required payload must include reason, blocking, available_actions per EVENT_SCHEMA.md \u00a74.5. Add guardrail events: guardrail.warning, guardrail.exceeded, budget.updated.",
       "acceptance_criteria": [
         "All 5 review event types are implemented",
-        "review.required payload matches EVENT_SCHEMA.md §4.5",
+        "review.required payload matches EVENT_SCHEMA.md \u00a74.5",
         "All 3 guardrail event types are implemented",
         "Events serialize/deserialize correctly"
       ],
-      "depends_on": ["EVENT-001"],
+      "depends_on": [
+        "EVENT-001"
+      ],
       "blocked_by": [],
       "files": [
         "crates/event-model/src/human_review_events.rs",
         "crates/event-model/src/guardrail_events.rs"
       ],
-      "docs": ["docs/EVENT_SCHEMA.md"],
+      "docs": [
+        "docs/EVENT_SCHEMA.md"
+      ],
       "notes": [],
       "commands": [],
       "estimate": "S"
@@ -576,12 +696,25 @@
         "Every event family has at least one round-trip test",
         "No lossy transformation is permitted"
       ],
-      "depends_on": ["EVENT-002", "EVENT-003", "EVENT-004", "EVENT-005", "EVENT-006", "EVENT-007"],
+      "depends_on": [
+        "EVENT-002",
+        "EVENT-003",
+        "EVENT-004",
+        "EVENT-005",
+        "EVENT-006",
+        "EVENT-007"
+      ],
       "blocked_by": [],
-      "files": ["crates/event-model/src/tests/"],
-      "docs": ["docs/TESTING.md"],
+      "files": [
+        "crates/event-model/src/tests/"
+      ],
+      "docs": [
+        "docs/TESTING.md"
+      ],
       "notes": [],
-      "commands": ["cargo test -p event-model"],
+      "commands": [
+        "cargo test -p event-model"
+      ],
       "estimate": "S"
     },
     {
@@ -599,12 +732,24 @@
         "Every transition emits the correct RunEvent type",
         "State machine is deterministic and side-effect-free (pure transition logic)"
       ],
-      "depends_on": ["MODEL-003", "EVENT-002"],
+      "depends_on": [
+        "MODEL-003",
+        "EVENT-002"
+      ],
       "blocked_by": [],
-      "files": ["crates/core-engine/src/state_machine/mod.rs"],
-      "docs": ["docs/ARCHITECTURE.md", "AGENTS.md"],
-      "notes": ["This is the foundation of the engine. Test every transition exhaustively."],
-      "commands": ["cargo test -p core-engine state_machine"],
+      "files": [
+        "crates/core-engine/src/state_machine/mod.rs"
+      ],
+      "docs": [
+        "docs/ARCHITECTURE.md",
+        "AGENTS.md"
+      ],
+      "notes": [
+        "This is the foundation of the engine. Test every transition exhaustively."
+      ],
+      "commands": [
+        "cargo test -p core-engine state_machine"
+      ],
       "estimate": "M"
     },
     {
@@ -622,12 +767,21 @@
         "Every transition emits the correct event type",
         "Retry transitions increment attempt count correctly"
       ],
-      "depends_on": ["MODEL-004", "EVENT-003"],
+      "depends_on": [
+        "MODEL-004",
+        "EVENT-003"
+      ],
       "blocked_by": [],
-      "files": ["crates/core-engine/src/state_machine/mod.rs"],
-      "docs": ["docs/ARCHITECTURE.md"],
+      "files": [
+        "crates/core-engine/src/state_machine/mod.rs"
+      ],
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ],
       "notes": [],
-      "commands": ["cargo test -p core-engine state_machine"],
+      "commands": [
+        "cargo test -p core-engine state_machine"
+      ],
       "estimate": "M"
     },
     {
@@ -645,12 +799,22 @@
         "ValidationResult can be serialized and returned to the frontend for display",
         "cargo test -p core-engine validation passes"
       ],
-      "depends_on": ["MODEL-001", "MODEL-006"],
+      "depends_on": [
+        "MODEL-001",
+        "MODEL-006",
+        "QA-002"
+      ],
       "blocked_by": [],
-      "files": ["crates/core-engine/src/validation/mod.rs"],
-      "docs": ["docs/ARCHITECTURE.md"],
+      "files": [
+        "crates/core-engine/src/validation/mod.rs"
+      ],
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ],
       "notes": [],
-      "commands": ["cargo test -p core-engine validation"],
+      "commands": [
+        "cargo test -p core-engine validation"
+      ],
       "estimate": "M"
     },
     {
@@ -669,15 +833,27 @@
         "Guardrails halt the run when limits are exceeded",
         "Events are emitted for every transition"
       ],
-      "depends_on": ["ENGINE-001", "ENGINE-002", "ENGINE-003", "ADAPT-001"],
+      "depends_on": [
+        "ENGINE-001",
+        "ENGINE-002",
+        "ENGINE-003",
+        "ADAPT-001",
+        "QA-002"
+      ],
       "blocked_by": [],
       "files": [
         "crates/core-engine/src/scheduler/mod.rs",
         "crates/core-engine/src/execution/mod.rs"
       ],
-      "docs": ["docs/ARCHITECTURE.md"],
-      "notes": ["This is the most complex task in the project. Consider stubbing adapter calls for initial integration tests."],
-      "commands": ["cargo test -p core-engine"],
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ],
+      "notes": [
+        "This is the most complex task in the project. Consider stubbing adapter calls for initial integration tests."
+      ],
+      "commands": [
+        "cargo test -p core-engine"
+      ],
       "estimate": "XL"
     },
     {
@@ -688,7 +864,7 @@
       "priority": "high",
       "type": "implementation",
       "summary": "Implement routing logic that evaluates ConditionKind rules and selects outgoing edges.",
-      "description": "The engine must evaluate edges with condition_kind always, on_success, on_failure, and expression. For expression conditions, define a safe evaluation strategy (e.g. simple key-value matching against node output or memory — not an arbitrary script interpreter). Emit router.evaluated and router.branch_selected events. Handle router.no_match as a run failure.",
+      "description": "The engine must evaluate edges with condition_kind always, on_success, on_failure, and expression. For expression conditions, define a safe evaluation strategy (e.g. simple key-value matching against node output or memory \u2014 not an arbitrary script interpreter). Emit router.evaluated and router.branch_selected events. Handle router.no_match as a run failure.",
       "acceptance_criteria": [
         "always edges are always followed",
         "on_success and on_failure edges follow the node's terminal status",
@@ -696,11 +872,21 @@
         "router.no_match causes the run to fail with a clear error",
         "router.branch_selected event is emitted with reason"
       ],
-      "depends_on": ["ENGINE-004", "EVENT-005"],
+      "depends_on": [
+        "ENGINE-004",
+        "EVENT-005"
+      ],
       "blocked_by": [],
-      "files": ["crates/core-engine/src/execution/mod.rs"],
-      "docs": ["docs/ARCHITECTURE.md", "docs/EVENT_SCHEMA.md"],
-      "notes": ["Keep expression evaluation minimal and safe in v1. Do not build a full expression language."],
+      "files": [
+        "crates/core-engine/src/execution/mod.rs"
+      ],
+      "docs": [
+        "docs/ARCHITECTURE.md",
+        "docs/EVENT_SCHEMA.md"
+      ],
+      "notes": [
+        "Keep expression evaluation minimal and safe in v1. Do not build a full expression language."
+      ],
       "commands": [],
       "estimate": "M"
     },
@@ -721,10 +907,18 @@
         "Retry re-queues the relevant node",
         "All decisions emit the correct review event"
       ],
-      "depends_on": ["ENGINE-004", "EVENT-007"],
+      "depends_on": [
+        "ENGINE-004",
+        "EVENT-007"
+      ],
       "blocked_by": [],
-      "files": ["crates/core-engine/src/review/mod.rs"],
-      "docs": ["docs/ARCHITECTURE.md", "docs/EVENT_SCHEMA.md"],
+      "files": [
+        "crates/core-engine/src/review/mod.rs"
+      ],
+      "docs": [
+        "docs/ARCHITECTURE.md",
+        "docs/EVENT_SCHEMA.md"
+      ],
       "notes": [],
       "commands": [],
       "estimate": "M"
@@ -744,10 +938,19 @@
         "Nodes exceeding max_retries are marked Failed",
         "guardrail.warning is emitted before guardrail.exceeded"
       ],
-      "depends_on": ["ENGINE-004", "MODEL-006", "EVENT-007"],
+      "depends_on": [
+        "ENGINE-004",
+        "MODEL-006",
+        "EVENT-007"
+      ],
       "blocked_by": [],
-      "files": ["crates/core-engine/src/execution/mod.rs"],
-      "docs": ["docs/ARCHITECTURE.md", "docs/PRD.md"],
+      "files": [
+        "crates/core-engine/src/execution/mod.rs"
+      ],
+      "docs": [
+        "docs/ARCHITECTURE.md",
+        "docs/PRD.md"
+      ],
       "notes": [],
       "commands": [],
       "estimate": "S"
@@ -760,7 +963,7 @@
       "priority": "high",
       "type": "testing",
       "summary": "Comprehensive unit tests for state machines, validation, scheduler, and guardrails.",
-      "description": "Write tests in crates/core-engine/src/tests/ covering: (1) every valid and invalid RunStatus transition, (2) every valid and invalid NodeStatus transition, (3) all validation failure scenarios, (4) scheduler sequencing with mock adapters, (5) routing rules for all ConditionKind variants, (6) human review pause/resume/reject, (7) guardrail enforcement. Use mock adapters — do not spawn real processes.",
+      "description": "Write tests in crates/core-engine/src/tests/ covering: (1) every valid and invalid RunStatus transition, (2) every valid and invalid NodeStatus transition, (3) all validation failure scenarios, (4) scheduler sequencing with mock adapters, (5) routing rules for all ConditionKind variants, (6) human review pause/resume/reject, (7) guardrail enforcement. Use mock adapters \u2014 do not spawn real processes.",
       "acceptance_criteria": [
         "cargo test -p core-engine passes",
         "State machine transitions tested exhaustively (valid and invalid)",
@@ -768,12 +971,26 @@
         "Human review flow tested",
         "Guardrail limits tested"
       ],
-      "depends_on": ["ENGINE-001", "ENGINE-002", "ENGINE-003", "ENGINE-004", "ENGINE-005", "ENGINE-006", "ENGINE-007"],
+      "depends_on": [
+        "ENGINE-001",
+        "ENGINE-002",
+        "ENGINE-003",
+        "ENGINE-004",
+        "ENGINE-005",
+        "ENGINE-006",
+        "ENGINE-007"
+      ],
       "blocked_by": [],
-      "files": ["crates/core-engine/src/tests/"],
-      "docs": ["docs/TESTING.md"],
+      "files": [
+        "crates/core-engine/src/tests/"
+      ],
+      "docs": [
+        "docs/TESTING.md"
+      ],
       "notes": [],
-      "commands": ["cargo test -p core-engine"],
+      "commands": [
+        "cargo test -p core-engine"
+      ],
       "estimate": "L"
     },
     {
@@ -797,9 +1014,15 @@
         "crates/persistence/src/sqlite/mod.rs",
         "crates/persistence/migrations/"
       ],
-      "docs": ["docs/ARCHITECTURE.md"],
-      "notes": ["Use in-memory SQLite (:memory:) for all unit tests — never hit a real file in tests."],
-      "commands": ["cargo test -p persistence"],
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ],
+      "notes": [
+        "Use in-memory SQLite (:memory:) for all unit tests \u2014 never hit a real file in tests."
+      ],
+      "commands": [
+        "cargo test -p persistence"
+      ],
       "estimate": "M"
     },
     {
@@ -818,12 +1041,21 @@
         "Versioning correctly tracks multiple versions of the same workflow_id",
         "Unit tests pass with in-memory SQLite"
       ],
-      "depends_on": ["PERSIST-001", "MODEL-001"],
+      "depends_on": [
+        "PERSIST-001",
+        "MODEL-001"
+      ],
       "blocked_by": [],
-      "files": ["crates/persistence/src/repositories/mod.rs"],
-      "docs": ["docs/ARCHITECTURE.md"],
+      "files": [
+        "crates/persistence/src/repositories/mod.rs"
+      ],
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ],
       "notes": [],
-      "commands": ["cargo test -p persistence"],
+      "commands": [
+        "cargo test -p persistence"
+      ],
       "estimate": "M"
     },
     {
@@ -841,12 +1073,22 @@
         "list_runs_for_workflow returns all runs for a workflow_id ordered by recency",
         "Unit tests pass with in-memory SQLite"
       ],
-      "depends_on": ["PERSIST-001", "MODEL-003", "MODEL-004"],
+      "depends_on": [
+        "PERSIST-001",
+        "MODEL-003",
+        "MODEL-004"
+      ],
       "blocked_by": [],
-      "files": ["crates/persistence/src/repositories/mod.rs"],
-      "docs": ["docs/ARCHITECTURE.md"],
+      "files": [
+        "crates/persistence/src/repositories/mod.rs"
+      ],
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ],
       "notes": [],
-      "commands": ["cargo test -p persistence"],
+      "commands": [
+        "cargo test -p persistence"
+      ],
       "estimate": "M"
     },
     {
@@ -864,12 +1106,24 @@
         "Replay can reconstruct node states from stored events for the demo workflow",
         "Unit tests pass with in-memory SQLite"
       ],
-      "depends_on": ["PERSIST-001", "EVENT-001"],
+      "depends_on": [
+        "PERSIST-001",
+        "EVENT-001"
+      ],
       "blocked_by": [],
-      "files": ["crates/persistence/src/repositories/mod.rs"],
-      "docs": ["docs/ARCHITECTURE.md", "docs/EVENT_SCHEMA.md"],
-      "notes": ["This is append-only by design. Do not add update or delete functions for event rows."],
-      "commands": ["cargo test -p persistence"],
+      "files": [
+        "crates/persistence/src/repositories/mod.rs"
+      ],
+      "docs": [
+        "docs/ARCHITECTURE.md",
+        "docs/EVENT_SCHEMA.md"
+      ],
+      "notes": [
+        "This is append-only by design. Do not add update or delete functions for event rows."
+      ],
+      "commands": [
+        "cargo test -p persistence"
+      ],
       "estimate": "M"
     },
     {
@@ -885,9 +1139,13 @@
         "get_setting and set_setting work correctly",
         "Settings persist across app restarts"
       ],
-      "depends_on": ["PERSIST-001"],
+      "depends_on": [
+        "PERSIST-001"
+      ],
       "blocked_by": [],
-      "files": ["crates/persistence/src/repositories/mod.rs"],
+      "files": [
+        "crates/persistence/src/repositories/mod.rs"
+      ],
       "docs": [],
       "notes": [],
       "commands": [],
@@ -907,12 +1165,23 @@
         "All repository functions have test coverage",
         "Tests use :memory: SQLite exclusively"
       ],
-      "depends_on": ["PERSIST-002", "PERSIST-003", "PERSIST-004", "PERSIST-005"],
+      "depends_on": [
+        "PERSIST-002",
+        "PERSIST-003",
+        "PERSIST-004",
+        "PERSIST-005"
+      ],
       "blocked_by": [],
-      "files": ["crates/persistence/src/tests/"],
-      "docs": ["docs/TESTING.md"],
+      "files": [
+        "crates/persistence/src/tests/"
+      ],
+      "docs": [
+        "docs/TESTING.md"
+      ],
       "notes": [],
-      "commands": ["cargo test -p persistence"],
+      "commands": [
+        "cargo test -p persistence"
+      ],
       "estimate": "M"
     },
     {
@@ -930,10 +1199,17 @@
         "A mock adapter implementing the trait exists for use in engine tests",
         "Trait is documented with expected behavior per method"
       ],
-      "depends_on": ["MODEL-001", "EVENT-004"],
+      "depends_on": [
+        "MODEL-001",
+        "EVENT-004"
+      ],
       "blocked_by": [],
-      "files": ["crates/runtime-adapters/src/lib.rs"],
-      "docs": ["docs/ARCHITECTURE.md"],
+      "files": [
+        "crates/runtime-adapters/src/lib.rs"
+      ],
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ],
       "notes": [],
       "commands": [],
       "estimate": "S"
@@ -946,7 +1222,7 @@
       "priority": "high",
       "type": "implementation",
       "summary": "Implement the CLI shell adapter that executes arbitrary shell commands in a workspace.",
-      "description": "Implement in crates/runtime-adapters/src/cli/. Use tokio::process::Command to spawn processes inside workspace_root. Stream stdout and stderr, capturing them into command.stdout and command.stderr events. Record: command string, shell, cwd, exit code, duration_ms, stdout_bytes, stderr_bytes. Emit command.prepared, command.started, stdout/stderr events, and command.completed/command.failed. Support a configurable timeout (max_runtime_ms). Do not sanitize commands in v1 — all shell commands are allowed per DECISIONS.md.",
+      "description": "Implement in crates/runtime-adapters/src/cli/. Use tokio::process::Command to spawn processes inside workspace_root. Stream stdout and stderr, capturing them into command.stdout and command.stderr events. Record: command string, shell, cwd, exit code, duration_ms, stdout_bytes, stderr_bytes. Emit command.prepared, command.started, stdout/stderr events, and command.completed/command.failed. Support a configurable timeout (max_runtime_ms). Do not sanitize commands in v1 \u2014 all shell commands are allowed per DECISIONS.md.",
       "acceptance_criteria": [
         "Adapter executes a shell command in the given workspace_root",
         "stdout and stderr are captured and emitted as events",
@@ -954,12 +1230,23 @@
         "Timeout causes command.failed with a clear reason",
         "All required metadata fields are logged"
       ],
-      "depends_on": ["ADAPT-001"],
+      "depends_on": [
+        "ADAPT-001"
+      ],
       "blocked_by": [],
-      "files": ["crates/runtime-adapters/src/cli/mod.rs"],
-      "docs": ["docs/ARCHITECTURE.md", "docs/DECISIONS.md"],
-      "notes": ["Arbitrary shell commands are approved for v1. Log everything. Prefer patch-aware flows but support raw writes."],
-      "commands": ["cargo test -p runtime-adapters"],
+      "files": [
+        "crates/runtime-adapters/src/cli/mod.rs"
+      ],
+      "docs": [
+        "docs/ARCHITECTURE.md",
+        "docs/DECISIONS.md"
+      ],
+      "notes": [
+        "Arbitrary shell commands are approved for v1. Log everything. Prefer patch-aware flows but support raw writes."
+      ],
+      "commands": [
+        "cargo test -p runtime-adapters"
+      ],
       "estimate": "M"
     },
     {
@@ -977,11 +1264,23 @@
         "Output is captured and available for downstream nodes via memory",
         "Failure (non-zero exit) emits agent.failed correctly"
       ],
-      "depends_on": ["ADAPT-002", "EVENT-006", "DEC-005"],
-      "blocked_by": ["DEC-005"],
-      "files": ["crates/runtime-adapters/src/cli/mod.rs"],
-      "docs": ["docs/ARCHITECTURE.md"],
-      "notes": ["Blocked on DEC-005: how much structured output is required from agent CLI nodes."],
+      "depends_on": [
+        "ADAPT-002",
+        "EVENT-006",
+        "DEC-005"
+      ],
+      "blocked_by": [
+        "DEC-005"
+      ],
+      "files": [
+        "crates/runtime-adapters/src/cli/mod.rs"
+      ],
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ],
+      "notes": [
+        "Blocked on DEC-005: how much structured output is required from agent CLI nodes."
+      ],
       "commands": [],
       "estimate": "M"
     },
@@ -992,7 +1291,7 @@
       "status": "todo",
       "priority": "medium",
       "type": "testing",
-      "summary": "Unit tests for runtime adapters using mock command execution — no real processes in tests.",
+      "summary": "Unit tests for runtime adapters using mock command execution \u2014 no real processes in tests.",
       "description": "Write tests in crates/runtime-adapters/src/tests/. Test: CLI adapter with a mocked process (e.g. echo command or in-process mock), event emission order and correctness, timeout behavior, stderr capture, non-zero exit code handling.",
       "acceptance_criteria": [
         "cargo test -p runtime-adapters passes",
@@ -1000,12 +1299,20 @@
         "Event emission order matches the documented flow",
         "Timeout test verifies command.failed with the correct reason"
       ],
-      "depends_on": ["ADAPT-002"],
+      "depends_on": [
+        "ADAPT-002"
+      ],
       "blocked_by": [],
-      "files": ["crates/runtime-adapters/src/tests/"],
-      "docs": ["docs/TESTING.md"],
+      "files": [
+        "crates/runtime-adapters/src/tests/"
+      ],
+      "docs": [
+        "docs/TESTING.md"
+      ],
       "notes": [],
-      "commands": ["cargo test -p runtime-adapters"],
+      "commands": [
+        "cargo test -p runtime-adapters"
+      ],
       "estimate": "S"
     },
     {
@@ -1016,17 +1323,23 @@
       "priority": "high",
       "type": "implementation",
       "summary": "Implement Tauri command handlers for creating, reading, updating, listing, and deleting workflows.",
-      "description": "Implement in apps/desktop/src-tauri/src/commands/. Add Tauri #[command] functions: create_workflow, get_workflow, list_workflows, update_workflow, delete_workflow, import_workflow, export_workflow. Delegate to the persistence layer — no execution logic here. Return serialized WorkflowDefinition or error to the frontend via invoke().",
+      "description": "Implement in apps/desktop/src-tauri/src/commands/. Add Tauri #[command] functions: create_workflow, get_workflow, list_workflows, update_workflow, delete_workflow, import_workflow, export_workflow. Delegate to the persistence layer \u2014 no execution logic here. Return serialized WorkflowDefinition or error to the frontend via invoke().",
       "acceptance_criteria": [
         "All CRUD commands are registered with Tauri",
         "Frontend can invoke each command via invoke()",
-        "Commands delegate to persistence — no engine logic in command handlers",
+        "Commands delegate to persistence \u2014 no engine logic in command handlers",
         "Errors are returned as serializable error types"
       ],
-      "depends_on": ["PERSIST-002"],
+      "depends_on": [
+        "PERSIST-002"
+      ],
       "blocked_by": [],
-      "files": ["apps/desktop/src-tauri/src/commands/mod.rs"],
-      "docs": ["docs/ARCHITECTURE.md"],
+      "files": [
+        "apps/desktop/src-tauri/src/commands/mod.rs"
+      ],
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ],
       "notes": [],
       "commands": [],
       "estimate": "M"
@@ -1039,17 +1352,26 @@
       "priority": "high",
       "type": "implementation",
       "summary": "Implement Tauri command handlers for creating, starting, pausing, resuming, and cancelling runs.",
-      "description": "Add commands: create_run, start_run, pause_run, resume_run, cancel_run, get_run, list_runs. start_run initiates engine execution asynchronously — the engine emits events to the frontend via the event bridge. Commands must not block the frontend.",
+      "description": "Add commands: create_run, start_run, pause_run, resume_run, cancel_run, get_run, list_runs. start_run initiates engine execution asynchronously \u2014 the engine emits events to the frontend via the event bridge. Commands must not block the frontend.",
       "acceptance_criteria": [
         "All run lifecycle commands are registered with Tauri",
         "start_run launches engine execution without blocking the invoke() call",
         "cancel_run correctly signals the engine to stop",
         "get_run returns current RunInstance state"
       ],
-      "depends_on": ["PERSIST-003", "ENGINE-004", "TAURI-001"],
+      "depends_on": [
+        "PERSIST-003",
+        "ENGINE-004",
+        "TAURI-001",
+        "QA-001"
+      ],
       "blocked_by": [],
-      "files": ["apps/desktop/src-tauri/src/commands/mod.rs"],
-      "docs": ["docs/ARCHITECTURE.md"],
+      "files": [
+        "apps/desktop/src-tauri/src/commands/mod.rs"
+      ],
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ],
       "notes": [],
       "commands": [],
       "estimate": "M"
@@ -1070,10 +1392,18 @@
         "Retry signals the engine to re-queue the predecessor node",
         "Correct review events are emitted"
       ],
-      "depends_on": ["ENGINE-006", "TAURI-002"],
+      "depends_on": [
+        "ENGINE-006",
+        "TAURI-002",
+        "QA-001"
+      ],
       "blocked_by": [],
-      "files": ["apps/desktop/src-tauri/src/commands/mod.rs"],
-      "docs": ["docs/ARCHITECTURE.md"],
+      "files": [
+        "apps/desktop/src-tauri/src/commands/mod.rs"
+      ],
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ],
       "notes": [],
       "commands": [],
       "estimate": "S"
@@ -1086,18 +1416,34 @@
       "priority": "critical",
       "type": "implementation",
       "summary": "Implement the event bridge that emits engine RunEvents to the frontend via Tauri's app.emit().",
-      "description": "Implement in apps/desktop/src-tauri/src/bridge/. The engine emits typed RunEvents to an internal event bus. The bridge subscribes to this bus and re-emits events to the frontend using app.emit() or window.emit(). The frontend subscribes using @tauri-apps/api listen(). The UI must not poll — it must receive pushed events.",
+      "description": "Implement in apps/desktop/src-tauri/src/bridge/. The engine emits typed RunEvents to an internal event bus. The bridge subscribes to this bus and re-emits events to the frontend using app.emit() or window.emit(). The frontend subscribes using @tauri-apps/api listen(). The UI must not poll \u2014 it must receive pushed events.",
       "acceptance_criteria": [
         "Engine events are forwarded to the frontend as Tauri events",
         "Frontend receives events via listen(), not polling",
         "All event families are forwarded (run, node, command, routing, memory, review, guardrail)",
-        "The bridge is thin — no state derivation or mutation"
+        "The bridge is thin \u2014 no state derivation or mutation"
       ],
-      "depends_on": ["ENGINE-004", "EVENT-002", "EVENT-003", "EVENT-004", "EVENT-005", "EVENT-006", "EVENT-007"],
+      "depends_on": [
+        "ENGINE-004",
+        "EVENT-002",
+        "EVENT-003",
+        "EVENT-004",
+        "EVENT-005",
+        "EVENT-006",
+        "EVENT-007",
+        "QA-001"
+      ],
       "blocked_by": [],
-      "files": ["apps/desktop/src-tauri/src/bridge/mod.rs"],
-      "docs": ["docs/ARCHITECTURE.md", "AGENTS.md"],
-      "notes": ["Rule A: engine owns state. The bridge only forwards events. The UI renders from events."],
+      "files": [
+        "apps/desktop/src-tauri/src/bridge/mod.rs"
+      ],
+      "docs": [
+        "docs/ARCHITECTURE.md",
+        "AGENTS.md"
+      ],
+      "notes": [
+        "Rule A: engine owns state. The bridge only forwards events. The UI renders from events."
+      ],
       "commands": [],
       "estimate": "M"
     },
@@ -1115,9 +1461,13 @@
         "Selected path is returned to the frontend and stored in settings",
         "get_settings and set_setting work correctly"
       ],
-      "depends_on": ["PERSIST-005"],
+      "depends_on": [
+        "PERSIST-005"
+      ],
       "blocked_by": [],
-      "files": ["apps/desktop/src-tauri/src/commands/mod.rs"],
+      "files": [
+        "apps/desktop/src-tauri/src/commands/mod.rs"
+      ],
       "docs": [],
       "notes": [],
       "commands": [],
@@ -1131,22 +1481,29 @@
       "priority": "high",
       "type": "implementation",
       "summary": "Implement the top-level React app shell with routing between Builder, LiveRun, Replay, and Library views.",
-      "description": "Replace the App.tsx skeleton with a working view router. Implement a top-level nav bar or sidebar for switching views. Use React state or a router library (react-router or a simple custom router). Each view renders a placeholder initially. Keyboard shortcuts for view switching should be wired (per DESIGN_SPEC.md §13).",
+      "description": "Replace the App.tsx skeleton with a working view router. Implement a top-level nav bar or sidebar for switching views. Use React state or a router library (react-router or a simple custom router). Each view renders a placeholder initially. Keyboard shortcuts for view switching should be wired (per DESIGN_SPEC.md \u00a713).",
       "acceptance_criteria": [
         "Four views are reachable: Builder, LiveRun, Replay, Library",
         "View switches without a full page reload",
         "Keyboard shortcuts switch between views",
         "App shell has the mission-control visual identity baseline"
       ],
-      "depends_on": ["FOUND-002"],
+      "depends_on": [
+        "FOUND-002"
+      ],
       "blocked_by": [],
       "files": [
         "apps/desktop/src/app/App.tsx",
         "apps/desktop/src/views/"
       ],
-      "docs": ["docs/DESIGN_SPEC.md", "docs/ARCHITECTURE.md"],
+      "docs": [
+        "docs/DESIGN_SPEC.md",
+        "docs/ARCHITECTURE.md"
+      ],
       "notes": [],
-      "commands": ["cd apps/desktop && npm run dev"],
+      "commands": [
+        "cd apps/desktop && npm run dev"
+      ],
       "estimate": "M"
     },
     {
@@ -1165,14 +1522,21 @@
         "Canvas can load a WorkflowDefinition from JSON and render its nodes/edges",
         "Node positions use NodeDefinition.display.x/y"
       ],
-      "depends_on": ["UI-BLD-001", "MODEL-001"],
+      "depends_on": [
+        "UI-BLD-001",
+        "MODEL-001"
+      ],
       "blocked_by": [],
       "files": [
         "apps/desktop/src/components/canvas/",
         "apps/desktop/src/components/nodes/"
       ],
-      "docs": ["docs/DESIGN_SPEC.md"],
-      "notes": ["reactflow ^11 is already in package.json."],
+      "docs": [
+        "docs/DESIGN_SPEC.md"
+      ],
+      "notes": [
+        "reactflow ^11 is already in package.json."
+      ],
       "commands": [],
       "estimate": "L"
     },
@@ -1191,10 +1555,16 @@
         "New nodes appear at the drop position",
         "Newly created node gets a new UUID"
       ],
-      "depends_on": ["UI-BLD-002"],
+      "depends_on": [
+        "UI-BLD-002"
+      ],
       "blocked_by": [],
-      "files": ["apps/desktop/src/components/panels/NodePalette.tsx"],
-      "docs": ["docs/DESIGN_SPEC.md"],
+      "files": [
+        "apps/desktop/src/components/panels/NodePalette.tsx"
+      ],
+      "docs": [
+        "docs/DESIGN_SPEC.md"
+      ],
       "notes": [],
       "commands": [],
       "estimate": "M"
@@ -1214,10 +1584,19 @@
         "Editing a field updates the WorkflowDefinition in state",
         "Inspector updates when a different node is selected"
       ],
-      "depends_on": ["UI-BLD-002", "MODEL-005"],
-      "blocked_by": ["MODEL-005"],
-      "files": ["apps/desktop/src/components/panels/NodeInspector.tsx"],
-      "docs": ["docs/DESIGN_SPEC.md"],
+      "depends_on": [
+        "UI-BLD-002",
+        "MODEL-005"
+      ],
+      "blocked_by": [
+        "MODEL-005"
+      ],
+      "files": [
+        "apps/desktop/src/components/panels/NodeInspector.tsx"
+      ],
+      "docs": [
+        "docs/DESIGN_SPEC.md"
+      ],
       "notes": [],
       "commands": [],
       "estimate": "M"
@@ -1238,10 +1617,18 @@
         "Invalid nodes or edges are visually flagged on the canvas",
         "Validation runs before execution is allowed"
       ],
-      "depends_on": ["UI-BLD-002", "ENGINE-003", "TAURI-001"],
+      "depends_on": [
+        "UI-BLD-002",
+        "ENGINE-003",
+        "TAURI-001"
+      ],
       "blocked_by": [],
-      "files": ["apps/desktop/src/components/canvas/"],
-      "docs": ["docs/DESIGN_SPEC.md"],
+      "files": [
+        "apps/desktop/src/components/canvas/"
+      ],
+      "docs": [
+        "docs/DESIGN_SPEC.md"
+      ],
       "notes": [],
       "commands": [],
       "estimate": "M"
@@ -1250,7 +1637,7 @@
       "id": "UI-BLD-006",
       "group_id": "UI-BLD",
       "title": "Save and load workflow",
-      "status": "todo",
+      "status": "done",
       "priority": "high",
       "type": "implementation",
       "summary": "Wire save and load workflow actions to Tauri CRUD commands.",
@@ -1261,9 +1648,14 @@
         "Layout (node x/y positions) is preserved across save/load",
         "User receives feedback on save success or failure"
       ],
-      "depends_on": ["UI-BLD-002", "TAURI-001"],
+      "depends_on": [
+        "UI-BLD-002",
+        "TAURI-001"
+      ],
       "blocked_by": [],
-      "files": ["apps/desktop/src/views/BuilderView.tsx"],
+      "files": [
+        "apps/desktop/src/views/BuilderView.tsx"
+      ],
       "docs": [],
       "notes": [],
       "commands": [],
@@ -1284,12 +1676,23 @@
         "Node creation, selection, and edge creation are tested",
         "Validation error display is tested"
       ],
-      "depends_on": ["UI-BLD-002", "UI-BLD-003", "UI-BLD-004", "UI-BLD-005"],
+      "depends_on": [
+        "UI-BLD-002",
+        "UI-BLD-003",
+        "UI-BLD-004",
+        "UI-BLD-005"
+      ],
       "blocked_by": [],
-      "files": ["apps/desktop/src/__tests__/"],
-      "docs": ["docs/TESTING.md"],
+      "files": [
+        "apps/desktop/src/__tests__/"
+      ],
+      "docs": [
+        "docs/TESTING.md"
+      ],
       "notes": [],
-      "commands": ["cd apps/desktop && npm test"],
+      "commands": [
+        "cd apps/desktop && npm test"
+      ],
       "estimate": "M"
     },
     {
@@ -1300,17 +1703,25 @@
       "priority": "high",
       "type": "implementation",
       "summary": "Implement the Live Run view shell with layout panels and Tauri event subscriptions.",
-      "description": "Create the Live Run view with panels: animated graph, event feed, command output, and run HUD. Subscribe to Tauri events (via listen()) for all RunEvent types. Maintain a React state model of the current run derived from received events. The UI must not poll — events drive state.",
+      "description": "Create the Live Run view with panels: animated graph, event feed, command output, and run HUD. Subscribe to Tauri events (via listen()) for all RunEvent types. Maintain a React state model of the current run derived from received events. The UI must not poll \u2014 events drive state.",
       "acceptance_criteria": [
         "Live Run view is reachable from the app shell",
         "Tauri event subscription is set up for all event families",
         "Received events update React state",
         "Run HUD shows run_id, workflow name, status, workspace_root, and elapsed time"
       ],
-      "depends_on": ["UI-BLD-001", "TAURI-004"],
+      "depends_on": [
+        "UI-BLD-001",
+        "TAURI-004"
+      ],
       "blocked_by": [],
-      "files": ["apps/desktop/src/views/LiveRunView.tsx"],
-      "docs": ["docs/ARCHITECTURE.md", "docs/DESIGN_SPEC.md"],
+      "files": [
+        "apps/desktop/src/views/LiveRunView.tsx"
+      ],
+      "docs": [
+        "docs/ARCHITECTURE.md",
+        "docs/DESIGN_SPEC.md"
+      ],
       "notes": [],
       "commands": [],
       "estimate": "M"
@@ -1323,7 +1734,7 @@
       "priority": "high",
       "type": "implementation",
       "summary": "Render the workflow graph in live view with per-node state badges and animations.",
-      "description": "Render a read-only React Flow graph in the live view. Update each node's visual state (idle, queued, running, waiting, succeeded, failed, skipped, paused) as events arrive. Running nodes should show a subtle pulse animation. Waiting nodes show an amber hold state. Failed nodes show a high-contrast alert. Active edges show directional motion. Per DESIGN_SPEC.md §7.",
+      "description": "Render a read-only React Flow graph in the live view. Update each node's visual state (idle, queued, running, waiting, succeeded, failed, skipped, paused) as events arrive. Running nodes should show a subtle pulse animation. Waiting nodes show an amber hold state. Failed nodes show a high-contrast alert. Active edges show directional motion. Per DESIGN_SPEC.md \u00a77.",
       "acceptance_criteria": [
         "All 8 node states have distinct visual styles",
         "Running nodes animate with a pulse",
@@ -1331,10 +1742,17 @@
         "Active edges show directional flow",
         "Node states update correctly as events are received"
       ],
-      "depends_on": ["UI-RUN-001", "UI-BLD-002"],
+      "depends_on": [
+        "UI-RUN-001",
+        "UI-BLD-002"
+      ],
       "blocked_by": [],
-      "files": ["apps/desktop/src/components/nodes/"],
-      "docs": ["docs/DESIGN_SPEC.md"],
+      "files": [
+        "apps/desktop/src/components/nodes/"
+      ],
+      "docs": [
+        "docs/DESIGN_SPEC.md"
+      ],
       "notes": [],
       "commands": [],
       "estimate": "L"
@@ -1354,10 +1772,16 @@
         "Clicking an event shows the full payload",
         "Events are color-coded by family (run, node, command, review, etc.)"
       ],
-      "depends_on": ["UI-RUN-001"],
+      "depends_on": [
+        "UI-RUN-001"
+      ],
       "blocked_by": [],
-      "files": ["apps/desktop/src/components/panels/EventFeed.tsx"],
-      "docs": ["docs/DESIGN_SPEC.md"],
+      "files": [
+        "apps/desktop/src/components/panels/EventFeed.tsx"
+      ],
+      "docs": [
+        "docs/DESIGN_SPEC.md"
+      ],
       "notes": [],
       "commands": [],
       "estimate": "M"
@@ -1370,18 +1794,28 @@
       "priority": "medium",
       "type": "implementation",
       "summary": "Implement a terminal-like output panel showing stdout/stderr from the active node.",
-      "description": "Show stdout and stderr streams from command events in a scrollable panel. Separate stdout and stderr visually if available. Show timestamps or event associations. Support copy/select. Allow collapse/expand for noisy output. Link output to the originating node. Per DESIGN_SPEC.md §9.",
+      "description": "Show stdout and stderr streams from command events in a scrollable panel. Separate stdout and stderr visually if available. Show timestamps or event associations. Support copy/select. Allow collapse/expand for noisy output. Link output to the originating node. Per DESIGN_SPEC.md \u00a79.",
       "acceptance_criteria": [
         "Stdout and stderr from command events appear in the panel",
         "Panel is within the app layout, not full-screen",
         "Collapse/expand works for long outputs",
         "Text is selectable and copyable"
       ],
-      "depends_on": ["UI-RUN-001"],
-      "blocked_by": ["DEC-004"],
-      "files": ["apps/desktop/src/components/panels/OutputPanel.tsx"],
-      "docs": ["docs/DESIGN_SPEC.md"],
-      "notes": ["DEC-004 asks whether to embed a terminal emulator component or build a custom output panel. Custom panel is the default."],
+      "depends_on": [
+        "UI-RUN-001"
+      ],
+      "blocked_by": [
+        "DEC-004"
+      ],
+      "files": [
+        "apps/desktop/src/components/panels/OutputPanel.tsx"
+      ],
+      "docs": [
+        "docs/DESIGN_SPEC.md"
+      ],
+      "notes": [
+        "DEC-004 asks whether to embed a terminal emulator component or build a custom output panel. Custom panel is the default."
+      ],
       "commands": [],
       "estimate": "M"
     },
@@ -1393,7 +1827,7 @@
       "priority": "high",
       "type": "implementation",
       "summary": "Implement the human review UI that surfaces when the run is paused at a HumanReview node.",
-      "description": "When a review.required event arrives, surface a modal or prominent panel showing: reason for review, relevant outputs and memory from the current run, and action buttons (Approve, Reject, Retry). Keyboard shortcuts for each action. Actions call submit_review_decision via Tauri. Per DESIGN_SPEC.md §10.",
+      "description": "When a review.required event arrives, surface a modal or prominent panel showing: reason for review, relevant outputs and memory from the current run, and action buttons (Approve, Reject, Retry). Keyboard shortcuts for each action. Actions call submit_review_decision via Tauri. Per DESIGN_SPEC.md \u00a710.",
       "acceptance_criteria": [
         "review.required event triggers the review panel",
         "Panel shows reason, outputs, and available actions",
@@ -1401,10 +1835,17 @@
         "Keyboard shortcuts work for each action",
         "Panel closes and run resumes/fails after the decision"
       ],
-      "depends_on": ["UI-RUN-001", "TAURI-003"],
+      "depends_on": [
+        "UI-RUN-001",
+        "TAURI-003"
+      ],
       "blocked_by": [],
-      "files": ["apps/desktop/src/components/panels/HumanReviewPanel.tsx"],
-      "docs": ["docs/DESIGN_SPEC.md"],
+      "files": [
+        "apps/desktop/src/components/panels/HumanReviewPanel.tsx"
+      ],
+      "docs": [
+        "docs/DESIGN_SPEC.md"
+      ],
       "notes": [],
       "commands": [],
       "estimate": "M"
@@ -1424,33 +1865,53 @@
         "Human review panel test covers all three actions",
         "No real Tauri bridge calls in tests"
       ],
-      "depends_on": ["UI-RUN-002", "UI-RUN-003", "UI-RUN-004", "UI-RUN-005"],
+      "depends_on": [
+        "UI-RUN-002",
+        "UI-RUN-003",
+        "UI-RUN-004",
+        "UI-RUN-005"
+      ],
       "blocked_by": [],
-      "files": ["apps/desktop/src/__tests__/"],
-      "docs": ["docs/TESTING.md"],
+      "files": [
+        "apps/desktop/src/__tests__/"
+      ],
+      "docs": [
+        "docs/TESTING.md"
+      ],
       "notes": [],
-      "commands": ["cd apps/desktop && npm test"],
+      "commands": [
+        "cd apps/desktop && npm test"
+      ],
       "estimate": "M"
     },
     {
       "id": "UI-RPL-001",
       "group_id": "UI-RPL",
       "title": "Replay view layout and event loading",
-      "status": "todo",
+      "status": "done",
       "priority": "high",
       "type": "implementation",
       "summary": "Implement the Replay view shell that loads a completed run's event log for inspection.",
-      "description": "Create the Replay view with panels: timeline scrubber, event list, graph playback, and event detail inspector. On entering replay view for a run, invoke list_events_for_run and load the event sequence into local state. All state in replay view is derived from the stored event sequence — never from current engine state.",
+      "description": "Create the Replay view with panels: timeline scrubber, event list, graph playback, and event detail inspector. On entering replay view for a run, invoke list_events_for_run and load the event sequence into local state. All state in replay view is derived from the stored event sequence \u2014 never from current engine state.",
       "acceptance_criteria": [
         "Replay view is accessible from the Library view",
         "Events for the selected run are loaded via Tauri command",
         "Event list renders all events in chronological order",
         "Initial scrubber position is at the first event"
       ],
-      "depends_on": ["UI-BLD-001", "PERSIST-004", "TAURI-001"],
+      "depends_on": [
+        "UI-BLD-001",
+        "PERSIST-004",
+        "TAURI-001"
+      ],
       "blocked_by": [],
-      "files": ["apps/desktop/src/views/ReplayView.tsx"],
-      "docs": ["docs/ARCHITECTURE.md", "docs/DESIGN_SPEC.md"],
+      "files": [
+        "apps/desktop/src/views/ReplayView.tsx"
+      ],
+      "docs": [
+        "docs/ARCHITECTURE.md",
+        "docs/DESIGN_SPEC.md"
+      ],
       "notes": [],
       "commands": [],
       "estimate": "M"
@@ -1463,17 +1924,24 @@
       "priority": "high",
       "type": "implementation",
       "summary": "Implement a timeline scrubber that navigates the event sequence by position or event.",
-      "description": "Implement a scrubber component that allows the user to move backward and forward through the event sequence. Scrubbing to a position derives node states at that moment by replaying events up to that point. Support keyboard-based scrubbing (arrow keys). Per DESIGN_SPEC.md §4.3.",
+      "description": "Implement a scrubber component that allows the user to move backward and forward through the event sequence. Scrubbing to a position derives node states at that moment by replaying events up to that point. Support keyboard-based scrubbing (arrow keys). Per DESIGN_SPEC.md \u00a74.3.",
       "acceptance_criteria": [
         "Scrubber moves forward/backward through events",
         "Keyboard arrow keys scrub the timeline",
         "Graph state updates to reflect the selected event position",
         "Scrubber position is visually clear"
       ],
-      "depends_on": ["UI-RPL-001", "UI-BLD-002"],
+      "depends_on": [
+        "UI-RPL-001",
+        "UI-BLD-002"
+      ],
       "blocked_by": [],
-      "files": ["apps/desktop/src/components/panels/TimelineScrubber.tsx"],
-      "docs": ["docs/DESIGN_SPEC.md"],
+      "files": [
+        "apps/desktop/src/components/panels/TimelineScrubber.tsx"
+      ],
+      "docs": [
+        "docs/DESIGN_SPEC.md"
+      ],
       "notes": [],
       "commands": [],
       "estimate": "M"
@@ -1493,10 +1961,17 @@
         "Routing events show branch_selected reason",
         "Command events show command, exit_code, stdout/stderr summary"
       ],
-      "depends_on": ["UI-RPL-001"],
+      "depends_on": [
+        "UI-RPL-001"
+      ],
       "blocked_by": [],
-      "files": ["apps/desktop/src/components/panels/EventInspector.tsx"],
-      "docs": ["docs/DESIGN_SPEC.md", "docs/EVENT_SCHEMA.md"],
+      "files": [
+        "apps/desktop/src/components/panels/EventInspector.tsx"
+      ],
+      "docs": [
+        "docs/DESIGN_SPEC.md",
+        "docs/EVENT_SCHEMA.md"
+      ],
       "notes": [],
       "commands": [],
       "estimate": "M"
@@ -1515,12 +1990,22 @@
         "Scrubber position affects node states (tested with mocked event sequence)",
         "Event inspector shows correct payload for the selected event"
       ],
-      "depends_on": ["UI-RPL-001", "UI-RPL-002", "UI-RPL-003"],
+      "depends_on": [
+        "UI-RPL-001",
+        "UI-RPL-002",
+        "UI-RPL-003"
+      ],
       "blocked_by": [],
-      "files": ["apps/desktop/src/__tests__/"],
-      "docs": ["docs/TESTING.md"],
+      "files": [
+        "apps/desktop/src/__tests__/"
+      ],
+      "docs": [
+        "docs/TESTING.md"
+      ],
       "notes": [],
-      "commands": ["cd apps/desktop && npm test"],
+      "commands": [
+        "cd apps/desktop && npm test"
+      ],
       "estimate": "S"
     },
     {
@@ -1538,10 +2023,19 @@
         "Clicking a run opens the Replay view for that run",
         "Import/export workflow works correctly"
       ],
-      "depends_on": ["UI-BLD-001", "TAURI-001", "PERSIST-002", "PERSIST-003"],
+      "depends_on": [
+        "UI-BLD-001",
+        "TAURI-001",
+        "PERSIST-002",
+        "PERSIST-003"
+      ],
       "blocked_by": [],
-      "files": ["apps/desktop/src/views/LibraryView.tsx"],
-      "docs": ["docs/DESIGN_SPEC.md"],
+      "files": [
+        "apps/desktop/src/views/LibraryView.tsx"
+      ],
+      "docs": [
+        "docs/DESIGN_SPEC.md"
+      ],
       "notes": [],
       "commands": [],
       "estimate": "M"
@@ -1554,7 +2048,7 @@
       "priority": "medium",
       "type": "implementation",
       "summary": "Implement keyboard shortcuts for all major actions across all views.",
-      "description": "Implement keyboard-driven navigation per DESIGN_SPEC.md §13: (1) view switching shortcuts, (2) canvas navigation (arrow keys, zoom), (3) node selection and connection, (4) run start/stop/pause, (5) human review approve/reject, (6) timeline scrubbing in Replay. A power user should complete a full workflow — build, run, inspect, replay — primarily by keyboard.",
+      "description": "Implement keyboard-driven navigation per DESIGN_SPEC.md \u00a713: (1) view switching shortcuts, (2) canvas navigation (arrow keys, zoom), (3) node selection and connection, (4) run start/stop/pause, (5) human review approve/reject, (6) timeline scrubbing in Replay. A power user should complete a full workflow \u2014 build, run, inspect, replay \u2014 primarily by keyboard.",
       "acceptance_criteria": [
         "View switching is keyboard-accessible",
         "Canvas can be navigated without a mouse",
@@ -1562,10 +2056,19 @@
         "Human review actions have keyboard shortcuts",
         "Replay timeline is keyboard-scrubable"
       ],
-      "depends_on": ["UI-BLD-001", "UI-RUN-001", "UI-RPL-001", "UX-001"],
+      "depends_on": [
+        "UI-BLD-001",
+        "UI-RUN-001",
+        "UI-RPL-001",
+        "UX-001"
+      ],
       "blocked_by": [],
-      "files": ["apps/desktop/src/hooks/useKeybindings.ts"],
-      "docs": ["docs/DESIGN_SPEC.md"],
+      "files": [
+        "apps/desktop/src/hooks/useKeybindings.ts"
+      ],
+      "docs": [
+        "docs/DESIGN_SPEC.md"
+      ],
       "notes": [],
       "commands": [],
       "estimate": "M"
@@ -1578,18 +2081,24 @@
       "priority": "medium",
       "type": "implementation",
       "summary": "Implement the mission control / strategy HUD visual design system.",
-      "description": "Define a CSS design system in styles/ implementing the mission control aesthetic: dark background, grid overlays, restrained motion, state glows/rings, layered panel depth. Avoid cartoonish or over-saturated arcade aesthetic. Reference: lazygit, k9s, Insomnia. Implement motion guidelines from DESIGN_SPEC.md §11 (edge flow animation, node pulse, timeline playhead).",
+      "description": "Define a CSS design system in styles/ implementing the mission control aesthetic: dark background, grid overlays, restrained motion, state glows/rings, layered panel depth. Avoid cartoonish or over-saturated arcade aesthetic. Reference: lazygit, k9s, Insomnia. Implement motion guidelines from DESIGN_SPEC.md \u00a711 (edge flow animation, node pulse, timeline playhead).",
       "acceptance_criteria": [
         "App uses a consistent dark, mission-control visual theme",
         "Running nodes have a subtle pulse animation",
         "Active edges show directional flow",
-        "Motion is restrained — no constant animation everywhere",
+        "Motion is restrained \u2014 no constant animation everywhere",
         "Text remains readable at all states"
       ],
-      "depends_on": ["UI-BLD-001"],
+      "depends_on": [
+        "UI-BLD-001"
+      ],
       "blocked_by": [],
-      "files": ["apps/desktop/src/styles/"],
-      "docs": ["docs/DESIGN_SPEC.md"],
+      "files": [
+        "apps/desktop/src/styles/"
+      ],
+      "docs": [
+        "docs/DESIGN_SPEC.md"
+      ],
       "notes": [],
       "commands": [],
       "estimate": "L"
@@ -1602,21 +2111,30 @@
       "priority": "high",
       "type": "implementation",
       "summary": "On first launch, offer the demo workflow immediately without requiring the user to build anything.",
-      "description": "On first launch (detect via settings), display an onboarding screen or auto-load the plan-execute-critique-approve workflow into the Library. Prompt the user to select a workspace and run the demo. The path from app launch to first run replay must be achievable in under 2 minutes. Per PRD.md §16.",
+      "description": "On first launch (detect via settings), display an onboarding screen or auto-load the plan-execute-critique-approve workflow into the Library. Prompt the user to select a workspace and run the demo. The path from app launch to first run replay must be achievable in under 2 minutes. Per PRD.md \u00a716.",
       "acceptance_criteria": [
         "On first launch, the demo workflow is immediately available in the Library",
         "User can select a workspace and start the demo run without building anything from scratch",
         "The first run produces events that can be replayed",
         "Onboarding does not require completing a tutorial"
       ],
-      "depends_on": ["UX-001", "TAURI-002", "FOUND-004"],
+      "depends_on": [
+        "UX-001",
+        "TAURI-002",
+        "FOUND-004"
+      ],
       "blocked_by": [],
       "files": [
         "apps/desktop/src/views/LibraryView.tsx",
         "apps/desktop/src/app/App.tsx"
       ],
-      "docs": ["docs/PRD.md", "docs/DECISIONS.md"],
-      "notes": ["This is a critical UX success criterion per DECISIONS.md."],
+      "docs": [
+        "docs/PRD.md",
+        "docs/DECISIONS.md"
+      ],
+      "notes": [
+        "This is a critical UX success criterion per DECISIONS.md."
+      ],
       "commands": [],
       "estimate": "M"
     },
@@ -1628,7 +2146,7 @@
       "priority": "medium",
       "type": "implementation",
       "summary": "Set up native OS installer builds for GitHub Releases and formulae for Homebrew, winget, and AUR.",
-      "description": "Configure Tauri bundler to produce: .dmg (macOS), .msi (Windows), .AppImage (Linux). Set up a GitHub Actions release workflow that builds all three on tag push and attaches them to the GitHub Release. Create a Homebrew formula, a winget manifest, and an AUR PKGBUILD. Per PRD.md §16 and DECISIONS.md.",
+      "description": "Configure Tauri bundler to produce: .dmg (macOS), .msi (Windows), .AppImage (Linux). Set up a GitHub Actions release workflow that builds all three on tag push and attaches them to the GitHub Release. Create a Homebrew formula, a winget manifest, and an AUR PKGBUILD. Per PRD.md \u00a716 and DECISIONS.md.",
       "acceptance_criteria": [
         "Tagged release builds produce .dmg, .msi, and .AppImage artifacts",
         "Artifacts are attached to the GitHub Release automatically",
@@ -1637,7 +2155,9 @@
         "AUR PKGBUILD is functional on Arch Linux",
         "App is NOT distributed via npm for the GUI"
       ],
-      "depends_on": ["FOUND-005"],
+      "depends_on": [
+        "FOUND-005"
+      ],
       "blocked_by": [],
       "files": [
         ".github/workflows/release.yml",
@@ -1645,8 +2165,13 @@
         "distribution/winget/",
         "distribution/aur/"
       ],
-      "docs": ["docs/PRD.md", "docs/DECISIONS.md"],
-      "notes": ["Per DECISIONS.md: do not use npm for the GUI app. npm is only appropriate for a future headless CLI companion (out of v1 scope)."],
+      "docs": [
+        "docs/PRD.md",
+        "docs/DECISIONS.md"
+      ],
+      "notes": [
+        "Per DECISIONS.md: do not use npm for the GUI app. npm is only appropriate for a future headless CLI companion (out of v1 scope)."
+      ],
       "commands": [],
       "estimate": "L"
     },
@@ -1665,7 +2190,9 @@
       ],
       "depends_on": [],
       "blocked_by": [],
-      "files": ["docs/REPO_STRUCTURE.md"],
+      "files": [
+        "docs/REPO_STRUCTURE.md"
+      ],
       "docs": [],
       "notes": [],
       "commands": [],
@@ -1684,9 +2211,18 @@
         "EVENT_SCHEMA.md payload examples match implemented Rust structs",
         "Every event type has at least a basic payload example"
       ],
-      "depends_on": ["EVENT-002", "EVENT-003", "EVENT-004", "EVENT-005", "EVENT-006", "EVENT-007"],
+      "depends_on": [
+        "EVENT-002",
+        "EVENT-003",
+        "EVENT-004",
+        "EVENT-005",
+        "EVENT-006",
+        "EVENT-007"
+      ],
       "blocked_by": [],
-      "files": ["docs/EVENT_SCHEMA.md"],
+      "files": [
+        "docs/EVENT_SCHEMA.md"
+      ],
       "docs": [],
       "notes": [],
       "commands": [],
@@ -1700,14 +2236,16 @@
       "priority": "medium",
       "type": "docs",
       "summary": "Move resolved decisions from Open to Accepted in DECISIONS.md and add rationale.",
-      "description": "As each DEC-00x task is resolved, add the decision to the Accepted section of DECISIONS.md with context, rationale, tradeoffs, and follow-up implications. Per AGENTS.md §14 ADR policy.",
+      "description": "As each DEC-00x task is resolved, add the decision to the Accepted section of DECISIONS.md with context, rationale, tradeoffs, and follow-up implications. Per AGENTS.md \u00a714 ADR policy.",
       "acceptance_criteria": [
         "All resolved DEC tasks have a corresponding accepted decision entry",
         "Each entry includes context, decision, alternatives considered, and tradeoffs"
       ],
       "depends_on": [],
       "blocked_by": [],
-      "files": ["docs/DECISIONS.md"],
+      "files": [
+        "docs/DECISIONS.md"
+      ],
       "docs": [],
       "notes": [],
       "commands": [],
@@ -1728,15 +2266,24 @@
         "A trivial test (app loads, title is visible) passes",
         "Setup instructions are documented in docs/TESTING.md or a README"
       ],
-      "depends_on": ["FOUND-005", "TAURI-001", "UI-BLD-001"],
+      "depends_on": [
+        "FOUND-005",
+        "TAURI-001",
+        "UI-BLD-001"
+      ],
       "blocked_by": [],
       "files": [
         "tests/e2e/wdio.conf.js",
         "tests/e2e/package.json"
       ],
-      "docs": ["docs/TESTING.md"],
+      "docs": [
+        "docs/TESTING.md"
+      ],
       "notes": [],
-      "commands": ["cargo install tauri-driver", "cd tests/e2e && npm test"],
+      "commands": [
+        "cargo install tauri-driver",
+        "cd tests/e2e && npm test"
+      ],
       "estimate": "M"
     },
     {
@@ -1754,12 +2301,22 @@
         "Saved workflow appears in Library view",
         "Test passes reliably against a compiled Tauri build"
       ],
-      "depends_on": ["TEST-001", "UI-BLD-006", "UX-001"],
+      "depends_on": [
+        "TEST-001",
+        "UI-BLD-006",
+        "UX-001"
+      ],
       "blocked_by": [],
-      "files": ["tests/e2e/specs/builder.spec.js"],
-      "docs": ["docs/TESTING.md"],
+      "files": [
+        "tests/e2e/specs/builder.spec.js"
+      ],
+      "docs": [
+        "docs/TESTING.md"
+      ],
       "notes": [],
-      "commands": ["cd tests/e2e && npm test"],
+      "commands": [
+        "cd tests/e2e && npm test"
+      ],
       "estimate": "M"
     },
     {
@@ -1770,19 +2327,29 @@
       "priority": "high",
       "type": "testing",
       "summary": "E2E test loading the demo workflow, starting a run, and verifying node state transitions.",
-      "description": "Write a WebdriverIO spec that: loads the plan-execute-critique-approve workflow, selects a test workspace, starts a run, and asserts that each node transitions through correct states (queued, running, waiting/succeeded). Use a dedicated test workspace — never a real project.",
+      "description": "Write a WebdriverIO spec that: loads the plan-execute-critique-approve workflow, selects a test workspace, starts a run, and asserts that each node transitions through correct states (queued, running, waiting/succeeded). Use a dedicated test workspace \u2014 never a real project.",
       "acceptance_criteria": [
         "Demo workflow loads and run starts",
         "Node states are observed transitioning via the live run view",
         "Run reaches the HumanReview node and pauses",
         "Test uses a dedicated test workspace, not a real project"
       ],
-      "depends_on": ["TEST-001", "UI-RUN-002", "TAURI-002"],
+      "depends_on": [
+        "TEST-001",
+        "UI-RUN-002",
+        "TAURI-002"
+      ],
       "blocked_by": [],
-      "files": ["tests/e2e/specs/run.spec.js"],
-      "docs": ["docs/TESTING.md"],
+      "files": [
+        "tests/e2e/specs/run.spec.js"
+      ],
+      "docs": [
+        "docs/TESTING.md"
+      ],
       "notes": [],
-      "commands": ["cd tests/e2e && npm test"],
+      "commands": [
+        "cd tests/e2e && npm test"
+      ],
       "estimate": "M"
     },
     {
@@ -1800,12 +2367,21 @@
         "Clicking Approve resumes the run",
         "Run reaches the End node and transitions to Succeeded"
       ],
-      "depends_on": ["TEST-003", "UI-RUN-005"],
+      "depends_on": [
+        "TEST-003",
+        "UI-RUN-005"
+      ],
       "blocked_by": [],
-      "files": ["tests/e2e/specs/review.spec.js"],
-      "docs": ["docs/TESTING.md"],
+      "files": [
+        "tests/e2e/specs/review.spec.js"
+      ],
+      "docs": [
+        "docs/TESTING.md"
+      ],
       "notes": [],
-      "commands": ["cd tests/e2e && npm test"],
+      "commands": [
+        "cd tests/e2e && npm test"
+      ],
       "estimate": "M"
     },
     {
@@ -1822,12 +2398,21 @@
         "Timeline scrubbing changes node states on the graph",
         "Event inspector shows correct payload for the selected event"
       ],
-      "depends_on": ["TEST-003", "UI-RPL-002"],
+      "depends_on": [
+        "TEST-003",
+        "UI-RPL-002"
+      ],
       "blocked_by": [],
-      "files": ["tests/e2e/specs/replay.spec.js"],
-      "docs": ["docs/TESTING.md"],
+      "files": [
+        "tests/e2e/specs/replay.spec.js"
+      ],
+      "docs": [
+        "docs/TESTING.md"
+      ],
       "notes": [],
-      "commands": ["cd tests/e2e && npm test"],
+      "commands": [
+        "cd tests/e2e && npm test"
+      ],
       "estimate": "M"
     },
     {
@@ -1844,12 +2429,21 @@
         "Run transitions to Failed",
         "Failed node is visually distinct (high contrast per DESIGN_SPEC.md)"
       ],
-      "depends_on": ["TEST-003", "UI-RUN-002"],
+      "depends_on": [
+        "TEST-003",
+        "UI-RUN-002"
+      ],
       "blocked_by": [],
-      "files": ["tests/e2e/specs/failure.spec.js"],
-      "docs": ["docs/TESTING.md"],
+      "files": [
+        "tests/e2e/specs/failure.spec.js"
+      ],
+      "docs": [
+        "docs/TESTING.md"
+      ],
       "notes": [],
-      "commands": ["cd tests/e2e && npm test"],
+      "commands": [
+        "cd tests/e2e && npm test"
+      ],
       "estimate": "S"
     },
     {
@@ -1868,9 +2462,17 @@
       ],
       "depends_on": [],
       "blocked_by": [],
-      "files": ["docs/DECISIONS.md", "schemas/workflow.schema.json", "crates/workflow-model/src/workflow.rs"],
-      "docs": ["docs/DECISIONS.md"],
-      "notes": ["This blocks FOUND-003 and MODEL-005 from being considered fully stable."],
+      "files": [
+        "docs/DECISIONS.md",
+        "schemas/workflow.schema.json",
+        "crates/workflow-model/src/workflow.rs"
+      ],
+      "docs": [
+        "docs/DECISIONS.md"
+      ],
+      "notes": [
+        "This blocks FOUND-003 and MODEL-005 from being considered fully stable."
+      ],
       "commands": [],
       "estimate": "S"
     },
@@ -1890,9 +2492,15 @@
       ],
       "depends_on": [],
       "blocked_by": [],
-      "files": ["docs/DECISIONS.md"],
-      "docs": ["AGENTS.md"],
-      "notes": ["Default recommendation: defer to v1.1. Bounded loops add significant scheduler complexity."],
+      "files": [
+        "docs/DECISIONS.md"
+      ],
+      "docs": [
+        "AGENTS.md"
+      ],
+      "notes": [
+        "Default recommendation: defer to v1.1. Bounded loops add significant scheduler complexity."
+      ],
       "commands": [],
       "estimate": "XS"
     },
@@ -1912,8 +2520,12 @@
       ],
       "depends_on": [],
       "blocked_by": [],
-      "files": ["docs/DECISIONS.md"],
-      "docs": ["docs/ARCHITECTURE.md"],
+      "files": [
+        "docs/DECISIONS.md"
+      ],
+      "docs": [
+        "docs/ARCHITECTURE.md"
+      ],
       "notes": [],
       "commands": [],
       "estimate": "XS"
@@ -1926,7 +2538,7 @@
       "priority": "medium",
       "type": "decision",
       "summary": "Decide whether to embed a full terminal emulator component or build a custom styled output panel.",
-      "description": "Options: (1) embed an existing terminal emulator (e.g. xterm.js) for full ANSI/VT100 support, (2) build a custom styled div-based output panel with stdout/stderr separation and event association. Custom panel is simpler; xterm.js is better for ANSI-heavy tools. DESIGN_SPEC.md §9 specifies the panel should be within the app, not full-screen.",
+      "description": "Options: (1) embed an existing terminal emulator (e.g. xterm.js) for full ANSI/VT100 support, (2) build a custom styled div-based output panel with stdout/stderr separation and event association. Custom panel is simpler; xterm.js is better for ANSI-heavy tools. DESIGN_SPEC.md \u00a79 specifies the panel should be within the app, not full-screen.",
       "acceptance_criteria": [
         "Decision is recorded in DECISIONS.md",
         "If xterm.js: package is added to package.json and integration path documented",
@@ -1934,9 +2546,15 @@
       ],
       "depends_on": [],
       "blocked_by": [],
-      "files": ["docs/DECISIONS.md"],
-      "docs": ["docs/DESIGN_SPEC.md"],
-      "notes": ["This decision unblocks UI-RUN-004."],
+      "files": [
+        "docs/DECISIONS.md"
+      ],
+      "docs": [
+        "docs/DESIGN_SPEC.md"
+      ],
+      "notes": [
+        "This decision unblocks UI-RUN-004."
+      ],
       "commands": [],
       "estimate": "XS"
     },
@@ -1956,11 +2574,109 @@
       ],
       "depends_on": [],
       "blocked_by": [],
-      "files": ["docs/DECISIONS.md"],
-      "docs": ["AGENTS.md", "docs/ARCHITECTURE.md"],
-      "notes": ["This decision unblocks MODEL-005 and ADAPT-003."],
+      "files": [
+        "docs/DECISIONS.md"
+      ],
+      "docs": [
+        "AGENTS.md",
+        "docs/ARCHITECTURE.md"
+      ],
+      "notes": [
+        "This decision unblocks MODEL-005 and ADAPT-003."
+      ],
       "commands": [],
       "estimate": "XS"
+    },
+    {
+      "id": "QA-001",
+      "group_id": "QA",
+      "title": "Tauri IPC boundary contract",
+      "type": "design",
+      "status": "todo",
+      "priority": "critical",
+      "estimate": "S",
+      "summary": "Define and document every Tauri invoke() command and listen() event payload before any run-lifecycle or event-bridge implementation begins.",
+      "description": "Create docs/TAURI_IPC_CONTRACT.md that specifies:\n1. Every invoke() command name, its exact Rust argument struct (as TypeScript interface), and return type.\n2. Every listen() event name emitted by the backend, its exact payload shape, and which frontend component subscribes.\n3. Error variant shapes returned from each command (Tauri serialises Rust Result::Err as a string or typed object \u2014 document which).\n\nThe contract must cover at minimum:\n- create_run / start_run / cancel_run / get_run / list_runs_for_workflow\n- get_run_events (for replay)\n- submit_human_review_decision\n- Events: run_status_changed, node_status_changed, run_event_appended, human_review_requested\n\nThe TypeScript interfaces defined here become the canonical source for UI-RUN, UI-RPL, and TAURI-002/003/004 implementation. Any deviation between Rust impl and this contract is a bug, not a design choice.\n\nAlso create apps/desktop/src/types/ipc.ts mirroring every interface from the contract so TypeScript consumers have a typed invoke wrapper rather than casting unknown at every call site.",
+      "acceptance_criteria": [
+        "docs/TAURI_IPC_CONTRACT.md exists and covers all run-lifecycle and event-bridge commands/events",
+        "apps/desktop/src/types/ipc.ts exports TypeScript interfaces for every invoke arg, return, and event payload",
+        "Each command entry includes: command name, Rust struct equivalent, return type, error type, and example JSON",
+        "Each event entry includes: event name, payload interface, emitter (Rust function), and subscriber (React component/hook)",
+        "TAURI-002, TAURI-003, TAURI-004 implement against this contract \u2014 no undocumented commands or events",
+        "A utility invokeTyped<T>() wrapper in ipc.ts that calls invoke() with the typed arg and casts the result"
+      ],
+      "depends_on": [
+        "TAURI-001",
+        "ENGINE-001",
+        "ENGINE-002",
+        "EVENT-002",
+        "EVENT-003"
+      ],
+      "blocked_by": [],
+      "files": [
+        "docs/TAURI_IPC_CONTRACT.md",
+        "apps/desktop/src/types/ipc.ts"
+      ],
+      "docs": [
+        "docs/ARCHITECTURE.md",
+        "docs/EVENT_SCHEMA.md"
+      ],
+      "commands": [
+        "cd apps/desktop && npm test -- --run"
+      ],
+      "notes": [
+        "BLOCKS: TAURI-002, TAURI-003, TAURI-004 \u2014 do not implement those until this contract is approved",
+        "Tauri 2.x serialises Result<T, E> where E: ToString as a plain string error. Document this clearly.",
+        "The invokeTyped wrapper prevents silent any-casts accumulating across the UI codebase"
+      ]
+    },
+    {
+      "id": "QA-002",
+      "group_id": "QA",
+      "title": "Engine test-first mandate: validator and coordinator",
+      "type": "testing",
+      "status": "todo",
+      "priority": "critical",
+      "estimate": "M",
+      "summary": "Write failing unit tests for ENGINE-003 (workflow validator) and ENGINE-004 (run coordinator) before implementing those tasks. Tests become the executable spec.",
+      "description": "Before ENGINE-003 and ENGINE-004 are coded, write a comprehensive unit test file for each:\n\ncrates/core-engine/src/validator_tests.rs \u2014 covering WorkflowValidator:\n- valid minimal workflow passes (single start, single end, connected)\n- workflow with no start node fails with ValidationError::NoStartNode\n- workflow with no end node fails with ValidationError::NoEndNode\n- workflow with multiple start nodes fails\n- workflow with a cycle fails with ValidationError::CycleDetected\n- workflow with an edge referencing a non-existent node fails\n- workflow with an unreachable node fails or warns (decide and document in DECISIONS.md)\n- all v1 NodeKind variants are accepted by the validator\n\ncrates/core-engine/src/coordinator_tests.rs \u2014 covering RunCoordinator:\n- new run starts in Created state\n- valid run transitions Created -> Validating -> Ready -> Running\n- invalid transition (e.g. Running -> Created) returns StateTransitionError\n- cancelling a running run transitions to Cancelled and emits RunCancelled event\n- a node completing with success transitions its state to Succeeded and queues next nodes\n- a node failing with no retries left transitions to Failed and the run to Failed\n- pausing on a HumanReview node transitions the run to Paused and emits HumanReviewRequested\n- approving a paused run resumes and transitions correctly\n\nTests must compile (but are expected to FAIL until ENGINE-003/004 implement the code). Use an in-memory event log stub (not SQLite) for coordinator tests to keep them fast and isolated.",
+      "acceptance_criteria": [
+        "crates/core-engine/src/validator_tests.rs exists with >= 8 named test cases for WorkflowValidator",
+        "crates/core-engine/src/coordinator_tests.rs exists with >= 8 named test cases for RunCoordinator",
+        "All test cases are #[test] annotated and compile cleanly (cargo check -p core-engine passes)",
+        "Tests are expected to fail at this stage \u2014 that is correct; they define the contract ENGINE-003/004 must satisfy",
+        "ValidationError enum variants are declared (even if not implemented) so tests can reference them",
+        "RunCoordinator accepts an injected event log trait object so tests can use an in-memory stub",
+        "All test names follow the pattern: fn <verb>_<condition>_<expected_outcome>()",
+        "DECISIONS.md updated with the unreachable-node policy (error vs warning)"
+      ],
+      "depends_on": [
+        "ENGINE-001",
+        "ENGINE-002",
+        "MODEL-001",
+        "MODEL-003",
+        "MODEL-004"
+      ],
+      "blocked_by": [],
+      "files": [
+        "crates/core-engine/src/validator_tests.rs",
+        "crates/core-engine/src/coordinator_tests.rs",
+        "crates/core-engine/src/lib.rs"
+      ],
+      "docs": [
+        "docs/ARCHITECTURE.md",
+        "docs/DECISIONS.md"
+      ],
+      "commands": [
+        ". \"$HOME/.cargo/env\" && cargo check -p core-engine",
+        ". \"$HOME/.cargo/env\" && cargo test -p core-engine 2>&1 | grep -E 'FAILED|ok|error'"
+      ],
+      "notes": [
+        "BLOCKS: ENGINE-003, ENGINE-004 \u2014 those tasks must make these tests pass",
+        "Use trait injection (not direct SQLite) for the event log in coordinator tests",
+        "The ValidationError and StateTransitionError types defined here become the canonical error vocabulary for the engine",
+        "Coordinate with QA-001 \u2014 event names emitted in coordinator tests must match the IPC contract"
+      ]
     }
   ]
 }

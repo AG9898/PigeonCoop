@@ -375,6 +375,15 @@ Key panels:
 - node state playback
 - command/prompt/output details
 
+Implementation notes (UI-RPL-001):
+- `apps/desktop/src/views/ReplayView.tsx`
+- Accepts `runId: string | null` prop from App shell
+- On mount/runId change, calls `invoke("list_events_for_run", { runId, offset, limit })` to load events
+- All state is derived from the persisted event sequence — never from live engine state
+- Scrubber starts at index 0 (first event); prev/next buttons + range input control position
+- Accessible from Library view via "Open in Replay" button (`LibraryView.onOpenReplay` callback)
+- `RunEvent` and `RunInstance` types defined in `apps/desktop/src/types/workflow.ts`
+
 ### 10.4 Library View
 Purpose:
 - manage workflows and run history
@@ -503,6 +512,24 @@ Mitigation:
 - ship a minimal CLI wrapper abstraction first
 - do not chase broad integrations early
 
+### Risk 6 — IPC contract drift between Rust and TypeScript
+The Tauri bridge is the hardest boundary to catch at compile time. If a Rust command renames a field or changes a return type, the TypeScript caller silently receives `unknown`.
+
+Mitigation:
+- define all IPC contracts in `docs/TAURI_IPC_CONTRACT.md` before implementing run-lifecycle commands
+- mirror every contract as a TypeScript interface in `apps/desktop/src/types/ipc.ts`
+- use a typed `invokeTyped<T>()` wrapper at every call site — never cast `unknown` inline
+- see workboard task **QA-001** (must complete before TAURI-002, TAURI-003, TAURI-004)
+
+### Risk 7 — Engine implementation without executable specs
+The run coordinator and workflow validator are the most load-bearing Rust components. Implementing them without prior test definitions allows silent correctness assumptions to accumulate.
+
+Mitigation:
+- write failing unit tests for `WorkflowValidator` and `RunCoordinator` before implementation begins
+- tests define the error vocabulary (`ValidationError`, `StateTransitionError`) used system-wide
+- use trait injection for the event log in coordinator tests — no SQLite dependency in unit tests
+- see workboard task **QA-002** (must complete before ENGINE-003, ENGINE-004)
+
 ### Implementation notes (TAURI-001)
 - Workflow CRUD commands: `apps/desktop/src-tauri/src/commands/mod.rs`
 - Commands registered: `create_workflow`, `get_workflow`, `list_workflows`, `update_workflow`, `delete_workflow`, `import_workflow`, `export_workflow`
@@ -524,6 +551,14 @@ Summary:
 - **E2E tests** (`tauri-driver` + WebdriverIO) cover full app flows against a real Tauri build
 
 Playwright is **not used** — it cannot drive Tauri's native webview. Use `tauri-driver` + WebdriverIO for E2E coverage.
+
+### Quality gates for the critical integration path
+
+Before any run-lifecycle or event-bridge Tauri command is implemented, two quality gates must be satisfied:
+
+1. **QA-001 — IPC boundary contract**: `docs/TAURI_IPC_CONTRACT.md` must exist and cover every `invoke()` command and `listen()` event for the run lifecycle. `apps/desktop/src/types/ipc.ts` must export typed interfaces mirroring the contract. This gate blocks TAURI-002, TAURI-003, TAURI-004.
+
+2. **QA-002 — Engine test-first mandate**: Failing unit tests for `WorkflowValidator` and `RunCoordinator` must be committed before ENGINE-003 or ENGINE-004 implementation begins. The tests define the error types and state transition contracts that the rest of the system depends on. This gate blocks ENGINE-003, ENGINE-004.
 
 ---
 

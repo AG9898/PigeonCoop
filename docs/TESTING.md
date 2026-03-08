@@ -64,18 +64,35 @@ npm test          # or: npx vitest
 ```
 
 ### Tauri API mock pattern
+
+All Tauri API mocks are registered globally in `apps/desktop/src/__tests__/setup.ts`, which is loaded by Vitest before every test file via `vite.config.ts → test.setupFiles`.
+
+**Core (invoke):**
 ```ts
-// src/__mocks__/@tauri-apps/api/core.ts
 vi.mock('@tauri-apps/api/core', () => ({
   invoke: vi.fn(),
+}));
+```
+
+**Event bridge (listen / emit / once):** required for any component that subscribes to live backend events.
+```ts
+vi.mock('@tauri-apps/api/event', () => ({
+  listen: vi.fn(() => Promise.resolve(() => {})),  // returns no-op unlisten fn
+  once:   vi.fn(() => Promise.resolve(() => {})),
+  emit:   vi.fn(() => Promise.resolve()),
 }));
 ```
 
 Set up per-test return values:
 ```ts
 import { invoke } from '@tauri-apps/api/core';
-(invoke as vi.Mock).mockResolvedValueOnce({ status: 'Running', nodes: [] });
+const mockInvoke = invoke as ReturnType<typeof vi.fn>;
+mockInvoke.mockResolvedValueOnce({ status: 'Running', nodes: [] });
 ```
+
+Components that call `listen()` inside a `useEffect` must call the returned unlisten function on cleanup. Tests can verify this by inspecting the mock's call count and return value.
+
+For typed IPC interactions, use the interfaces from `apps/desktop/src/types/ipc.ts` (defined by QA-001). Do not cast `invoke` return values as `any` or `unknown` inline.
 
 ### Guidelines
 - Components must not contain execution logic — test rendering and interaction only
@@ -83,6 +100,7 @@ import { invoke } from '@tauri-apps/api/core';
 - Live run view tests: correct rendering of node states from mocked events
 - Replay view tests: timeline scrubbing state, event inspector display
 - Do not test Tauri bridge behavior in component tests
+- All new components using `listen()` must have at least one test asserting correct unlisten cleanup
 
 ---
 
@@ -142,7 +160,34 @@ export const config = {
 
 ---
 
-## 4. Testing the canonical demo workflow
+## 4. Quality gates for the critical integration path
+
+Two mandatory gates must be satisfied before implementation of the engine and Tauri bridge can begin. Both are tracked as workboard tasks.
+
+### QA-001 — Tauri IPC boundary contract (blocks TAURI-002, TAURI-003, TAURI-004)
+
+Before writing any run-lifecycle Tauri command, define the full IPC surface in `docs/TAURI_IPC_CONTRACT.md`:
+- every `invoke()` command name, argument struct, return type, and error type
+- every `listen()` event name, payload shape, emitter function, and subscriber component
+- Tauri 2.x error serialisation behaviour (`Result::Err` serialises as a plain string)
+
+Mirror every interface in `apps/desktop/src/types/ipc.ts` and expose a typed `invokeTyped<T>()` helper. No component may call `invoke()` directly with an inline cast.
+
+Any deviation between the Rust implementation and the contract is a **bug**, not a design choice. The contract is the source of truth.
+
+### QA-002 — Engine test-first mandate (blocks ENGINE-003, ENGINE-004)
+
+Before implementing `WorkflowValidator` (ENGINE-003) or `RunCoordinator` (ENGINE-004), commit failing unit tests to:
+- `crates/core-engine/src/validator_tests.rs` — ≥ 8 cases covering valid/invalid/cycle/unreachable graphs
+- `crates/core-engine/src/coordinator_tests.rs` — ≥ 8 cases covering state transitions, retry, pause/resume, cancellation
+
+The tests define `ValidationError` and `StateTransitionError` enum variants that the rest of the system references. Use trait injection (not SQLite) for the event log in coordinator tests.
+
+Acceptance: `cargo check -p core-engine` passes; tests compile but fail until ENGINE-003/004 provide implementations.
+
+---
+
+## 5. Testing the canonical demo workflow
 
 The **Plan -> Execute Tool -> Critique -> Approve** workflow (see `examples/plan-execute-critique-approve/`) is the primary integration target.
 
@@ -156,7 +201,7 @@ Each test layer covers it differently:
 
 ---
 
-## 5. CI guidance
+## 6. CI guidance
 
 The live CI pipeline is defined in `.github/workflows/ci.yml` and runs automatically on every push and PR to `main`.
 
@@ -181,7 +226,7 @@ tauri-driver + wdio                             # E2E — PR only, requires bina
 
 ---
 
-## 6. File locations
+## 7. File locations
 
 ```text
 agent-arcade/
@@ -202,7 +247,7 @@ agent-arcade/
 
 ---
 
-## 7. What is not tested here
+## 8. What is not tested here
 
 - **Simulation crate** — deferred to v1.1
 - **Plugin adapters** — out of scope for v1

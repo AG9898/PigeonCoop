@@ -8,6 +8,16 @@ vi.mock("@tauri-apps/api/core", () => ({
   invoke: vi.fn(),
 }));
 
+// Mock @tauri-apps/api/event so tests never hit the real Tauri event bus.
+// listen() returns a no-op unlisten function; emit/once are stubs.
+// Components that use listen() in effects should call unlisten on cleanup —
+// these mocks let tests verify that contract without a live backend.
+vi.mock("@tauri-apps/api/event", () => ({
+  listen: vi.fn(() => Promise.resolve(() => {})),
+  once: vi.fn(() => Promise.resolve(() => {})),
+  emit: vi.fn(() => Promise.resolve()),
+}));
+
 // Mock reactflow: jsdom lacks ResizeObserver and SVG APIs required by the
 // real library. Tests that exercise the canvas mount it as a plain div.
 vi.mock("reactflow", () => ({

@@ -82,6 +82,44 @@ The target user is a technical developer. The product must feel like it was buil
 
 **Follow-up:** When E2E tests are added (TEST-001), a separate CI job will compile the full Tauri binary with system deps and run `tauri-driver` + WebdriverIO against it. That job will run on PR only, not on every push.
 
+### 2026-03-08 — Contract-first IPC boundary (QA-001)
+
+**Context:** The Tauri bridge between Rust commands and TypeScript consumers is the hardest boundary to catch at compile time. Field renames or type changes in Rust produce silent `unknown` values on the TypeScript side. With TAURI-002, TAURI-003, and TAURI-004 forming the entire run-lifecycle surface, implementing them without a prior contract creates high drift risk across multiple agent sessions.
+
+**Decision:** Before any run-lifecycle or event-bridge Tauri command is implemented, produce:
+1. `docs/TAURI_IPC_CONTRACT.md` — the canonical specification of every `invoke()` command (name, arg struct, return type, error type) and every `listen()` event (name, payload, emitter, subscriber).
+2. `apps/desktop/src/types/ipc.ts` — TypeScript interfaces mirroring the contract, plus a typed `invokeTyped<T>()` wrapper.
+
+No component may call `invoke()` with an inline `unknown` cast. Any deviation between implementation and contract is a bug.
+
+**Alternatives considered:**
+- Generate TypeScript bindings from Rust types via `ts-rs` or `specta` — viable long-term but adds build complexity and a codegen step in v1 before the contract surface is even settled.
+- Runtime validation (Zod) at the boundary — useful defence-in-depth but does not replace a declared contract.
+
+**Tradeoffs:** Adds one mandatory design task before implementation. Cost is low (< 1 session); benefit is that all three TAURI tasks implement against a shared specification rather than diverging independently.
+
+**Blocks:** TAURI-002, TAURI-003, TAURI-004. See workboard task **QA-001**.
+
+---
+
+### 2026-03-08 — Test-first mandate for engine validator and coordinator (QA-002)
+
+**Context:** The workflow validator (ENGINE-003) and run coordinator (ENGINE-004) are the most load-bearing Rust components. They define the error vocabulary (`ValidationError`, `StateTransitionError`) and state transition contracts that the entire system references. Implementing them without prior executable specifications risks silent assumption drift across agent sessions.
+
+**Decision:** Before ENGINE-003 or ENGINE-004 implementation begins, commit failing unit tests to:
+- `crates/core-engine/src/validator_tests.rs` (≥ 8 cases: valid graph, missing start/end, cycle, orphan node, invalid edge reference)
+- `crates/core-engine/src/coordinator_tests.rs` (≥ 8 cases: state transitions, retry, pause/resume, cancel, human review gate)
+
+The `ValidationError` and `StateTransitionError` enum variants are declared in these test files and become the canonical error types. Coordinator tests use trait injection for the event log — no SQLite in unit tests.
+
+**Alternatives considered:**
+- Write tests after implementation (standard TDD inversion) — rejected for this project because multiple agents implement tasks across sessions. Without prior tests as a contract, each session can independently diverge.
+- Rely on ENGINE-008 (unit test task) to cover this retroactively — rejected; by that point the error vocabulary and state transition semantics are already locked in by prior implementations.
+
+**Tradeoffs:** Adds one mandatory test-authoring task before implementation. The tests are expected to fail until ENGINE-003/004 are implemented — that is the intended state.
+
+**Blocks:** ENGINE-003, ENGINE-004. See workboard task **QA-002**.
+
 ---
 
 ## Open decisions

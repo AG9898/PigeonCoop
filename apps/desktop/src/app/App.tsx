@@ -19,6 +19,7 @@ const NAV_ITEMS: { id: View; label: string; shortcut: string }[] = [
 
 export function App() {
   const [activeView, setActiveView] = useState<View>("builder");
+  const [replayRunId, setReplayRunId] = useState<string | null>(null);
 
   useEffect(() => {
     function handleKey(e: KeyboardEvent) {
@@ -35,6 +36,11 @@ export function App() {
     window.addEventListener("keydown", handleKey);
     return () => window.removeEventListener("keydown", handleKey);
   }, []);
+
+  function openReplay(runId: string) {
+    setReplayRunId(runId || null);
+    setActiveView("replay");
+  }
 
   return (
     <div className="app">
@@ -56,8 +62,8 @@ export function App() {
       <main className="app-main">
         {activeView === "builder" && <BuilderView />}
         {activeView === "liverun" && <LiveRunView />}
-        {activeView === "replay" && <ReplayView />}
-        {activeView === "library" && <LibraryView />}
+        {activeView === "replay" && <ReplayView runId={replayRunId} />}
+        {activeView === "library" && <LibraryView onOpenReplay={openReplay} />}
       </main>
     </div>
   );

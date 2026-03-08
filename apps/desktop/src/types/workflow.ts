@@ -65,3 +65,37 @@ export interface WorkflowDefinition {
   created_at: string;
   updated_at: string;
 }
+
+export type RunStatus =
+  | "created"
+  | "validating"
+  | "ready"
+  | "running"
+  | "paused"
+  | "succeeded"
+  | "failed"
+  | "cancelled";
+
+export interface RunInstance {
+  run_id: string;
+  workflow_id: string;
+  workflow_version: number;
+  status: RunStatus;
+  workspace_root: string;
+  created_at: string;
+  started_at?: string;
+  ended_at?: string;
+}
+
+export interface RunEvent {
+  event_id: string;
+  run_id: string;
+  workflow_id: string;
+  node_id?: string;
+  event_type: string;
+  timestamp: string;
+  payload: unknown;
+  causation_id?: string;
+  correlation_id?: string;
+  sequence: number;
+}

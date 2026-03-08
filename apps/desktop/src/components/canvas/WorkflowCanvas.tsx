@@ -2,7 +2,7 @@
 // Loads from a WorkflowDefinition or starts with an empty canvas.
 // Nodes are draggable and selectable. Edge connections can be drawn.
 
-import { useCallback, useMemo } from "react";
+import { forwardRef, useCallback, useImperativeHandle, useMemo } from "react";
 import ReactFlow, {
   Background,
   BackgroundVariant,
@@ -56,53 +56,63 @@ function workflowToFlow(wf: WorkflowDefinition): {
 const EMPTY_NODES: Node[] = [];
 const EMPTY_EDGES: Edge[] = [];
 
+export interface WorkflowCanvasHandle {
+  getFlowData(): { nodes: Node<WorkflowNodeData>[]; edges: Edge[] };
+}
+
 interface WorkflowCanvasProps {
   workflow?: WorkflowDefinition;
 }
 
-export function WorkflowCanvas({ workflow }: WorkflowCanvasProps) {
-  const initial = useMemo(
-    () =>
-      workflow
-        ? workflowToFlow(workflow)
-        : { nodes: EMPTY_NODES, edges: EMPTY_EDGES },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    []
-  );
+export const WorkflowCanvas = forwardRef<WorkflowCanvasHandle, WorkflowCanvasProps>(
+  function WorkflowCanvas({ workflow }, ref) {
+    const initial = useMemo(
+      () =>
+        workflow
+          ? workflowToFlow(workflow)
+          : { nodes: EMPTY_NODES, edges: EMPTY_EDGES },
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+      []
+    );
 
-  const [nodes, , onNodesChange] = useNodesState(initial.nodes);
-  const [edges, setEdges, onEdgesChange] = useEdgesState(initial.edges);
+    const [nodes, , onNodesChange] = useNodesState(initial.nodes);
+    const [edges, setEdges, onEdgesChange] = useEdgesState(initial.edges);
 
-  const onConnect = useCallback(
-    (params: Connection) => setEdges((eds) => addEdge(params, eds)),
-    [setEdges]
-  );
+    useImperativeHandle(ref, () => ({
+      getFlowData: () => ({ nodes, edges }),
+    }), [nodes, edges]);
 
-  return (
-    <div className="wf-canvas">
-      <ReactFlow
-        nodes={nodes}
-        edges={edges}
-        onNodesChange={onNodesChange}
-        onEdgesChange={onEdgesChange}
-        onConnect={onConnect}
-        nodeTypes={NODE_TYPES}
-        fitView
-        deleteKeyCode="Delete"
-        proOptions={{ hideAttribution: true }}
-      >
-        <Background
-          variant={BackgroundVariant.Dots}
-          gap={20}
-          size={1}
-          color="var(--color-border)"
-        />
-        <Controls showInteractive={false} />
-        <MiniMap
-          nodeColor="var(--color-surface)"
-          maskColor="rgba(13,15,20,0.75)"
-        />
-      </ReactFlow>
-    </div>
-  );
-}
+    const onConnect = useCallback(
+      (params: Connection) => setEdges((eds) => addEdge(params, eds)),
+      [setEdges]
+    );
+
+    return (
+      <div className="wf-canvas">
+        <ReactFlow
+          nodes={nodes}
+          edges={edges}
+          onNodesChange={onNodesChange}
+          onEdgesChange={onEdgesChange}
+          onConnect={onConnect}
+          nodeTypes={NODE_TYPES}
+          fitView
+          deleteKeyCode="Delete"
+          proOptions={{ hideAttribution: true }}
+        >
+          <Background
+            variant={BackgroundVariant.Dots}
+            gap={20}
+            size={1}
+            color="var(--color-border)"
+          />
+          <Controls showInteractive={false} />
+          <MiniMap
+            nodeColor="var(--color-surface)"
+            maskColor="rgba(13,15,20,0.75)"
+          />
+        </ReactFlow>
+      </div>
+    );
+  }
+);
