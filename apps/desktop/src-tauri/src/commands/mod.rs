@@ -1,27 +1,62 @@
 // Tauri command handlers exposed to the frontend via invoke().
-// Keep thin — delegate to persistence, never duplicate execution logic here.
+// Keep thin — delegate to persistence/engine, never duplicate execution logic here.
+// See TAURI_IPC_CONTRACT.md for the full IPC contract.
 
-use std::sync::Mutex;
+use std::collections::HashMap;
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::{Arc, Mutex};
 
+use chrono::Utc;
 use serde::Serialize;
-use tauri::State;
+use tauri::{AppHandle, State};
 use uuid::Uuid;
 
+use core_engine::coordinator::RunCoordinator;
+use core_engine::scheduler::RunScheduler;
+use core_engine::state_machine::{node::NodeTransitionInput, RunTransitionInput};
 use persistence::{
-    repositories::workflows::{
-        delete_workflow as repo_delete_workflow,
-        get_workflow_by_id,
-        list_workflows as repo_list_workflows,
-        save_workflow,
+    repositories::{
+        runs::RunRepository,
+        workflows::{
+            delete_workflow as repo_delete_workflow, get_workflow_by_id,
+            list_workflows as repo_list_workflows, save_workflow,
+        },
     },
     sqlite::Db,
 };
-use workflow_model::workflow::WorkflowDefinition;
+use workflow_model::{
+    run::{NodeSnapshot, NodeStatus, RunInstance, RunStatus},
+    workflow::WorkflowDefinition,
+};
+
+use crate::bridge::TauriEventLog;
+
+// ---------------------------------------------------------------------------
+// AppState
+// ---------------------------------------------------------------------------
 
 /// Shared application state managed by Tauri.
+///
+/// `db` is wrapped in `Arc` so it can be cloned into background async tasks
+/// without giving up ownership of the `Mutex<Db>` managed by Tauri.
 pub struct AppState {
-    pub db: Mutex<Db>,
+    pub db: Arc<Mutex<Db>>,
+    /// Cancellation flags for active runs. Keyed by run_id.
+    pub active_runs: Mutex<HashMap<Uuid, Arc<AtomicBool>>>,
 }
+
+impl AppState {
+    pub fn new(db: Db) -> Self {
+        Self {
+            db: Arc::new(Mutex::new(db)),
+            active_runs: Mutex::new(HashMap::new()),
+        }
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Error helpers
+// ---------------------------------------------------------------------------
 
 /// Serializable error returned from all command handlers.
 #[derive(Debug, Serialize)]
@@ -34,6 +69,10 @@ fn cmd_err(e: impl std::fmt::Display) -> CmdError {
 }
 
 type CmdResult<T> = Result<T, CmdError>;
+
+// ---------------------------------------------------------------------------
+// Workflow CRUD commands (TAURI-001)
+// ---------------------------------------------------------------------------
 
 /// Persist a new workflow.
 #[tauri::command]
@@ -89,5 +128,274 @@ pub fn export_workflow(state: State<AppState>, id: String) -> CmdResult<String> 
     match get_workflow_by_id(&db, uuid).map_err(cmd_err)? {
         Some(wf) => serde_json::to_string(&wf).map_err(cmd_err),
         None => Err(CmdError { message: format!("workflow {id} not found") }),
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Run lifecycle commands (TAURI-002)
+// ---------------------------------------------------------------------------
+
+/// Create a new RunInstance for a workflow and persist it. Does not start execution.
+#[tauri::command]
+pub fn create_run(
+    state: State<AppState>,
+    workflow_id: String,
+    workspace_root: String,
+) -> CmdResult<RunInstance> {
+    let wf_uuid = Uuid::parse_str(&workflow_id).map_err(cmd_err)?;
+    let db = state.db.lock().unwrap();
+
+    let workflow = get_workflow_by_id(&db, wf_uuid)
+        .map_err(cmd_err)?
+        .ok_or_else(|| cmd_err(format!("workflow {workflow_id} not found")))?;
+
+    let run = RunInstance::from_workflow(&workflow, workspace_root);
+    RunRepository::new(&db).create_run(&run).map_err(cmd_err)?;
+    Ok(run)
+}
+
+/// Transition a created run to running and launch engine execution asynchronously.
+///
+/// Returns immediately — the engine runs in a background tokio task and emits
+/// `run_status_changed`, `node_status_changed`, and `run_event_appended` Tauri
+/// events as execution progresses.
+#[tauri::command]
+pub async fn start_run(
+    app: AppHandle,
+    state: State<'_, AppState>,
+    run_id: String,
+) -> CmdResult<()> {
+    let run_uuid = Uuid::parse_str(&run_id).map_err(cmd_err)?;
+
+    // Clone Arc so the background task can share DB access.
+    let db_arc = Arc::clone(&state.db);
+
+    // Load run and workflow while holding the lock briefly.
+    let (run, workflow) = {
+        let db = db_arc.lock().unwrap();
+        let run = RunRepository::new(&db)
+            .get_run_by_id(run_uuid)
+            .map_err(cmd_err)?
+            .ok_or_else(|| cmd_err(format!("run {run_id} not found")))?;
+        let wf_id = run.workflow_id;
+        let workflow = get_workflow_by_id(&db, wf_id)
+            .map_err(cmd_err)?
+            .ok_or_else(|| cmd_err(format!("workflow {wf_id} not found")))?;
+        (run, workflow)
+    };
+
+    // Validate the run is in a startable state.
+    if !matches!(run.status, RunStatus::Created | RunStatus::Ready) {
+        return Err(cmd_err(format!(
+            "run {} is not in a startable state (current: {:?})",
+            run_id, run.status
+        )));
+    }
+
+    // Register a cancellation flag for this run.
+    let cancel_flag = Arc::new(AtomicBool::new(false));
+    state
+        .active_runs
+        .lock()
+        .unwrap()
+        .insert(run_uuid, Arc::clone(&cancel_flag));
+
+    // Spawn the engine in a background task — returns immediately to frontend.
+    tokio::spawn(async move {
+        run_workflow_background(app, db_arc, run, workflow, cancel_flag).await;
+    });
+
+    Ok(())
+}
+
+/// Request cancellation of an active run. Signals the background task to stop.
+#[tauri::command]
+pub fn cancel_run(state: State<AppState>, run_id: String) -> CmdResult<()> {
+    let run_uuid = Uuid::parse_str(&run_id).map_err(cmd_err)?;
+    let active = state.active_runs.lock().unwrap();
+    match active.get(&run_uuid) {
+        Some(flag) => {
+            flag.store(true, Ordering::SeqCst);
+            Ok(())
+        }
+        None => Err(cmd_err(format!("run {run_id} is not active"))),
+    }
+}
+
+/// Retrieve a single run by ID.
+#[tauri::command]
+pub fn get_run(state: State<AppState>, run_id: String) -> CmdResult<Option<RunInstance>> {
+    let run_uuid = Uuid::parse_str(&run_id).map_err(cmd_err)?;
+    let db = state.db.lock().unwrap();
+    RunRepository::new(&db).get_run_by_id(run_uuid).map_err(cmd_err)
+}
+
+/// List all runs for a workflow ordered by created_at DESC.
+#[tauri::command]
+pub fn list_runs_for_workflow(
+    state: State<AppState>,
+    workflow_id: String,
+) -> CmdResult<Vec<RunInstance>> {
+    let wf_uuid = Uuid::parse_str(&workflow_id).map_err(cmd_err)?;
+    let db = state.db.lock().unwrap();
+    RunRepository::new(&db)
+        .list_runs_for_workflow(wf_uuid)
+        .map_err(cmd_err)
+}
+
+// ---------------------------------------------------------------------------
+// Background execution task
+// ---------------------------------------------------------------------------
+
+/// Drive a workflow run to completion in a background tokio task.
+///
+/// Uses `StubNodeExecutor` semantics (all nodes succeed immediately) for v1.
+/// Real adapter dispatch will be wired in a later task (ADAPT-001, ADAPT-002).
+async fn run_workflow_background(
+    app: AppHandle,
+    db: Arc<Mutex<Db>>,
+    run: RunInstance,
+    workflow: WorkflowDefinition,
+    cancel_flag: Arc<AtomicBool>,
+) {
+    let run_id = run.run_id;
+    let node_count = workflow.nodes.len() as u32;
+
+    let event_log = TauriEventLog::new(app, Arc::clone(&db));
+    let mut coordinator = RunCoordinator::new(run, event_log);
+
+    // Initialize all node snapshots in Ready state.
+    for node in &workflow.nodes {
+        coordinator.node_snapshots.insert(
+            node.node_id,
+            NodeSnapshot {
+                node_id: node.node_id,
+                status: NodeStatus::Ready,
+                attempt: 1,
+                started_at: None,
+                ended_at: None,
+                output: None,
+            },
+        );
+    }
+
+    // Drive run state machine: Created → Validating → Ready → Running.
+    // Errors here mean the run was already in a later state (e.g. Ready).
+    let _ = coordinator
+        .transition_run(RunTransitionInput::BeginValidation { node_count });
+    let _ = coordinator
+        .transition_run(RunTransitionInput::ValidationPassed { node_count });
+    if coordinator
+        .transition_run(RunTransitionInput::Start { node_count })
+        .is_err()
+    {
+        // Could not transition to Running — persist current state and bail.
+        persist_run_status(&db, run_id, coordinator.run_status());
+        return;
+    }
+
+    persist_run_status_with_times(
+        &db,
+        run_id,
+        coordinator.run_status(),
+        Some(Utc::now()),
+        None,
+    );
+
+    // Step-by-step execution loop with cancellation support.
+    let scheduler = RunScheduler::new();
+
+    loop {
+        // Check for external cancellation request.
+        if cancel_flag.load(Ordering::SeqCst) {
+            let _ = coordinator.cancel(Some("cancelled by user".to_owned()));
+            break;
+        }
+
+        // Stop when run reaches a terminal or paused state.
+        match coordinator.run_status() {
+            RunStatus::Succeeded
+            | RunStatus::Failed
+            | RunStatus::Cancelled => break,
+            RunStatus::Paused => break,
+            _ => {}
+        }
+
+        // Find nodes eligible to execute this step.
+        let ready = scheduler.next_ready_nodes(&workflow, &coordinator.node_snapshots);
+        if ready.is_empty() {
+            break;
+        }
+
+        for node_id in ready {
+            let node_type = node_type_label(&workflow, node_id);
+            let workspace_root = coordinator.run.workspace_root.clone();
+
+            // Ready → Queued
+            if coordinator
+                .transition_node(node_id, NodeTransitionInput::Queue { node_type: node_type.clone() })
+                .is_err()
+            {
+                continue;
+            }
+
+            // Queued → Running
+            if coordinator
+                .transition_node(
+                    node_id,
+                    NodeTransitionInput::Start {
+                        node_type,
+                        input_refs: vec![],
+                        workspace_root,
+                    },
+                )
+                .is_err()
+            {
+                continue;
+            }
+
+            // Stub execution: all nodes succeed in 1 ms.
+            // Real adapter dispatch wired in ADAPT-001/ADAPT-002.
+            let _ = coordinator.complete_node_success(node_id, 1);
+        }
+    }
+
+    // Persist final run status and timestamps to SQLite.
+    let final_status = coordinator.run_status().clone();
+    let ended_at = match &final_status {
+        RunStatus::Succeeded | RunStatus::Failed | RunStatus::Cancelled => Some(Utc::now()),
+        _ => None,
+    };
+    persist_run_status_with_times(&db, run_id, &final_status, None, ended_at);
+}
+
+// ---------------------------------------------------------------------------
+// Private helpers
+// ---------------------------------------------------------------------------
+
+fn node_type_label(workflow: &WorkflowDefinition, node_id: Uuid) -> String {
+    workflow
+        .nodes
+        .iter()
+        .find(|n| n.node_id == node_id)
+        .map(|n| format!("{:?}", n.node_type).to_lowercase())
+        .unwrap_or_else(|| "unknown".to_owned())
+}
+
+fn persist_run_status(db: &Arc<Mutex<Db>>, run_id: Uuid, status: &RunStatus) {
+    if let Ok(db) = db.lock() {
+        let _ = RunRepository::new(&db).update_run_status(run_id, status, None, None);
+    }
+}
+
+fn persist_run_status_with_times(
+    db: &Arc<Mutex<Db>>,
+    run_id: Uuid,
+    status: &RunStatus,
+    started_at: Option<chrono::DateTime<Utc>>,
+    ended_at: Option<chrono::DateTime<Utc>>,
+) {
+    if let Ok(db) = db.lock() {
+        let _ = RunRepository::new(&db).update_run_status(run_id, status, started_at, ended_at);
     }
 }

@@ -535,6 +535,28 @@ Mitigation:
 - use a typed `invokeTyped<T>()` wrapper at every call site — never cast `unknown` inline
 - see workboard task **QA-001** (must complete before TAURI-002, TAURI-003, TAURI-004)
 
+### Implementation notes (ENGINE-005)
+- `RouterEvaluator` in `crates/core-engine/src/execution/mod.rs` — pure evaluator for outgoing edge conditions
+- `RouteDecision` enum: `Routed { selected_edge_ids, skipped_node_ids, reason }` or `NoMatch { reason }`
+- Edge evaluation per `ConditionKind`: `Always` → always active; `OnSuccess` → active if source Succeeded; `OnFailure` → active if source Failed; `Expression` → matched via `{"key": "<k>", "equals": <v>}` against source node's `output` JSON
+- `apply_routing()` in execution module: called after every node reaches a terminal status; skips non-selected downstream nodes, emits `router.evaluated`, `router.branch_selected` (or `router.no_match`) events
+- `NoMatch` causes immediate `run.failed` regardless of whether the source node succeeded or failed
+- Scheduler updated: `Failed` and `Cancelled` predecessors are now treated as terminal (alongside `Succeeded`/`Skipped`), enabling `OnFailure`-routed successors to be picked up
+- `RunCoordinator::skip_node` transitions a node Ready/Queued → Skipped; `emit_event` appends a pre-built event to the log
+
+### Implementation notes (ENGINE-004)
+- `RunCoordinator<L: EventLog>` in `crates/core-engine/src/coordinator.rs` owns all live run state
+- `transition_run(RunTransitionInput)` drives run-level state machine, emits `RunEvent` via `EventLog`
+- `transition_node(node_id, NodeTransitionInput)` drives per-node state machine, emits node events
+- `complete_node_success(node_id, duration_ms)` — increments `steps_executed`, enforces `max_steps` guardrail, auto-succeeds run when all nodes are terminal
+- `fail_node(node_id, reason, retries_remaining)` — schedules retry (Failed→Queued) if retries > 0; otherwise fails the run
+- `pause_for_review(node_id, reason)` — transitions node Running→Waiting, run Running→Paused
+- `approve_review(node_id)` — transitions node Waiting→Running, run Paused→Running
+- `cancel(reason)` — valid from Running or Paused; emits `run.cancelled`
+- `EventLog` trait is the injection point for the persistence layer; tests use `InMemoryEventLog`
+- `RunScheduler` in `crates/core-engine/src/scheduler/mod.rs` — `next_ready_nodes` returns nodes whose predecessors are all Succeeded/Skipped; `topological_order` uses Kahn's algorithm
+- `ExecutionDriver` in `crates/core-engine/src/execution/mod.rs` — async driver that loops scheduler→coordinator→adapter; `NodeExecutor` trait injectable; `StubNodeExecutor` used in tests
+
 ### Risk 7 — Engine implementation without executable specs
 The run coordinator and workflow validator are the most load-bearing Rust components. Implementing them without prior test definitions allows silent correctness assumptions to accumulate.
 
@@ -544,10 +566,19 @@ Mitigation:
 - use trait injection for the event log in coordinator tests — no SQLite dependency in unit tests
 - see workboard task **QA-002** (must complete before ENGINE-003, ENGINE-004)
 
+### Implementation notes (TAURI-002)
+- Run lifecycle commands: `create_run`, `start_run`, `cancel_run`, `get_run`, `list_runs_for_workflow`
+- `AppState` updated: `db` is now `Arc<Mutex<Db>>` (shared with background tasks); `active_runs: Mutex<HashMap<Uuid, Arc<AtomicBool>>>` tracks per-run cancellation flags
+- `start_run` uses `tokio::spawn` to launch `run_workflow_background` and returns immediately — does not block the `invoke()` call
+- Background task drives run through `Created → Validating → Ready → Running`, initializes node snapshots in `Ready` state, runs step loop, persists final status
+- Cancellation: `cancel_run` sets the `AtomicBool` flag; the background loop checks it before each step and calls `coordinator.cancel()`
+- `TauriEventLog` in `apps/desktop/src-tauri/src/bridge/mod.rs`: implements `EventLog`, persists events to SQLite via `EventRepository`, and emits `run_event_appended`, `run_status_changed`, `node_status_changed` Tauri events on every append
+- Stub execution semantics for v1 (all nodes succeed immediately); real adapter dispatch wired in ADAPT-001/ADAPT-002
+
 ### Implementation notes (TAURI-001)
 - Workflow CRUD commands: `apps/desktop/src-tauri/src/commands/mod.rs`
 - Commands registered: `create_workflow`, `get_workflow`, `list_workflows`, `update_workflow`, `delete_workflow`, `import_workflow`, `export_workflow`
-- Shared database state: `AppState { db: Mutex<Db> }` managed via `app.manage()` in the Tauri `setup` hook
+- Shared database state: `AppState { db: Arc<Mutex<Db>> }` managed via `app.manage()` in the Tauri `setup` hook
 - Database file opened from `app_data_dir()` at startup; migrations run automatically on open
 - All command handlers delegate to `persistence::repositories::workflows` — no engine logic in command layer
 - Error type: `CmdError { message: String }` implements `Serialize` for Tauri `invoke()` error responses

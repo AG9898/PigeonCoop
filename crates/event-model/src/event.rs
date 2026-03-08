@@ -4,6 +4,7 @@ use chrono::{DateTime, Utc};
 
 use crate::node_events::NodeEventKind;
 use crate::run_events::RunEventKind;
+use crate::routing_events::RoutingEventKind;
 
 /// Base envelope for all run events. See EVENT_SCHEMA.md.
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -34,6 +35,28 @@ impl RunEvent {
             run_id,
             workflow_id,
             node_id: None,
+            event_type: kind.event_type_str().to_owned(),
+            timestamp: Utc::now(),
+            payload: kind.payload_value(),
+            causation_id,
+            correlation_id,
+        }
+    }
+
+    /// Construct a `RunEvent` envelope from a typed `RoutingEventKind`.
+    pub fn from_routing_kind(
+        run_id: Uuid,
+        workflow_id: Uuid,
+        node_id: Option<Uuid>,
+        kind: &RoutingEventKind,
+        causation_id: Option<Uuid>,
+        correlation_id: Option<Uuid>,
+    ) -> Self {
+        Self {
+            event_id: Uuid::new_v4(),
+            run_id,
+            workflow_id,
+            node_id,
             event_type: kind.event_type_str().to_owned(),
             timestamp: Utc::now(),
             payload: kind.payload_value(),

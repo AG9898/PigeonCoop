@@ -15,6 +15,7 @@ serde_json = { workspace = true }
 tokio = { workspace = true }
 tracing = { workspace = true }
 uuid = { workspace = true }
+chrono = { workspace = true }
 workflow-model = { path = "../../../crates/workflow-model" }
 event-model = { path = "../../../crates/event-model" }
 core-engine = { path = "../../../crates/core-engine" }

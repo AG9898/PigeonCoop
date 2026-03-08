@@ -1,8 +1,6 @@
 mod commands;
 mod bridge;
 
-use std::sync::Mutex;
-
 use commands::AppState;
 use persistence::sqlite::Db;
 use tauri::Manager;
@@ -16,10 +14,11 @@ pub fn run() {
             std::fs::create_dir_all(&data_dir)?;
             let db_path = data_dir.join("agent-arcade.db");
             let db = Db::open(db_path)?;
-            app.manage(AppState { db: Mutex::new(db) });
+            app.manage(AppState::new(db));
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
+            // Workflow CRUD (TAURI-001)
             commands::create_workflow,
             commands::get_workflow,
             commands::list_workflows,
@@ -27,6 +26,12 @@ pub fn run() {
             commands::delete_workflow,
             commands::import_workflow,
             commands::export_workflow,
+            // Run lifecycle (TAURI-002)
+            commands::create_run,
+            commands::start_run,
+            commands::cancel_run,
+            commands::get_run,
+            commands::list_runs_for_workflow,
         ])
         .run(tauri::generate_context!())
         .expect("error while running agent arcade");

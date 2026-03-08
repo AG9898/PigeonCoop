@@ -204,6 +204,32 @@ The raw stdout is always captured in `AdapterOutput.stdout` regardless of `outpu
 
 ---
 
+### 2026-03-08 — Tauri build scaffolding requirements
+
+**Context:** When `cargo build -p agent-arcade` was first attempted on a fresh Linux (WSL2) environment, it failed in three separate stages. These are not code bugs — they are scaffolding gaps in the initial project setup.
+
+**Required conditions for `cargo build -p agent-arcade` to succeed on Linux:**
+
+1. **System libraries** — GTK3/WebKit2GTK native libs must be installed via apt. One-time install per machine:
+   ```bash
+   sudo apt-get install -y libwebkit2gtk-4.1-dev libgtk-3-dev \
+     libayatana-appindicator3-dev librsvg2-dev libsoup-3.0-dev
+   ```
+
+2. **`build.rs`** — must exist at `apps/desktop/src-tauri/build.rs` containing `tauri_build::build()`. Without it, `tauri::generate_context!()` cannot set `OUT_DIR` and fails with "OUT_DIR env var is not set".
+
+3. **`icons/icon.png`** — must exist at `apps/desktop/src-tauri/icons/icon.png` as a valid RGBA PNG. `tauri_build::build()` reads it at compile time. Any other format (RGB, palette) causes a compile-time panic.
+
+4. **`apps/desktop/dist/`** — must exist (can be empty) as `tauri.conf.json` points `frontendDist` to `../dist`. Without it, `generate_context!()` panics with "path doesn't exist".
+
+5. **`tauri.conf.json` bundle target** — `"targets"` must be one of the documented enum values (`"all"`, `"deb"`, `"appimage"`, etc.). `"none"` is not valid even when `"active": false`. Use `"all"` with `"active": false` to disable bundling without a compile error.
+
+6. **`chrono` in `Cargo.toml`** — `apps/desktop/src-tauri/Cargo.toml` must explicitly depend on `chrono = { workspace = true }` since `commands/mod.rs` uses `chrono::Utc` for timestamping run status updates.
+
+**Note:** The `agent-arcade` crate is excluded from CI `cargo test --workspace` (see decision above) precisely because of items 1–4. These scaffolding requirements only matter when building the full Tauri binary, not when running the engine/persistence/model unit tests.
+
+---
+
 ## Open decisions
 
 These are not blockers, but should be resolved early during implementation:

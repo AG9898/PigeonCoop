@@ -8,3 +8,6 @@ pub mod edge;
 pub mod workflow;
 pub mod memory;
 pub mod run;
+
+#[cfg(test)]
+mod tests;

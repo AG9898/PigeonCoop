@@ -1,7 +1,5 @@
-// Test-first spec for WorkflowValidator.
-// These tests define the contract ENGINE-003 must satisfy.
-// All tests are expected to FAIL until ENGINE-003 is implemented —
-// that is correct and intentional. See QA-002.
+// Tests for WorkflowValidator (ENGINE-003).
+// These tests define the contract that the validator must satisfy.
 
 #[cfg(test)]
 mod tests {
@@ -97,21 +95,18 @@ mod tests {
     /// A workflow with one Start node, one End node, and a connecting edge
     /// must pass validation.
     #[test]
-    #[should_panic(expected = "ENGINE-003")]
     fn validate_passes_on_valid_minimal_workflow() {
         let start = make_node(NodeKind::Start);
         let end = make_node(NodeKind::End);
         let edge = make_edge(start.node_id, end.node_id);
         let wf = minimal_workflow(vec![start, end], vec![edge]);
         let validator = WorkflowValidator::new();
-        // Should return Ok(()) — not panic
         validator.validate(&wf).expect("valid workflow must pass validation");
     }
 
     /// All v1 NodeKind variants must be accepted by the validator when used
     /// in a structurally valid graph.
     #[test]
-    #[should_panic(expected = "ENGINE-003")]
     fn validate_accepts_all_v1_node_kinds() {
         let start_id = Uuid::new_v4();
         let agent_id = Uuid::new_v4();
@@ -149,7 +144,6 @@ mod tests {
 
     /// A workflow with no Start node must fail with NoStartNode.
     #[test]
-    #[should_panic(expected = "ENGINE-003")]
     fn validate_fails_on_missing_start_node() {
         let end = make_node(NodeKind::End);
         let wf = minimal_workflow(vec![end], vec![]);
@@ -165,7 +159,6 @@ mod tests {
 
     /// A workflow with no End node must fail with NoEndNode.
     #[test]
-    #[should_panic(expected = "ENGINE-003")]
     fn validate_fails_on_missing_end_node() {
         let start = make_node(NodeKind::Start);
         let wf = minimal_workflow(vec![start], vec![]);
@@ -182,7 +175,6 @@ mod tests {
     /// A workflow with more than one Start node must fail with
     /// MultipleStartNodes.
     #[test]
-    #[should_panic(expected = "ENGINE-003")]
     fn validate_fails_on_multiple_start_nodes() {
         let start1 = make_node(NodeKind::Start);
         let start2 = make_node(NodeKind::Start);
@@ -204,7 +196,6 @@ mod tests {
 
     /// A workflow whose edges form a cycle must fail with CycleDetected.
     #[test]
-    #[should_panic(expected = "ENGINE-003")]
     fn validate_fails_on_cycle_detected() {
         let start_id = Uuid::new_v4();
         let a_id = Uuid::new_v4();
@@ -238,7 +229,6 @@ mod tests {
     /// An edge whose source or target references a node_id not in the node
     /// list must fail with InvalidEdgeReference.
     #[test]
-    #[should_panic(expected = "ENGINE-003")]
     fn validate_fails_on_invalid_edge_reference() {
         let start_id = Uuid::new_v4();
         let end_id = Uuid::new_v4();
@@ -271,7 +261,6 @@ mod tests {
     /// Policy: unreachable nodes are a hard validation error in v1.
     /// See DECISIONS.md — "Unreachable node policy".
     #[test]
-    #[should_panic(expected = "ENGINE-003")]
     fn validate_fails_on_unreachable_node() {
         let start_id = Uuid::new_v4();
         let end_id = Uuid::new_v4();
@@ -299,7 +288,6 @@ mod tests {
 
     /// A workflow with zero nodes must fail with both NoStartNode and NoEndNode.
     #[test]
-    #[should_panic(expected = "ENGINE-003")]
     fn validate_fails_on_empty_workflow() {
         let wf = minimal_workflow(vec![], vec![]);
         let validator = WorkflowValidator::new();

@@ -1,6 +1,6 @@
 # Repository Structure
 
-## Proposed layout
+## Actual layout
 
 ```text
 .github/
@@ -15,67 +15,71 @@ docs/
   EVENT_SCHEMA.md
   REPO_STRUCTURE.md
   DECISIONS.md
+  TAURI_IPC_CONTRACT.md
+  TESTING.md
   README.md
 
-  apps/
-    desktop/
-      package.json
+apps/
+  desktop/
+    dist/                    # Frontend build output (placeholder until npm run build)
+    package.json
+    src/
+      app/
+      components/
+      views/
+      hooks/
+      state/
+      styles/
+    src-tauri/
+      build.rs               # Required: calls tauri_build::build() for generate_context!()
+      Cargo.toml
+      tauri.conf.json        # Tauri app config (read at compile time by generate_context!())
+      icons/
+        icon.png             # App icon (RGBA PNG required by tauri_build)
       src/
-        app/
-        components/
-        views/
-        hooks/
-        state/
-        styles/
-      src-tauri/
-        Cargo.toml
-        tauri.conf.json      # Tauri app config (read at compile time by generate_context!())
-        src/
-          main.rs
-          commands/
-          bridge/
+        main.rs
+        lib.rs               # Tauri setup, invoke_handler registration
+        commands/
+          mod.rs             # All Tauri command handlers
+        bridge/
+          mod.rs             # TauriEventLog + frontend event payload types
 
-  crates/
-    workflow-model/
-      src/
-    event-model/
-      src/
-    core-engine/
-      src/
-        scheduler/
-        state_machine/
-        validation/
-        execution/
-        review/
-    runtime-adapters/
-      src/
-        cli/
-        tools/
-    persistence/
-      src/
-        sqlite/
-        repositories/
-    simulation/
-      src/
+crates/
+  workflow-model/
+    src/
+  event-model/
+    src/
+  core-engine/
+    src/
+      scheduler/
+      state_machine/
+      validation/
+      execution/
+      review/
+  runtime-adapters/
+    src/
+      cli/
+      mock/
+  persistence/
+    src/
+      sqlite/
+      repositories/
+  simulation/
+    src/
 
-  schemas/
-    workflow.schema.json
-    run-event.schema.json
+schemas/
+  workflow.schema.json
+  run-event.schema.json
 
-  examples/
-    plan-execute-critique-approve/
-      workflow.json
-      README.md
+examples/
+  plan-execute-critique-approve/
+    workflow.json
+    README.md
 
-  tests/
-    e2e/
-      specs/                 # WebdriverIO E2E test specs
-      wdio.conf.js           # tauri-driver + WebdriverIO config
-
-  docs/
-    decisions/
-    architecture/
-    ux/
+tests/
+  e2e/
+    specs/                   # WebdriverIO E2E test specs
+    wdio.conf.js             # tauri-driver + WebdriverIO config
 ```
 
 ---
