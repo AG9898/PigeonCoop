@@ -417,7 +417,7 @@
       "id": "MODEL-006",
       "group_id": "MODEL",
       "title": "Guardrails/constraints model",
-      "status": "todo",
+      "status": "done",
       "priority": "medium",
       "type": "implementation",
       "summary": "Implement a typed RunConstraints struct covering max_retries, max_runtime_ms, max_steps, and optional budget controls.",

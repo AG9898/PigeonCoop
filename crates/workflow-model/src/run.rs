@@ -2,6 +2,7 @@ use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 use chrono::{DateTime, Utc};
 use crate::workflow::WorkflowDefinition;
+pub use crate::constraints::RunConstraints;
 
 /// Per-node lifecycle states. See ARCHITECTURE.md §7.3.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -43,24 +44,6 @@ pub enum RunStatus {
     Succeeded,
     Failed,
     Cancelled,
-}
-
-/// Guardrail limits applied to a run.
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct RunConstraints {
-    pub max_retries: u32,
-    pub max_runtime_ms: Option<u64>,
-    pub max_steps: Option<u32>,
-}
-
-impl Default for RunConstraints {
-    fn default() -> Self {
-        Self {
-            max_retries: 3,
-            max_runtime_ms: None,
-            max_steps: None,
-        }
-    }
 }
 
 /// One execution of a WorkflowDefinition. See ARCHITECTURE.md §5.4.
@@ -114,7 +97,7 @@ mod tests {
             metadata: serde_json::Value::Null,
             nodes: vec![],
             edges: vec![],
-            default_constraints: serde_json::Value::Null,
+            default_constraints: RunConstraints::default(),
             created_at: Utc::now(),
             updated_at: Utc::now(),
         }

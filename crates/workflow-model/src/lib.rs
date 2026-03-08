@@ -1,6 +1,7 @@
 // workflow-model: static definitions for workflows, nodes, and edges.
 // Nothing here is mutated at runtime. See ARCHITECTURE.md §5.
 
+pub mod constraints;
 pub mod node;
 pub mod node_config;
 pub mod edge;

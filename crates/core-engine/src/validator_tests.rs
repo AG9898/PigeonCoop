@@ -56,7 +56,7 @@ mod tests {
             metadata: serde_json::Value::Null,
             nodes,
             edges,
-            default_constraints: serde_json::Value::Null,
+            default_constraints: workflow_model::constraints::RunConstraints::default(),
             created_at: Utc::now(),
             updated_at: Utc::now(),
         }

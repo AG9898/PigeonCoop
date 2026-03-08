@@ -3,11 +3,16 @@ use uuid::Uuid;
 use chrono::{DateTime, Utc};
 use crate::node::NodeDefinition;
 use crate::edge::EdgeDefinition;
+use crate::constraints::RunConstraints;
 
 /// The schema format version this build of the engine reads and writes.
 /// Increment this when the WorkflowDefinition JSON format changes in a
 /// backward-incompatible way and provide a corresponding arm in `migrate`.
 pub const CURRENT_SCHEMA_VERSION: u32 = 1;
+
+fn default_schema_version() -> u32 {
+    CURRENT_SCHEMA_VERSION
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct WorkflowDefinition {
@@ -15,6 +20,8 @@ pub struct WorkflowDefinition {
     pub name: String,
     /// Schema format version (set by the application). Used to detect and
     /// migrate documents written by an older engine. Not user-editable.
+    /// Defaults to `CURRENT_SCHEMA_VERSION` when absent in JSON (e.g. hand-authored files).
+    #[serde(default = "default_schema_version")]
     pub schema_version: u32,
     /// User-controlled revision counter. Incremented by the application each
     /// time the user saves a new revision of the workflow. Used by the
@@ -23,7 +30,10 @@ pub struct WorkflowDefinition {
     pub metadata: serde_json::Value,
     pub nodes: Vec<NodeDefinition>,
     pub edges: Vec<EdgeDefinition>,
-    pub default_constraints: serde_json::Value,
+    /// Guardrail limits applied by default to every run of this workflow.
+    /// Uses `RunConstraints::default()` when the field is absent in JSON.
+    #[serde(default)]
+    pub default_constraints: RunConstraints,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
 }
