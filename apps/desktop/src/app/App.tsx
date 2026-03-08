@@ -42,6 +42,10 @@ export function App() {
     setActiveView("replay");
   }
 
+  function openBuilder(_workflowId?: string) {
+    setActiveView("builder");
+  }
+
   return (
     <div className="app">
       <nav className="app-nav">
@@ -63,7 +67,9 @@ export function App() {
         {activeView === "builder" && <BuilderView />}
         {activeView === "liverun" && <LiveRunView />}
         {activeView === "replay" && <ReplayView runId={replayRunId} />}
-        {activeView === "library" && <LibraryView onOpenReplay={openReplay} />}
+        {activeView === "library" && (
+          <LibraryView onOpenReplay={openReplay} onOpenBuilder={openBuilder} />
+        )}
       </main>
     </div>
   );

@@ -66,6 +66,19 @@ export interface WorkflowDefinition {
   updated_at: string;
 }
 
+/** Node lifecycle status as reported by the backend engine. */
+export type NodeStatus =
+  | "draft"
+  | "validated"
+  | "ready"
+  | "queued"
+  | "running"
+  | "waiting"
+  | "succeeded"
+  | "failed"
+  | "cancelled"
+  | "skipped";
+
 export type RunStatus =
   | "created"
   | "validating"

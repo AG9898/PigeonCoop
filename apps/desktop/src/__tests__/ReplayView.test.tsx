@@ -4,7 +4,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { ReplayView } from "../views/ReplayView";
 import { LibraryView } from "../views/LibraryView";
 import { App } from "../app/App";
-import type { RunEvent } from "../types/workflow";
+import type { RunEvent, WorkflowDefinition, RunInstance } from "../types/workflow";
 
 const mockInvoke = invoke as ReturnType<typeof vi.fn>;
 
@@ -39,6 +39,30 @@ const SAMPLE_EVENTS: RunEvent[] = [
     sequence: 3,
   },
 ];
+
+const SAMPLE_WORKFLOW: WorkflowDefinition = {
+  workflow_id: "wf-001",
+  name: "Test Workflow",
+  schema_version: 1,
+  version: 1,
+  metadata: null,
+  nodes: [],
+  edges: [],
+  default_constraints: null,
+  created_at: "2026-03-08T10:00:00.000Z",
+  updated_at: "2026-03-08T10:00:00.000Z",
+};
+
+const SAMPLE_RUN: RunInstance = {
+  run_id: "run-abc",
+  workflow_id: "wf-001",
+  workflow_version: 1,
+  status: "succeeded",
+  workspace_root: "/home/user/project",
+  created_at: "2026-03-08T10:00:00.000Z",
+  started_at: "2026-03-08T10:00:01.000Z",
+  ended_at: "2026-03-08T10:01:00.000Z",
+};
 
 beforeEach(() => {
   mockInvoke.mockReset();
@@ -116,27 +140,59 @@ describe("ReplayView", () => {
 });
 
 describe("LibraryView — Replay access", () => {
-  it("renders Open in Replay button", () => {
+  it("renders workflow list and shows replay button after selecting a workflow with runs", async () => {
+    mockInvoke.mockImplementation((cmd: string) => {
+      if (cmd === "list_workflows") return Promise.resolve([SAMPLE_WORKFLOW]);
+      if (cmd === "list_runs_for_workflow") return Promise.resolve([SAMPLE_RUN]);
+      return Promise.resolve(null);
+    });
     render(<LibraryView onOpenReplay={() => {}} />);
-    expect(screen.getByTestId("open-replay-btn")).toBeTruthy();
+    await waitFor(() => screen.getByTestId("workflow-card-wf-001"));
+    fireEvent.click(screen.getByTestId("workflow-card-wf-001"));
+    await waitFor(() =>
+      screen.getByTestId(`open-replay-${SAMPLE_RUN.run_id}`)
+    );
+    expect(screen.getByTestId(`open-replay-${SAMPLE_RUN.run_id}`)).toBeTruthy();
   });
 
-  it("calls onOpenReplay when button is clicked", () => {
+  it("calls onOpenReplay with run_id when Replay button is clicked", async () => {
+    mockInvoke.mockImplementation((cmd: string) => {
+      if (cmd === "list_workflows") return Promise.resolve([SAMPLE_WORKFLOW]);
+      if (cmd === "list_runs_for_workflow") return Promise.resolve([SAMPLE_RUN]);
+      return Promise.resolve(null);
+    });
     const handler = vi.fn();
     render(<LibraryView onOpenReplay={handler} />);
-    fireEvent.click(screen.getByTestId("open-replay-btn"));
-    expect(handler).toHaveBeenCalledTimes(1);
+    await waitFor(() => screen.getByTestId("workflow-card-wf-001"));
+    fireEvent.click(screen.getByTestId("workflow-card-wf-001"));
+    await waitFor(() =>
+      screen.getByTestId(`open-replay-${SAMPLE_RUN.run_id}`)
+    );
+    fireEvent.click(screen.getByTestId(`open-replay-${SAMPLE_RUN.run_id}`));
+    expect(handler).toHaveBeenCalledWith(SAMPLE_RUN.run_id);
   });
 });
 
 describe("App — Library to Replay navigation", () => {
-  it("navigates from Library to Replay when Open in Replay is clicked", async () => {
+  it("navigates from Library to Replay when a run's Replay button is clicked", async () => {
+    mockInvoke.mockImplementation((cmd: string) => {
+      if (cmd === "list_workflows") return Promise.resolve([SAMPLE_WORKFLOW]);
+      if (cmd === "list_runs_for_workflow") return Promise.resolve([SAMPLE_RUN]);
+      if (cmd === "list_events_for_run") return Promise.resolve([]);
+      return Promise.resolve(null);
+    });
     render(<App />);
     // Go to Library
     fireEvent.click(screen.getByText("Library"));
     expect(screen.getByText("LIBRARY")).toBeTruthy();
-    // Click Open in Replay
-    fireEvent.click(screen.getByTestId("open-replay-btn"));
+    // Wait for workflow card and click to expand runs
+    await waitFor(() => screen.getByTestId("workflow-card-wf-001"));
+    fireEvent.click(screen.getByTestId("workflow-card-wf-001"));
+    // Wait for run and click Replay
+    await waitFor(() =>
+      screen.getByTestId(`open-replay-${SAMPLE_RUN.run_id}`)
+    );
+    fireEvent.click(screen.getByTestId(`open-replay-${SAMPLE_RUN.run_id}`));
     // Should now be in Replay view
     expect(screen.getByText("REPLAY")).toBeTruthy();
   });

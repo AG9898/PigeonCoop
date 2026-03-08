@@ -122,10 +122,65 @@ The `ValidationError` and `StateTransitionError` enum variants are declared in t
 
 ---
 
+### 2026-03-08 — Unreachable node policy (QA-002)
+
+**Context:** The workflow validator (ENGINE-003) must decide whether a node that exists in the node list but cannot be reached from the Start node via forward edges is a hard error or a warning. This decision affects the `ValidationError` vocabulary and the test contract.
+
+**Decision:** Unreachable nodes are a **hard validation error** in v1. `WorkflowValidator::validate()` must return `ValidationError::UnreachableNode { node_id }` for each node that is unreachable from the Start node. The run will not proceed to execution.
+
+**Rationale:**
+- Unreachable nodes indicate a workflow design mistake (a disconnected subgraph or a forgotten edge). Silently ignoring them hides bugs and produces confusing run traces where nodes never execute but are never reported as skipped.
+- In v1, where the graph is small and developer-facing, strict validation is more helpful than permissive warnings.
+- The replay/debugging goals of the project require that every node has a clear status in every run. A node that can never be queued has no valid lifecycle.
+
+**Alternatives considered:**
+- Emit a warning (non-fatal) and allow the run to proceed — rejected for v1 because it produces confusion in the live run view (nodes stuck in Draft state with no explanation).
+- Skip validation and detect unreachable nodes at runtime (they simply never get queued) — rejected because silent omission violates the explicitness principle (CLAUDE.md Rule D).
+
+**Tradeoffs:** Developers must explicitly remove or connect all nodes before a run can start. This is a minor authoring friction but prevents runtime ambiguity.
+
+**Follow-up:** If bounded loop support is added in v1.1, the validator must be updated to handle back-edges correctly so loop nodes are not incorrectly flagged as unreachable.
+
+---
+
+### 2026-03-08 — Agent CLI node output strategy (DEC-005)
+
+**Context:** Agent nodes execute external CLI tools (e.g. `claude-code`, `aider`, custom scripts) and must make their output available to downstream nodes via run-scoped memory. Three options were considered:
+1. Require structured JSON on stdout from the agent CLI
+2. Capture raw text and pass it as-is
+3. Use a configurable per-node output parsing strategy
+
+**Decision:** Configurable output mode per `AgentNodeConfig`, defaulting to `raw`.
+
+The `AgentNodeConfig` struct includes an `output_mode` field with three variants:
+- `Raw` (default) — capture full stdout as a string; `AdapterOutput.output` is `{"raw": "<stdout>"}`. Works with any CLI.
+- `JsonStdout` — parse the entire stdout as a JSON value; fail the node if stdout is not valid JSON.
+- `JsonLastLine` — parse only the last non-empty line of stdout as JSON; fail the node if that line is not valid JSON. Supports a common agent CLI convention of emitting a structured summary line at the end of a verbose run.
+
+The raw stdout is always captured in `AdapterOutput.stdout` regardless of `output_mode`. The `output_mode` only affects what goes into `AdapterOutput.output` (the structured value that downstream nodes and memory writes consume).
+
+**Rationale:**
+- Most real agent CLIs (`claude-code`, `aider`, shell scripts) emit natural-language output or diffs — not JSON. Requiring Option 1 globally would break compatibility with the entire target ecosystem.
+- Option 2 (raw-only) is compatible but forces every downstream Router or Memory node to treat agent output as an opaque blob, with no path to structured data even when the agent can provide it.
+- Option 3 preserves compatibility (default is `raw`) while enabling structured workflows where the agent CLI does emit parseable output. The `JsonLastLine` mode is a practical accommodation of a common pattern (agent emits verbose reasoning, then a final JSON summary line).
+
+**Alternatives considered:**
+- Require JSON on stdout globally — rejected; breaks all standard agent CLIs.
+- Raw-only forever — rejected; forecloses structured workflows for CLIs that can produce structured output.
+- Full regex/jq extraction — viable but over-engineered for v1. Can be added in v1.1 as a fourth mode without breaking the existing enum.
+
+**Tradeoffs:**
+- Adds one enum field to `AgentNodeConfig`. Minimal schema complexity.
+- Nodes using `JsonStdout` or `JsonLastLine` will fail if the CLI does not honour the contract — this is intentional. Developers configuring these modes are opting in to a stricter contract.
+- `Raw` default means existing tool configurations never break.
+
+**Unblocks:** MODEL-005 (`AgentNodeConfig` struct), ADAPT-003 (agent CLI adapter output handling).
+
+---
+
 ## Open decisions
 
 These are not blockers, but should be resolved early during implementation:
 - whether to add bounded loop edges in v1 or v1.1
 - how to detect changed files reliably across platforms
 - whether to embed a terminal emulator component or use a custom output panel only
-- how much structured output is required from CLI-backed agent nodes

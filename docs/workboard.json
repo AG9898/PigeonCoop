@@ -398,9 +398,7 @@
         "MODEL-001",
         "DEC-005"
       ],
-      "blocked_by": [
-        "DEC-005"
-      ],
+      "blocked_by": [],
       "files": [
         "crates/workflow-model/src/node.rs",
         "crates/workflow-model/src/node_config.rs"
@@ -1269,9 +1267,7 @@
         "EVENT-006",
         "DEC-005"
       ],
-      "blocked_by": [
-        "DEC-005"
-      ],
+      "blocked_by": [],
       "files": [
         "crates/runtime-adapters/src/cli/mod.rs"
       ],
@@ -1920,7 +1916,7 @@
       "id": "UI-RPL-002",
       "group_id": "UI-RPL",
       "title": "Timeline scrubber component",
-      "status": "todo",
+      "status": "done",
       "priority": "high",
       "type": "implementation",
       "summary": "Implement a timeline scrubber that navigates the event sequence by position or event.",
@@ -2012,7 +2008,7 @@
       "id": "UX-001",
       "group_id": "UX",
       "title": "Library view",
-      "status": "todo",
+      "status": "done",
       "priority": "high",
       "type": "implementation",
       "summary": "Implement the Library view listing all workflows and recent run history.",
@@ -2562,7 +2558,7 @@
       "id": "DEC-005",
       "group_id": "DEC",
       "title": "Decide: structured output requirements for agent CLI nodes",
-      "status": "todo",
+      "status": "done",
       "priority": "high",
       "type": "decision",
       "summary": "Decide how much structured output is required from CLI-backed agent nodes and how it is extracted.",
@@ -2592,7 +2588,7 @@
       "group_id": "QA",
       "title": "Tauri IPC boundary contract",
       "type": "design",
-      "status": "todo",
+      "status": "done",
       "priority": "critical",
       "estimate": "S",
       "summary": "Define and document every Tauri invoke() command and listen() event payload before any run-lifecycle or event-bridge implementation begins.",
@@ -2635,7 +2631,7 @@
       "group_id": "QA",
       "title": "Engine test-first mandate: validator and coordinator",
       "type": "testing",
-      "status": "todo",
+      "status": "done",
       "priority": "critical",
       "estimate": "M",
       "summary": "Write failing unit tests for ENGINE-003 (workflow validator) and ENGINE-004 (run coordinator) before implementing those tasks. Tests become the executable spec.",

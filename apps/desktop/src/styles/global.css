@@ -299,3 +299,172 @@ body {
   background: var(--color-accent);
   border-color: var(--color-accent);
 }
+
+/* ── Library view ─────────────────────────────────────────────────────── */
+
+.library-body {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+  overflow: hidden;
+}
+
+.library-panel {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-right: 1px solid var(--color-border);
+}
+
+.library-panel:last-child {
+  border-right: none;
+}
+
+.library-header-actions {
+  margin-left: auto;
+  display: flex;
+  gap: 0.5rem;
+}
+
+.panel-header {
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  color: var(--color-text-muted);
+  padding: 0.5rem 1rem;
+  border-bottom: 1px solid var(--color-border);
+  flex-shrink: 0;
+}
+
+.panel-header-sub {
+  font-weight: 400;
+  letter-spacing: 0.05em;
+  text-transform: none;
+  color: var(--color-text);
+}
+
+.lib-list {
+  list-style: none;
+  overflow-y: auto;
+  flex: 1;
+  padding: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.lib-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.5rem 0.75rem;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: border-color 0.1s;
+}
+
+.lib-card:hover {
+  border-color: var(--color-accent);
+}
+
+.lib-card--selected {
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 1px var(--color-accent);
+}
+
+.lib-card--run {
+  cursor: default;
+}
+
+.lib-card-main {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  min-width: 0;
+  flex: 1;
+}
+
+.lib-card-name {
+  font-size: 0.8rem;
+  color: var(--color-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.lib-card-meta {
+  font-size: 0.65rem;
+  color: var(--color-text-muted);
+}
+
+.lib-card-id {
+  font-size: 0.65rem;
+  color: var(--color-text-muted);
+  font-family: monospace;
+}
+
+.lib-card-actions {
+  display: flex;
+  gap: 0.35rem;
+  flex-shrink: 0;
+}
+
+.lib-btn {
+  padding: 0.3rem 0.7rem;
+  background: transparent;
+  border: 1px solid var(--color-border);
+  border-radius: 3px;
+  color: var(--color-text-muted);
+  font-family: inherit;
+  font-size: 0.7rem;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  transition: color 0.1s, border-color 0.1s;
+}
+
+.lib-btn:hover {
+  color: var(--color-text);
+  border-color: var(--color-accent);
+}
+
+.lib-btn--sm {
+  padding: 0.2rem 0.5rem;
+  font-size: 0.65rem;
+}
+
+.lib-empty {
+  padding: 2rem 1rem;
+  text-align: center;
+  color: var(--color-text-muted);
+  font-size: 0.75rem;
+  opacity: 0.6;
+  letter-spacing: 0.05em;
+}
+
+.lib-error {
+  padding: 0.5rem 1.25rem;
+  font-size: 0.75rem;
+  color: #ef4444;
+  border-bottom: 1px solid var(--color-border);
+  flex-shrink: 0;
+}
+
+.run-status {
+  display: inline-block;
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  padding: 0 0.3rem;
+  border: 1px solid currentColor;
+  border-radius: 2px;
+  text-transform: uppercase;
+  width: fit-content;
+}
+
+.run-status--ok    { color: var(--node-start); }
+.run-status--fail  { color: #ef4444; }
+.run-status--running { color: var(--color-accent); }
+.run-status--cancelled { color: var(--color-text-muted); }

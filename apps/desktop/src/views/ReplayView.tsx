@@ -5,6 +5,7 @@
 import { useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import type { RunEvent } from "../types/workflow";
+import { TimelineScrubber } from "../components/panels/TimelineScrubber";
 
 interface Props {
   runId: string | null;
@@ -39,14 +40,6 @@ export function ReplayView({ runId }: Props) {
 
   const currentEvent = events[scrubIndex] ?? null;
 
-  function advance(delta: number) {
-    setScrubIndex((prev) => {
-      const next = prev + delta;
-      if (next < 0 || next >= events.length) return prev;
-      return next;
-    });
-  }
-
   return (
     <div className="view replay-view">
       <div className="view-header">
@@ -58,39 +51,11 @@ export function ReplayView({ runId }: Props) {
 
       <div className="view-body replay-body">
         {/* Timeline scrubber */}
-        <div className="replay-scrubber">
-          <span className="scrubber-label">
-            EVENT {events.length > 0 ? scrubIndex + 1 : 0} / {events.length}
-          </span>
-          <input
-            type="range"
-            className="scrubber-input"
-            aria-label="timeline scrubber"
-            min={0}
-            max={Math.max(0, events.length - 1)}
-            value={scrubIndex}
-            disabled={events.length === 0}
-            onChange={(e) => setScrubIndex(Number(e.target.value))}
-          />
-          <div className="scrubber-controls">
-            <button
-              className="scrubber-btn"
-              onClick={() => advance(-1)}
-              disabled={events.length === 0 || scrubIndex === 0}
-              aria-label="previous event"
-            >
-              ◀
-            </button>
-            <button
-              className="scrubber-btn"
-              onClick={() => advance(1)}
-              disabled={events.length === 0 || scrubIndex >= events.length - 1}
-              aria-label="next event"
-            >
-              ▶
-            </button>
-          </div>
-        </div>
+        <TimelineScrubber
+          index={scrubIndex}
+          total={events.length}
+          onChange={setScrubIndex}
+        />
 
         {/* Main panels */}
         <div className="replay-panels">
