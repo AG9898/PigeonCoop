@@ -117,18 +117,21 @@ For typed IPC interactions, use the interfaces from `apps/desktop/src/types/ipc.
 
 ### Setup
 ```bash
-cargo install tauri-driver         # one-time install
+cargo install tauri-driver         # one-time install; installs tauri-driver v2.x
 
-# In one terminal: build and start the app in test mode
+# Step 1: build the debug binary
 cargo tauri build --debug
 
-# In another terminal: start tauri-driver
+# Step 2: in one terminal, start tauri-driver (WebDriver server on localhost:4444)
 tauri-driver
 
-# Run E2E tests
+# Step 3: in another terminal, run the E2E tests
 cd tests/e2e
+npm install                        # first time only
 npm test
 ```
+
+**Note:** `wdio-tauri-service` is not available as an npm package. WebdriverIO connects directly to `tauri-driver` via `hostname: localhost, port: 4444` in `wdio.conf.js`. No wdio service is required — just start `tauri-driver` manually before running tests.
 
 ### WebdriverIO configuration (outline)
 ```js
@@ -136,12 +139,18 @@ npm test
 export const config = {
   runner: 'local',
   specs: ['./specs/**/*.spec.js'],
+  hostname: 'localhost',
+  port: 4444,
+  path: '/',
   capabilities: [{
+    browserName: 'chrome',
     'tauri:options': {
       application: '../../target/debug/agent-arcade',
     },
   }],
-  services: ['tauri'],
+  services: [],   // no service needed; tauri-driver runs as a separate process
+  framework: 'mocha',
+  reporters: ['spec'],
 };
 ```
 
@@ -214,15 +223,21 @@ The live CI pipeline is defined in `.github/workflows/ci.yml` and runs automatic
 
 `apps/desktop/src-tauri` (`agent-arcade`) is a thin binary shell with no unit tests. Its `tauri::generate_context!()` macro reads `tauri.conf.json` at **compile time** and requires native system libraries (`libwebkit2gtk`, `libgtk-3`, etc.) to build. Excluding it keeps CI fast and dependency-free. All testable logic lives in the other crates.
 
-### Future: E2E in CI
+### E2E in CI
 
-E2E tests are not yet wired into CI. When added, they will run as a separate job on PR only, using a virtual display (Xvfb on Linux) and a compiled debug binary.
+E2E tests run as a separate `e2e` job, triggered only on pull requests. The job:
+- Installs Tauri system dependencies (`libwebkit2gtk-4.1-dev`, etc.)
+- Builds the Tauri debug binary via `cargo tauri build --debug`
+- Installs `tauri-driver` via `cargo install tauri-driver`
+- Runs WebdriverIO tests under `xvfb-run` for a virtual display
 
 ```
 cargo test --workspace --exclude agent-arcade   # unit — always, fast
 npm test -- --run                               # component — always, fast
 tauri-driver + wdio                             # E2E — PR only, requires binary
 ```
+
+E2E test dependencies are declared in `tests/e2e/package.json` and specs live in `tests/e2e/specs/`. The CI job starts `tauri-driver` in the background before invoking `npm test`.
 
 ---
 

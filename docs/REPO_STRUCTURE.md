@@ -91,6 +91,10 @@ Contains the Tauri application and frontend. Avoid putting core engine logic her
 ### `crates/workflow-model`
 Shared workflow definitions and validation-friendly types.
 
+Key source files:
+- `src/node.rs` — `NodeKind` enum and `NodeDefinition` struct (with custom `Deserialize` using `node_type` to drive config parsing)
+- `src/node_config.rs` — typed `NodeConfig` enum and per-kind config structs (`AgentNodeConfig`, `ToolNodeConfig`, `RouterNodeConfig`, `MemoryNodeConfig`, `HumanReviewNodeConfig`, `StartNodeConfig`, `EndNodeConfig`)
+
 ### `crates/event-model`
 Shared event types and payload definitions. This crate is foundational for replay.
 

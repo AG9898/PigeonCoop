@@ -115,16 +115,30 @@ Suggested fields:
 ### 5.2 NodeDefinition
 Static description of one node.
 
-Suggested fields:
+Fields:
 - `node_id`
 - `node_type`
 - `label`
-- `config`
+- `config` — typed `NodeConfig` enum; discriminated by `node_type` during JSON deserialisation
 - `input_contract`
 - `output_contract`
 - `memory_access`
 - `retry_policy`
 - `display`
+
+#### NodeConfig variants (`crates/workflow-model/src/node_config.rs`)
+
+| NodeKind     | Config struct            | Required fields          | Optional fields                     |
+|--------------|--------------------------|--------------------------|-------------------------------------|
+| `start`      | `StartNodeConfig`        | —                        | —                                   |
+| `end`        | `EndNodeConfig`          | —                        | —                                   |
+| `agent`      | `AgentNodeConfig`        | `prompt`                 | `provider_hint`                     |
+| `tool`       | `ToolNodeConfig`         | `command`                | `shell`, `timeout_ms`               |
+| `router`     | `RouterNodeConfig`       | `rules[]`                | —                                   |
+| `memory`     | `MemoryNodeConfig`       | `key`, `scope`, `operation` | —                                |
+| `human_review` | `HumanReviewNodeConfig` | —                       | `prompt`, `reason`, `available_actions` |
+
+`NodeConfig` serialises as the inner struct (untagged). `node_type` drives deserialisation so no extra discriminator field is needed in JSON.
 
 ### 5.3 EdgeDefinition
 Static directed connection between nodes.
