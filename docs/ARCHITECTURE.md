@@ -294,6 +294,23 @@ Each adapter should expose a consistent interface such as:
 - collect outputs/artifacts metadata
 - emit completion/failure events
 
+### Implementation notes (ADAPT-001)
+- `Adapter` trait defined in `crates/runtime-adapters/src/lib.rs`
+- Methods: `prepare`, `execute`, `abort` — all return `Pin<Box<dyn Future + Send>>` for object-safety
+- `execute` receives `&NodeDefinition`, `workspace_root: &str`, `&MemoryState`, and `mpsc::Sender<CommandEventKind>` for streaming events
+- Returns `AdapterOutput` (output JSON, exit_code, stdout, stderr, duration_ms) or `AdapterError`
+- `MockAdapter` in `crates/runtime-adapters/src/mock/mod.rs` — configurable canned output for engine tests
+
+### Implementation notes (ADAPT-002)
+- `CliAdapter` in `crates/runtime-adapters/src/cli/mod.rs`
+- Executes commands via `sh -c <command>` in the given `workspace_root`
+- Command extracted from `node.config["command"]` string field
+- Streams stdout/stderr via background `tokio::spawn` tasks, emitting `CommandEventKind::Stdout/Stderr` chunks
+- Abort support: `CliAdapter` stores a `oneshot::Sender`; `abort()` sends the signal; `execute` races via `tokio::select!`
+- Timeout from `node.retry_policy.max_runtime_ms`; emits `CommandEventKind::Failed` with reason on timeout or abort
+- Event sequence: `Prepared` → `Started` → `Stdout`/`Stderr` (streamed) → `Completed` or `Failed`
+- All metadata fields logged: command, shell, cwd, timeout_ms, exit_code, duration_ms, stdout_bytes, stderr_bytes
+
 ### Execution assumptions approved for v1
 - commands execute within a chosen workspace root
 - arbitrary shell commands are allowed
@@ -407,6 +424,17 @@ SQLite is the primary local datastore.
 - `WorkflowDefinition` is serialized as JSON into the `definition_json` blob column
 - Error type: `RepoError` (wraps `rusqlite::Error` and `serde_json::Error`)
 
+### Implementation notes (PERSIST-003)
+- Run repository: `crates/persistence/src/repositories/runs.rs`
+- Exposed as `RunRepository<'db>` — a struct holding `&Db`
+- `create_run(run)`: inserts a new `RunInstance` row into `runs`
+- `update_run_status(run_id, status, started_at, ended_at)`: updates status and timestamps in-place
+- `get_run_by_id(run_id)`: single run lookup by UUID; returns `None` if not found
+- `list_runs_for_workflow(workflow_id)`: all runs for a workflow, ordered by `created_at DESC`
+- `get_active_runs()`: all runs with status in `{created, validating, ready, running, paused}`
+- `active_nodes` and `constraints` are not persisted in schema v1; on load, `active_nodes` defaults to `[]` and `constraints` to `RunConstraints::default()`
+- Error type: `RunRepoError` (wraps `rusqlite::Error`, parse errors, and invalid status strings)
+
 ### Implementation notes (PERSIST-004)
 - Event log repository: `crates/persistence/src/repositories/events.rs`
 - Exposed as `EventRepository<'db>` — a struct holding `&Db`
@@ -474,6 +502,15 @@ Mitigation:
 Mitigation:
 - ship a minimal CLI wrapper abstraction first
 - do not chase broad integrations early
+
+### Implementation notes (TAURI-001)
+- Workflow CRUD commands: `apps/desktop/src-tauri/src/commands/mod.rs`
+- Commands registered: `create_workflow`, `get_workflow`, `list_workflows`, `update_workflow`, `delete_workflow`, `import_workflow`, `export_workflow`
+- Shared database state: `AppState { db: Mutex<Db> }` managed via `app.manage()` in the Tauri `setup` hook
+- Database file opened from `app_data_dir()` at startup; migrations run automatically on open
+- All command handlers delegate to `persistence::repositories::workflows` — no engine logic in command layer
+- Error type: `CmdError { message: String }` implements `Serialize` for Tauri `invoke()` error responses
+- `delete_workflow` also added to `persistence::repositories::workflows` (removes versions first, then the workflow row)
 
 ---
 

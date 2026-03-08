@@ -5,3 +5,6 @@ pub use events::{EventRepository, EventRepoError};
 
 pub mod workflows;
 pub use workflows::RepoError as WorkflowRepoError;
+
+pub mod runs;
+pub use runs::{RunRepository, RunRepoError};

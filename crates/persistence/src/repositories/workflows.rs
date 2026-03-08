@@ -87,6 +87,21 @@ pub fn list_workflows(db: &Db) -> Result<Vec<WorkflowDefinition>, RepoError> {
     Ok(result)
 }
 
+/// Delete a workflow and all its versions by UUID.
+pub fn delete_workflow(db: &Db, id: Uuid) -> Result<(), RepoError> {
+    let id_str = id.to_string();
+    // Delete versions first (FK references workflows)
+    db.conn().execute(
+        "DELETE FROM workflow_versions WHERE workflow_id = ?1",
+        params![id_str],
+    )?;
+    db.conn().execute(
+        "DELETE FROM workflows WHERE workflow_id = ?1",
+        params![id_str],
+    )?;
+    Ok(())
+}
+
 /// Retrieve a specific version of a workflow.
 pub fn get_workflow_version(
     db: &Db,
@@ -116,6 +131,7 @@ mod tests {
         WorkflowDefinition {
             workflow_id: Uuid::new_v4(),
             name: name.to_string(),
+            schema_version: workflow_model::workflow::CURRENT_SCHEMA_VERSION,
             version,
             metadata: serde_json::Value::Null,
             nodes: vec![],
@@ -202,5 +218,22 @@ mod tests {
 
         let missing = get_workflow_version(&db, wf.workflow_id, 99).expect("query");
         assert!(missing.is_none());
+    }
+
+    #[test]
+    fn delete_workflow_removes_workflow_and_versions() {
+        let db = Db::open_in_memory().expect("in-memory db");
+        let wf = make_workflow("to-delete", 1);
+        save_workflow(&db, &wf).expect("save");
+
+        // Confirm it exists
+        assert!(get_workflow_by_id(&db, wf.workflow_id).expect("query").is_some());
+
+        delete_workflow(&db, wf.workflow_id).expect("delete");
+
+        // Confirm it's gone
+        assert!(get_workflow_by_id(&db, wf.workflow_id).expect("query").is_none());
+        let list = list_workflows(&db).expect("list");
+        assert!(list.is_empty());
     }
 }

@@ -4,11 +4,20 @@
   "title": "WorkflowDefinition",
   "description": "Static definition of an Agent Arcade workflow. Never mutated at runtime.",
   "type": "object",
-  "required": ["workflow_id", "name", "version", "nodes", "edges"],
+  "required": ["workflow_id", "name", "schema_version", "version", "nodes", "edges"],
   "properties": {
     "workflow_id": { "type": "string", "format": "uuid" },
     "name": { "type": "string" },
-    "version": { "type": "integer", "minimum": 1 },
+    "schema_version": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Format version of this document (set by the application). Increment when the schema changes in a backward-incompatible way."
+    },
+    "version": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "User revision counter. Incremented each time the user saves a new revision of this workflow."
+    },
     "metadata": { "type": "object" },
     "nodes": {
       "type": "array",

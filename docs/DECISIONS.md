@@ -47,12 +47,32 @@ Distribute as native OS installers via GitHub Releases (`.dmg`, `.msi`, `.AppIma
 ### 2026-03-07 — Developer-first UX philosophy
 The target user is a technical developer. The product must feel like it was built by developers for developers. Do not sand off technical edges in pursuit of consumer-grade polish. Keyboard-driven workflows, readable config files, and visible system state are higher priorities than visual smoothness. The setup-to-wow moment — watching a real workflow run against your own repo and replaying it — must be reachable in under 2 minutes from install. The demo workflow (`plan-execute-critique-approve`) must be the first thing a user can run, not a tutorial they have to complete first.
 
+### 2026-03-07 — Workflow JSON schema versioning strategy (DEC-001)
+
+**Context:** `WorkflowDefinition` had a single `version: u32` field with no documented meaning. It was being used by the persistence layer as a user revision counter (incrementing on save), but could also have been interpreted as a schema format version.
+
+**Decision:** Two separate fields:
+- `schema_version: u32` — set by the application, never by the user. Tracks the JSON format version. `CURRENT_SCHEMA_VERSION = 1`. Must be incremented whenever the schema changes in a backward-incompatible way, and a corresponding migration arm added to `workflow_model::workflow::migrate()`.
+- `version: u32` — user-controlled revision counter. Incremented by the application each time the user saves a new revision of the same workflow. Used by the persistence layer as a row key in `workflow_versions`.
+
+**Migration policy:** On load, call `migrate(wf)`. The function steps `schema_version` from the stored value to `CURRENT_SCHEMA_VERSION` one increment at a time, applying the appropriate transform in each `match` arm. This makes migrations composable and deterministic.
+
+**Example v1 → v2 migration scenario:** If a future schema v2 adds a top-level `tags` array, the migrator sets `tags: []` on documents that lack it, then bumps `schema_version` to 2.
+
+**Alternatives considered:**
+- Single field (ambiguous — rejected; conflates schema format with user revision history)
+- Semver string for schema_version (expressive but unnecessary complexity for a local-first tool with a simple u32 increment policy)
+- User controls schema_version (rejected; users should not touch format metadata)
+
+**Tradeoffs:** Adds one required field to the schema. Minor breaking change during v1 development, but no deployed users exist yet so cost is zero.
+
+**Unblocks:** FOUND-003, MODEL-005.
+
 ---
 
 ## Open decisions
 
 These are not blockers, but should be resolved early during implementation:
-- exact workflow JSON schema versioning strategy
 - whether to add bounded loop edges in v1 or v1.1
 - how to detect changed files reliably across platforms
 - whether to embed a terminal emulator component or use a custom output panel only

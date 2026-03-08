@@ -109,6 +109,7 @@ mod tests {
         WorkflowDefinition {
             workflow_id: Uuid::new_v4(),
             name: "test-workflow".into(),
+            schema_version: crate::workflow::CURRENT_SCHEMA_VERSION,
             version: 1,
             metadata: serde_json::Value::Null,
             nodes: vec![],
