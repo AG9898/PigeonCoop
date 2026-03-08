@@ -18,6 +18,7 @@ use event_model::command_events::{
 };
 use workflow_model::memory::MemoryState;
 use workflow_model::node::NodeDefinition;
+use workflow_model::node_config::NodeConfig;
 
 use crate::{Adapter, AdapterError, AdapterOutput};
 
@@ -40,17 +41,14 @@ impl CliAdapter {
         }
     }
 
-    /// Extract the shell command string from `node.config["command"]`.
+    /// Extract the shell command string from the node's typed `ToolNodeConfig`.
     fn extract_command(node: &NodeDefinition) -> Result<String, AdapterError> {
-        node.config
-            .get("command")
-            .and_then(|v| v.as_str())
-            .map(|s| s.to_owned())
-            .ok_or_else(|| {
-                AdapterError::PreparationFailed(
-                    r#"node config must contain a "command" string field"#.into(),
-                )
-            })
+        match &node.config {
+            NodeConfig::Tool(cfg) => Ok(cfg.command.clone()),
+            _ => Err(AdapterError::PreparationFailed(
+                "node config must be a Tool variant with a \"command\" field".into(),
+            )),
+        }
     }
 }
 
@@ -293,13 +291,18 @@ mod tests {
     use uuid::Uuid;
     use workflow_model::memory::MemoryScope;
     use workflow_model::node::{NodeDisplay, NodeKind, RetryPolicy};
+    use workflow_model::node_config::{NodeConfig, ToolNodeConfig};
 
     fn node_with_command(cmd: &str) -> NodeDefinition {
         NodeDefinition {
             node_id: Uuid::new_v4(),
             node_type: NodeKind::Tool,
             label: "test".into(),
-            config: serde_json::json!({ "command": cmd }),
+            config: NodeConfig::Tool(ToolNodeConfig {
+                command: cmd.to_owned(),
+                shell: None,
+                timeout_ms: None,
+            }),
             input_contract: serde_json::Value::Null,
             output_contract: serde_json::Value::Null,
             memory_access: serde_json::Value::Null,

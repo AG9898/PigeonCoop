@@ -318,7 +318,7 @@ Each adapter should expose a consistent interface such as:
 ### Implementation notes (ADAPT-002)
 - `CliAdapter` in `crates/runtime-adapters/src/cli/mod.rs`
 - Executes commands via `sh -c <command>` in the given `workspace_root`
-- Command extracted from `node.config["command"]` string field
+- Command extracted from `node.config` by matching on `NodeConfig::Tool(cfg)` and reading `cfg.command` — **do not call `.get("command")` on `NodeConfig`; it is a typed enum, not a `serde_json::Value`**
 - Streams stdout/stderr via background `tokio::spawn` tasks, emitting `CommandEventKind::Stdout/Stderr` chunks
 - Abort support: `CliAdapter` stores a `oneshot::Sender`; `abort()` sends the signal; `execute` races via `tokio::select!`
 - Timeout from `node.retry_policy.max_runtime_ms`; emits `CommandEventKind::Failed` with reason on timeout or abort

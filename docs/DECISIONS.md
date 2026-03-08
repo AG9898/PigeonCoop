@@ -178,6 +178,25 @@ The raw stdout is always captured in `AdapterOutput.stdout` regardless of `outpu
 
 ---
 
+---
+
+## ADR: NodeConfig is a typed enum — never treat it as a JSON map
+
+**Context:** `NodeDefinition.config` was originally a raw `serde_json::Value`. It was refactored to `NodeConfig`, a strongly-typed enum discriminated by `node_type`. The `CliAdapter` continued calling `.get("command")` as if `config` were still a JSON map, causing a compile error (`E0599: no method named 'get' found for enum NodeConfig`).
+
+**Decision:** All code that reads node configuration must pattern-match on the `NodeConfig` enum variant, not treat it as a dynamic map. The `CliAdapter::extract_command` method now matches `NodeConfig::Tool(cfg)` and reads `cfg.command` directly.
+
+**Rule for future adapters and engine code:**
+- To read tool config: `match &node.config { NodeConfig::Tool(cfg) => cfg.command.clone(), _ => Err(...) }`
+- To read agent config: `match &node.config { NodeConfig::Agent(cfg) => &cfg.prompt, _ => Err(...) }`
+- Never call `.get(...)`, `.as_str()`, or any `serde_json::Value` method on `NodeConfig`.
+
+**Test helpers** that construct `NodeDefinition` must use `NodeConfig::Tool(ToolNodeConfig { command: ..., shell: None, timeout_ms: None })`, not `serde_json::json!({"command": ...})`.
+
+**Tradeoffs:** Slightly more verbose match arms vs. the old map lookup, but compile-time safety eliminates the entire class of "wrong field name" bugs.
+
+---
+
 ## Open decisions
 
 These are not blockers, but should be resolved early during implementation:
