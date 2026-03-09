@@ -7,6 +7,7 @@ import { BuilderView } from "../views/BuilderView";
 import { LibraryView } from "../views/LibraryView";
 import { LiveRunView } from "../views/LiveRunView";
 import { ReplayView } from "../views/ReplayView";
+import { useFirstRun } from "../hooks/useFirstRun";
 
 type View = "builder" | "liverun" | "replay" | "library";
 
@@ -20,6 +21,14 @@ const NAV_ITEMS: { id: View; label: string; shortcut: string }[] = [
 export function App() {
   const [activeView, setActiveView] = useState<View>("builder");
   const [replayRunId, setReplayRunId] = useState<string | null>(null);
+  const { isFirstRun, seeding } = useFirstRun();
+
+  // On first run, navigate to the Library so the user sees the demo workflow.
+  useEffect(() => {
+    if (!seeding && isFirstRun) {
+      setActiveView("library");
+    }
+  }, [seeding, isFirstRun]);
 
   useEffect(() => {
     function handleKey(e: KeyboardEvent) {
@@ -68,7 +77,7 @@ export function App() {
         {activeView === "liverun" && <LiveRunView />}
         {activeView === "replay" && <ReplayView runId={replayRunId} />}
         {activeView === "library" && (
-          <LibraryView onOpenReplay={openReplay} onOpenBuilder={openBuilder} />
+          <LibraryView onOpenReplay={openReplay} onOpenBuilder={openBuilder} isFirstRun={isFirstRun} />
         )}
       </main>
     </div>

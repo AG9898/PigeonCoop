@@ -24,7 +24,9 @@ mod tests {
             NodeKind::End => NodeConfig::End(EndNodeConfig {}),
             NodeKind::Agent => NodeConfig::Agent(AgentNodeConfig {
                 prompt: "test".into(),
+                command: None,
                 provider_hint: None,
+                output_mode: Default::default(),
             }),
             NodeKind::Tool => NodeConfig::Tool(ToolNodeConfig {
                 command: "echo test".into(),

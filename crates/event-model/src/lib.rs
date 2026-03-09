@@ -7,4 +7,6 @@ pub mod node_events;
 pub mod routing_events;
 pub mod command_events;
 pub mod human_review_events;
+pub mod guardrail_events;
 pub mod memory_events;
+pub mod agent_events;

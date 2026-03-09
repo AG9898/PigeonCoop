@@ -85,10 +85,16 @@ Suggested base shape:
 - `agent.completed`
 - `agent.failed`
 
+Implemented in `crates/event-model/src/agent_events.rs` as typed payload structs and `AgentEventKind` enum.
+
 ### 3.7 Memory events
 - `memory.read`
 - `memory.write`
 - `memory.snapshot_created`
+
+Implemented in `crates/event-model/src/memory_events.rs` as `MemoryReadPayload`, `MemoryWritePayload`, `MemorySnapshotCreatedPayload`, and `MemoryEventKind` enum.
+
+Memory scope (`MemoryScope`) mirrors the v1 scopes: `RunShared`, `NodeLocal`.
 
 ### 3.8 Human review events
 - `review.required`
@@ -97,10 +103,14 @@ Suggested base shape:
 - `review.edited`
 - `review.retry_requested`
 
+Implemented in `crates/event-model/src/human_review_events.rs` as typed payload structs and `HumanReviewEventKind` enum.
+
 ### 3.9 Guardrail / budget events
 - `guardrail.warning`
 - `guardrail.exceeded`
 - `budget.updated`
+
+Implemented in `crates/event-model/src/guardrail_events.rs` as typed payload structs and `GuardrailEventKind` enum. Includes `GuardrailSeverity` (low/medium/high/critical) and `BudgetResource` (tokens/time/api_calls/retries) enums.
 
 ---
 

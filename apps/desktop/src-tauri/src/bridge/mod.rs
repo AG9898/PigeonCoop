@@ -1,6 +1,11 @@
 // Tauri event bridge — emits engine events to the frontend via app.emit().
-// The UI subscribes; it never polls or invents state.
+// The UI subscribes via listen(); it never polls or invents state.
 // See TAURI_IPC_CONTRACT.md §Events.
+//
+// Design: the bridge is thin. It forwards every RunEvent as-is via
+// `run_event_appended`, plus convenience events (`run_status_changed`,
+// `node_status_changed`, `human_review_requested`) derived from the event
+// payload. No engine state is mutated or derived here.
 
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
@@ -44,6 +49,18 @@ pub struct NodeStatusChangedPayload {
 #[derive(Clone, Serialize, Deserialize)]
 pub struct RunEventAppendedPayload {
     pub event: RunEvent,
+}
+
+/// Payload for the `human_review_requested` Tauri event.
+/// Emitted when a `review.required` event is appended to the log.
+#[derive(Clone, Serialize, Deserialize)]
+pub struct HumanReviewRequestedPayload {
+    pub run_id: String,
+    pub node_id: String,
+    pub node_label: String,
+    pub reason: String,
+    pub available_actions: Vec<String>,
+    pub timestamp: String,
 }
 
 // ---------------------------------------------------------------------------
@@ -114,8 +131,13 @@ impl EventLog for TauriEventLog {
                 .cloned()
                 .unwrap_or(NodeStatus::Ready);
 
-            // Attempt is incremented by the state machine on ScheduleRetry; default 1.
-            let attempt: u32 = 1;
+            // Extract attempt from the event payload if present; default 1.
+            let attempt = event
+                .payload
+                .get("attempt")
+                .and_then(|v| v.as_u64())
+                .map(|v| v as u32)
+                .unwrap_or(1);
 
             let _ = self.app.emit(
                 "node_status_changed",
@@ -132,7 +154,43 @@ impl EventLog for TauriEventLog {
             self.node_statuses.insert(node_id, new_node_status);
         }
 
-        // 5. Cache in memory so `events()` can return a slice.
+        // 5. Emit `human_review_requested` for review.required events.
+        if event.event_type == "review.required" {
+            if let Some(node_id) = event.node_id {
+                let reason = event
+                    .payload
+                    .get("reason")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("")
+                    .to_owned();
+                let available_actions = event
+                    .payload
+                    .get("available_actions")
+                    .and_then(|v| v.as_array())
+                    .map(|arr| {
+                        arr.iter()
+                            .filter_map(|v| v.as_str().map(String::from))
+                            .collect()
+                    })
+                    .unwrap_or_default();
+
+                let _ = self.app.emit(
+                    "human_review_requested",
+                    HumanReviewRequestedPayload {
+                        run_id: event.run_id.to_string(),
+                        node_id: node_id.to_string(),
+                        // The bridge doesn't hold the workflow definition;
+                        // the frontend maps node_id → label from its own state.
+                        node_label: node_id.to_string(),
+                        reason,
+                        available_actions,
+                        timestamp: event.timestamp.to_rfc3339(),
+                    },
+                );
+            }
+        }
+
+        // 6. Cache in memory so `events()` can return a slice.
         self.events.push(event);
         Ok(())
     }

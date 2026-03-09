@@ -9,6 +9,8 @@ import type { RunInstance, WorkflowDefinition } from "../types/workflow";
 interface Props {
   onOpenReplay: (runId: string) => void;
   onOpenBuilder?: (workflowId?: string) => void;
+  /** When true, shows a welcome banner highlighting the demo workflow. */
+  isFirstRun?: boolean;
 }
 
 function formatDate(iso: string): string {
@@ -36,7 +38,7 @@ const STATUS_CLASS: Record<string, string> = {
   running: "run-status--running",
 };
 
-export function LibraryView({ onOpenReplay, onOpenBuilder }: Props) {
+export function LibraryView({ onOpenReplay, onOpenBuilder, isFirstRun }: Props) {
   const [workflows, setWorkflows] = useState<WorkflowDefinition[]>([]);
   const [runs, setRuns] = useState<Record<string, RunInstance[]>>({});
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -137,6 +139,16 @@ export function LibraryView({ onOpenReplay, onOpenBuilder }: Props) {
       {(error || importError) && (
         <div className="lib-error" data-testid="lib-error">
           {error ?? importError}
+        </div>
+      )}
+
+      {isFirstRun && (
+        <div className="lib-welcome" data-testid="welcome-banner">
+          <div className="lib-welcome-title">WELCOME TO AGENT ARCADE</div>
+          <div className="lib-welcome-body">
+            A demo workflow is ready to go. Select it below, choose a workspace
+            directory, and run it to see the system in action.
+          </div>
         </div>
       )}
 

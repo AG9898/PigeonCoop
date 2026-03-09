@@ -26,8 +26,9 @@ apps/
     src/
       app/
       components/
+      data/               # Embedded static data (e.g. demo workflow for first-run seeding)
       views/
-      hooks/
+      hooks/              # React hooks (e.g. useFirstRun for demo seeding)
       state/
       styles/
     src-tauri/
@@ -58,6 +59,7 @@ crates/
       review/
   runtime-adapters/
     src/
+      agent.rs        # Agent CLI adapter (ADAPT-003)
       cli/
       mock/
   persistence/

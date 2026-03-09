@@ -132,7 +132,7 @@ Fields:
 |--------------|--------------------------|--------------------------|-------------------------------------|
 | `start`      | `StartNodeConfig`        | —                        | —                                   |
 | `end`        | `EndNodeConfig`          | —                        | —                                   |
-| `agent`      | `AgentNodeConfig`        | `prompt`                 | `provider_hint`                     |
+| `agent`      | `AgentNodeConfig`        | `prompt`                 | `command`, `provider_hint`, `output_mode` |
 | `tool`       | `ToolNodeConfig`         | `command`                | `shell`, `timeout_ms`               |
 | `router`     | `RouterNodeConfig`       | `rules[]`                | —                                   |
 | `memory`     | `MemoryNodeConfig`       | `key`, `scope`, `operation` | —                                |
@@ -324,6 +324,17 @@ Each adapter should expose a consistent interface such as:
 - Timeout from `node.retry_policy.max_runtime_ms`; emits `CommandEventKind::Failed` with reason on timeout or abort
 - Event sequence: `Prepared` → `Started` → `Stdout`/`Stderr` (streamed) → `Completed` or `Failed`
 - All metadata fields logged: command, shell, cwd, timeout_ms, exit_code, duration_ms, stdout_bytes, stderr_bytes
+
+### Implementation notes (ADAPT-003)
+- `AgentCliAdapter` in `crates/runtime-adapters/src/agent.rs`
+- Wraps external agent CLIs (e.g. `claude-code`, `aider`) as Agent node executors
+- Does not implement the `Adapter` trait (which uses `CommandEventKind`); instead exposes its own `prepare`/`execute`/`abort` methods with `mpsc::Sender<AgentEventKind>`
+- Command resolution: `AgentNodeConfig.command` > `AgentNodeConfig.provider_hint` > error
+- Prompt is piped to stdin of the spawned process; stdout is streamed as `AgentEventKind::OutputReceived` events
+- `AgentOutputMode` (DEC-005): `Raw` (default, `{"raw": "<stdout>"}`), `JsonStdout` (parse all stdout as JSON), `JsonLastLine` (parse last non-empty line as JSON)
+- Event sequence: `RequestPrepared` → `Started` → `OutputReceived`* → `Completed` or `Failed`
+- Non-zero exit code emits `AgentEventKind::Failed` with the exit code in `error_code`
+- Abort/timeout support identical to `CliAdapter` pattern (oneshot channel + `tokio::select!`)
 
 ### Execution assumptions approved for v1
 - commands execute within a chosen workspace root
@@ -566,13 +577,25 @@ Mitigation:
 - use trait injection for the event log in coordinator tests — no SQLite dependency in unit tests
 - see workboard task **QA-002** (must complete before ENGINE-003, ENGINE-004)
 
+### Implementation notes (TAURI-004)
+- Event bridge in `apps/desktop/src-tauri/src/bridge/mod.rs` — thin forwarding layer between engine events and the frontend
+- `TauriEventLog` implements `EventLog` and is injected into `RunCoordinator`
+- On every `append()`:
+  1. Persist to SQLite via `EventRepository::append_event()`
+  2. Emit `run_event_appended` — carries the full `RunEvent` for all event families (run, node, command, routing, memory, review, guardrail)
+  3. Emit `run_status_changed` for run lifecycle events (old/new status pair)
+  4. Emit `node_status_changed` for node lifecycle events (with `attempt` extracted from payload)
+  5. Emit `human_review_requested` for `review.required` events (reason, available_actions)
+- The bridge tracks `node_statuses: HashMap<Uuid, NodeStatus>` solely to compute old→new deltas for `node_status_changed`
+- Frontend subscribes via `@tauri-apps/api` `listen()` — never polls
+- Payload structs: `RunStatusChangedPayload`, `NodeStatusChangedPayload`, `RunEventAppendedPayload`, `HumanReviewRequestedPayload`
+
 ### Implementation notes (TAURI-002)
 - Run lifecycle commands: `create_run`, `start_run`, `cancel_run`, `get_run`, `list_runs_for_workflow`
 - `AppState` updated: `db` is now `Arc<Mutex<Db>>` (shared with background tasks); `active_runs: Mutex<HashMap<Uuid, Arc<AtomicBool>>>` tracks per-run cancellation flags
 - `start_run` uses `tokio::spawn` to launch `run_workflow_background` and returns immediately — does not block the `invoke()` call
 - Background task drives run through `Created → Validating → Ready → Running`, initializes node snapshots in `Ready` state, runs step loop, persists final status
 - Cancellation: `cancel_run` sets the `AtomicBool` flag; the background loop checks it before each step and calls `coordinator.cancel()`
-- `TauriEventLog` in `apps/desktop/src-tauri/src/bridge/mod.rs`: implements `EventLog`, persists events to SQLite via `EventRepository`, and emits `run_event_appended`, `run_status_changed`, `node_status_changed` Tauri events on every append
 - Stub execution semantics for v1 (all nodes succeed immediately); real adapter dispatch wired in ADAPT-001/ADAPT-002
 
 ### Implementation notes (TAURI-001)

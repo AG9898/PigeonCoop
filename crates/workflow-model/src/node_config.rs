@@ -13,20 +13,47 @@ pub struct StartNodeConfig {}
 #[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq)]
 pub struct EndNodeConfig {}
 
+/// How the agent adapter should interpret stdout from the CLI process.
+///
+/// See DEC-005 for rationale.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Default)]
+#[serde(rename_all = "snake_case")]
+pub enum AgentOutputMode {
+    /// Capture full stdout as a string. Works with any CLI.
+    #[default]
+    Raw,
+    /// Parse entire stdout as JSON. Fails the node if stdout is not valid JSON.
+    JsonStdout,
+    /// Parse only the last non-empty line of stdout as JSON. Fails if that
+    /// line is not valid JSON. Supports agent CLIs that emit a JSON summary
+    /// line after verbose output.
+    JsonLastLine,
+}
+
 /// Config for Agent nodes.
 ///
 /// Required:
 /// - `prompt`: the instruction text sent to the agent.
 ///
 /// Optional:
+/// - `command`: the CLI command to run (e.g. `"claude-code"`, `"aider"`).
+///   If absent, `provider_hint` is used as the command name.
 /// - `provider_hint`: preferred provider/model key (e.g. `"claude-sonnet-4-6"`).
+/// - `output_mode`: how to parse stdout (default: `raw`). See DEC-005.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct AgentNodeConfig {
     /// The instruction or prompt template for this agent step.
     pub prompt: String,
+    /// The CLI command to invoke. If absent, `provider_hint` is used as the
+    /// command name. At least one of `command` or `provider_hint` must be set.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub command: Option<String>,
     /// Optional hint for the execution adapter about which provider/model to use.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub provider_hint: Option<String>,
+    /// How to interpret stdout from the agent CLI. Defaults to `raw`.
+    #[serde(default)]
+    pub output_mode: AgentOutputMode,
 }
 
 /// Config for Tool nodes.
@@ -176,7 +203,9 @@ mod tests {
     fn agent_roundtrip() {
         let cfg = NodeConfig::Agent(AgentNodeConfig {
             prompt: "Analyze the task".to_string(),
+            command: None,
             provider_hint: Some("claude-sonnet-4-6".to_string()),
+            output_mode: AgentOutputMode::Raw,
         });
         let json = serde_json::to_string(&cfg).unwrap();
         let back = NodeConfig::from_value(&NodeKind::Agent, serde_json::from_str(&json).unwrap()).unwrap();

@@ -42,7 +42,9 @@ fn agent_node_definition() -> NodeDefinition {
         label: "Plan".to_string(),
         config: NodeConfig::Agent(AgentNodeConfig {
             prompt: "Analyze the task.".to_string(),
+            command: None,
             provider_hint: None,
+            output_mode: Default::default(),
         }),
         input_contract: json!({"task": "string"}),
         output_contract: json!({"plan": "string"}),
