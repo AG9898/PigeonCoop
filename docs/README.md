@@ -24,6 +24,27 @@ cd apps/desktop && npm test -- --run
 
 CI runs both automatically on every push and PR to `main` via `.github/workflows/ci.yml`.
 
+### Running the app
+
+**Browser only (no Rust backend):**
+```bash
+cd apps/desktop
+npm run dev
+# Open http://localhost:1420 in your browser
+```
+
+**Full Tauri desktop app:**
+```bash
+cd apps/desktop
+npm run tauri dev
+# Starts Vite on port 1420 and opens a native window
+```
+
+The Tauri config (`src-tauri/tauri.conf.json`) is set up with `beforeDevCommand` so Vite starts automatically alongside the Rust backend — no need to start the frontend separately.
+
+#### WSL2 / WSLg note
+On WSL2, the native window requires WSLg (Windows 11 with `wsl --update`). The MESA/ZINK GPU warnings in the console are harmless. If the window hangs on close, run `wsl --shutdown` from PowerShell to clear it.
+
 ## Core docs
 
 - [AGENTS.md](./AGENTS.md)
