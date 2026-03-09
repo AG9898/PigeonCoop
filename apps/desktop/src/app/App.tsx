@@ -21,6 +21,7 @@ const NAV_ITEMS: { id: View; label: string; shortcut: string }[] = [
 export function App() {
   const [activeView, setActiveView] = useState<View>("builder");
   const [replayRunId, setReplayRunId] = useState<string | null>(null);
+  const [liveRunId, setLiveRunId] = useState<string | null>(null);
   const { isFirstRun, seeding } = useFirstRun();
 
   // On first run, navigate to the Library so the user sees the demo workflow.
@@ -51,6 +52,11 @@ export function App() {
     setActiveView("replay");
   }
 
+  function openLiveRun(runId: string) {
+    setLiveRunId(runId || null);
+    setActiveView("liverun");
+  }
+
   function openBuilder(_workflowId?: string) {
     setActiveView("builder");
   }
@@ -74,7 +80,7 @@ export function App() {
       </nav>
       <main className="app-main">
         {activeView === "builder" && <BuilderView />}
-        {activeView === "liverun" && <LiveRunView />}
+        {activeView === "liverun" && <LiveRunView runId={liveRunId} />}
         {activeView === "replay" && <ReplayView runId={replayRunId} />}
         {activeView === "library" && (
           <LibraryView onOpenReplay={openReplay} onOpenBuilder={openBuilder} isFirstRun={isFirstRun} />

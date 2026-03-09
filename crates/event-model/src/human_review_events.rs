@@ -61,6 +61,31 @@ pub enum HumanReviewEventKind {
     RetryRequested(ReviewRetryRequestedPayload),
 }
 
+impl HumanReviewEventKind {
+    /// Returns the canonical event_type string for this variant.
+    pub fn event_type_str(&self) -> &'static str {
+        match self {
+            HumanReviewEventKind::Required(_) => "review.required",
+            HumanReviewEventKind::Approved(_) => "review.approved",
+            HumanReviewEventKind::Rejected(_) => "review.rejected",
+            HumanReviewEventKind::Edited(_) => "review.edited",
+            HumanReviewEventKind::RetryRequested(_) => "review.retry_requested",
+        }
+    }
+
+    /// Serialise the inner payload to a `serde_json::Value`.
+    pub fn payload_value(&self) -> serde_json::Value {
+        match self {
+            HumanReviewEventKind::Required(p) => serde_json::to_value(p),
+            HumanReviewEventKind::Approved(p) => serde_json::to_value(p),
+            HumanReviewEventKind::Rejected(p) => serde_json::to_value(p),
+            HumanReviewEventKind::Edited(p) => serde_json::to_value(p),
+            HumanReviewEventKind::RetryRequested(p) => serde_json::to_value(p),
+        }
+        .unwrap_or(serde_json::Value::Null)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

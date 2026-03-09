@@ -390,6 +390,27 @@ Key panels:
 - event feed
 - workspace/run summary
 
+Implementation notes (UI-RUN-001):
+- `apps/desktop/src/views/LiveRunView.tsx`
+- Accepts `runId: string | null` prop from App shell
+- On mount/runId change, calls `ipc.getRun()` and `ipc.getWorkflow()` to populate the HUD
+- Subscribes to three Tauri events via `listen()`: `run_status_changed`, `node_status_changed`, `run_event_appended`
+- All state is derived from received events — the UI never polls
+- Run HUD displays: run_id (truncated), workflow name, run status, workspace_root, elapsed time (live ticker)
+- Four-column panel layout: live graph, node status list, event feed (auto-scrolling), event detail inspector
+- Clicking an event in the feed reveals its full payload in the detail panel
+- Listeners filter by `runId` so multiple runs do not cross-contaminate
+- Cleanup: all `UnlistenFn` handles called on unmount or runId change
+- `openLiveRun(runId)` callback added to `App.tsx` for future navigation from Library/Builder
+
+Implementation notes (UI-RUN-002):
+- `LiveGraph` sub-component renders a read-only React Flow graph inside the live view
+- Fetched `WorkflowDefinition` provides node positions and edges; `nodeStatuses` map drives visual state
+- `toVisualState()` maps backend `NodeStatus` to the 8 visual states: idle, queued, running, waiting, succeeded, failed, skipped, paused
+- All 8 states have distinct CSS styles in `global.css`: dashed border (queued), pulse glow (running), amber (waiting), green ring (succeeded), red flash (failed), dimmed (skipped), orange blink (paused)
+- Active edges (source node running/waiting) use React Flow's `animated: true` + accent stroke
+- Graph is non-interactive (no drag/connect/select) — read-only monitoring
+
 ### 10.3 Replay View
 Purpose:
 - inspect completed runs
@@ -562,11 +583,22 @@ Mitigation:
 - `complete_node_success(node_id, duration_ms)` — increments `steps_executed`, enforces `max_steps` guardrail, auto-succeeds run when all nodes are terminal
 - `fail_node(node_id, reason, retries_remaining)` — schedules retry (Failed→Queued) if retries > 0; otherwise fails the run
 - `pause_for_review(node_id, reason)` — transitions node Running→Waiting, run Running→Paused
-- `approve_review(node_id)` — transitions node Waiting→Running, run Paused→Running
+- `approve_review(node_id, comment)` — emits `review.approved`, transitions node Waiting→Running→Succeeded, run Paused→Running (auto-succeeds if all nodes terminal)
+- `reject_review(node_id, reason)` — emits `review.rejected`, transitions node to Failed, run to Failed
+- `retry_review(review_node_id, target_node_id, comment)` — emits `review.retry_requested`, succeeds review node, re-queues target node via ScheduleRetry
 - `cancel(reason)` — valid from Running or Paused; emits `run.cancelled`
 - `EventLog` trait is the injection point for the persistence layer; tests use `InMemoryEventLog`
 - `RunScheduler` in `crates/core-engine/src/scheduler/mod.rs` — `next_ready_nodes` returns nodes whose predecessors are all Succeeded/Skipped; `topological_order` uses Kahn's algorithm
 - `ExecutionDriver` in `crates/core-engine/src/execution/mod.rs` — async driver that loops scheduler→coordinator→adapter; `NodeExecutor` trait injectable; `StubNodeExecutor` used in tests
+
+### Implementation notes (ENGINE-006)
+- Human review gate handler in `crates/core-engine/src/review/mod.rs`
+- `ReviewDecision` enum: `Approve`, `Reject`, `Retry` — dispatched via `handle_review_decision()` to coordinator methods
+- `pause_for_review` emits `review.required` with `blocking: true` and the four standard `available_actions`
+- `approve_review` emits `review.approved`, transitions node Waiting→Running→Succeeded, run resumes; if all nodes terminal, run auto-succeeds
+- `reject_review` emits `review.rejected`, resumes run, then fails the review node (no retries), which fails the run
+- `retry_review` emits `review.retry_requested`, succeeds the review node, re-queues the target node (Failed→Queued via ScheduleRetry)
+- `HumanReviewEventKind` gained `event_type_str()` and `payload_value()` methods; `RunEvent::from_review_kind()` added for envelope construction
 
 ### Risk 7 — Engine implementation without executable specs
 The run coordinator and workflow validator are the most load-bearing Rust components. Implementing them without prior test definitions allows silent correctness assumptions to accumulate.
@@ -590,13 +622,22 @@ Mitigation:
 - Frontend subscribes via `@tauri-apps/api` `listen()` — never polls
 - Payload structs: `RunStatusChangedPayload`, `NodeStatusChangedPayload`, `RunEventAppendedPayload`, `HumanReviewRequestedPayload`
 
+### Implementation notes (TAURI-003)
+- Human review command: `submit_human_review_decision` in `apps/desktop/src-tauri/src/commands/mod.rs`
+- IPC-facing `HumanReviewDecision` enum: `Approved`, `Rejected`, `RetryRequested` — serde-tagged by `type` field
+- Command sends a `ReviewMessage` (node_id + `ReviewDecision`) through a `tokio::sync::mpsc` channel to the paused background task
+- Background execution loop detects `HumanReview` nodes via `NodeKind::HumanReview`, calls `coordinator.pause_for_review()` instead of auto-completing
+- When paused, the loop `tokio::select!`s between the review channel and a cancellation poll; on receiving a decision, dispatches via `handle_review_decision()`
+- `AppState` gained `review_senders: Mutex<HashMap<Uuid, mpsc::Sender<ReviewMessage>>>` — `start_run` creates the channel; the command looks up the sender by `run_id`
+- Events are emitted automatically by the coordinator methods (`review.approved`, `review.rejected`, `review.retry_requested`) through `TauriEventLog`
+
 ### Implementation notes (TAURI-002)
 - Run lifecycle commands: `create_run`, `start_run`, `cancel_run`, `get_run`, `list_runs_for_workflow`
-- `AppState` updated: `db` is now `Arc<Mutex<Db>>` (shared with background tasks); `active_runs: Mutex<HashMap<Uuid, Arc<AtomicBool>>>` tracks per-run cancellation flags
+- `AppState` updated: `db` is now `Arc<Mutex<Db>>` (shared with background tasks); `active_runs: Mutex<HashMap<Uuid, Arc<AtomicBool>>>` tracks per-run cancellation flags; `review_senders: Mutex<HashMap<Uuid, mpsc::Sender<ReviewMessage>>>` for human review channels
 - `start_run` uses `tokio::spawn` to launch `run_workflow_background` and returns immediately — does not block the `invoke()` call
-- Background task drives run through `Created → Validating → Ready → Running`, initializes node snapshots in `Ready` state, runs step loop, persists final status
+- Background task drives run through `Created → Validating → Ready → Running`, initializes node snapshots in `Ready` state, runs step loop with human review support, persists final status
 - Cancellation: `cancel_run` sets the `AtomicBool` flag; the background loop checks it before each step and calls `coordinator.cancel()`
-- Stub execution semantics for v1 (all nodes succeed immediately); real adapter dispatch wired in ADAPT-001/ADAPT-002
+- Stub execution semantics for v1 (all nodes succeed immediately); HumanReview nodes pause for operator decision; real adapter dispatch wired in ADAPT-001/ADAPT-002
 
 ### Implementation notes (TAURI-001)
 - Workflow CRUD commands: `apps/desktop/src-tauri/src/commands/mod.rs`

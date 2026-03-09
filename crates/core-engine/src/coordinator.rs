@@ -9,6 +9,10 @@ use uuid::Uuid;
 use chrono::Utc;
 use workflow_model::run::{RunInstance, RunStatus, NodeSnapshot, NodeStatus};
 use event_model::event::RunEvent;
+use event_model::human_review_events::{
+    HumanReviewEventKind, ReviewRequiredPayload, ReviewApprovedPayload,
+    ReviewRejectedPayload, ReviewRetryRequestedPayload,
+};
 use crate::state_machine::{RunTransitionInput, TransitionError};
 use crate::state_machine::node::{NodeTransitionInput, NodeTransitionError};
 
@@ -251,7 +255,7 @@ impl<L: EventLog> RunCoordinator<L> {
     }
 
     /// Pause execution at a HumanReview node. Transitions node to Waiting,
-    /// run to Paused, and emits HumanReviewRequested.
+    /// run to Paused, and emits `review.required` with `blocking=true`.
     pub fn pause_for_review(
         &mut self,
         node_id: Uuid,
@@ -263,18 +267,56 @@ impl<L: EventLog> RunCoordinator<L> {
         )?;
 
         self.transition_run(RunTransitionInput::Pause {
-            reason,
+            reason: reason.clone(),
             waiting_node_ids: vec![node_id],
         })?;
+
+        // Emit review.required event
+        let review_event = RunEvent::from_review_kind(
+            self.run.run_id,
+            self.run.workflow_id,
+            node_id,
+            &HumanReviewEventKind::Required(ReviewRequiredPayload {
+                reason: reason.unwrap_or_else(|| "human review required".to_owned()),
+                blocking: true,
+                available_actions: vec![
+                    "approve".to_owned(),
+                    "reject".to_owned(),
+                    "retry".to_owned(),
+                    "edit_memory".to_owned(),
+                ],
+            }),
+            None,
+            None,
+        );
+        let _ = self.event_log.append(review_event);
 
         Ok(())
     }
 
-    /// Approve a paused review node. Transitions node back to Running and
-    /// run to Running.
-    pub fn approve_review(&mut self, node_id: Uuid) -> Result<(), StateTransitionError> {
+    /// Approve a paused review node. Emits `review.approved`, transitions
+    /// node Waiting→Running→Succeeded, and resumes the run.
+    pub fn approve_review(
+        &mut self,
+        node_id: Uuid,
+        comment: Option<String>,
+    ) -> Result<(), StateTransitionError> {
+        // Emit review.approved event
+        let review_event = RunEvent::from_review_kind(
+            self.run.run_id,
+            self.run.workflow_id,
+            node_id,
+            &HumanReviewEventKind::Approved(ReviewApprovedPayload {
+                comment: comment.clone(),
+            }),
+            None,
+            None,
+        );
+        let _ = self.event_log.append(review_event);
+
         let workspace_root = self.run.workspace_root.clone();
 
+        // Waiting → Running
         self.transition_node(
             node_id,
             NodeTransitionInput::Resume {
@@ -284,7 +326,112 @@ impl<L: EventLog> RunCoordinator<L> {
             },
         )?;
 
+        // Resume the run (Paused → Running)
+        self.transition_run(RunTransitionInput::Resume {
+            resumed_by: comment,
+        })?;
+
+        // Running → Succeeded (the review node's work is complete)
+        self.complete_node_success(node_id, 0)?;
+
+        Ok(())
+    }
+
+    /// Reject a paused review node. Emits `review.rejected`, transitions
+    /// node to Failed, and fails the run.
+    pub fn reject_review(
+        &mut self,
+        node_id: Uuid,
+        reason: String,
+    ) -> Result<(), StateTransitionError> {
+        // Emit review.rejected event
+        let review_event = RunEvent::from_review_kind(
+            self.run.run_id,
+            self.run.workflow_id,
+            node_id,
+            &HumanReviewEventKind::Rejected(ReviewRejectedPayload {
+                reason: reason.clone(),
+            }),
+            None,
+            None,
+        );
+        let _ = self.event_log.append(review_event);
+
+        // Resume run first so we can fail from Running state
         self.transition_run(RunTransitionInput::Resume { resumed_by: None })?;
+
+        // Waiting → Running → Failed
+        let workspace_root = self.run.workspace_root.clone();
+        self.transition_node(
+            node_id,
+            NodeTransitionInput::Resume {
+                node_type: "human_review".to_owned(),
+                input_refs: vec![],
+                workspace_root,
+            },
+        )?;
+
+        // Fail the node (no retries for rejection)
+        self.fail_node(node_id, reason, 0)?;
+
+        Ok(())
+    }
+
+    /// Retry: emits `review.retry_requested`, resumes the run, and
+    /// re-queues the target node for another execution attempt.
+    pub fn retry_review(
+        &mut self,
+        review_node_id: Uuid,
+        target_node_id: Uuid,
+        comment: Option<String>,
+    ) -> Result<(), StateTransitionError> {
+        // Emit review.retry_requested event
+        let review_event = RunEvent::from_review_kind(
+            self.run.run_id,
+            self.run.workflow_id,
+            review_node_id,
+            &HumanReviewEventKind::RetryRequested(ReviewRetryRequestedPayload {
+                target_node_id: target_node_id.to_string(),
+                comment,
+            }),
+            None,
+            None,
+        );
+        let _ = self.event_log.append(review_event);
+
+        // Resume the run (Paused → Running)
+        self.transition_run(RunTransitionInput::Resume { resumed_by: None })?;
+
+        // Resume the review node (Waiting → Running) then succeed it
+        let workspace_root = self.run.workspace_root.clone();
+        self.transition_node(
+            review_node_id,
+            NodeTransitionInput::Resume {
+                node_type: "human_review".to_owned(),
+                input_refs: vec![],
+                workspace_root,
+            },
+        )?;
+        self.transition_node(
+            review_node_id,
+            NodeTransitionInput::Succeed { duration_ms: 0 },
+        )?;
+
+        // Re-queue the target node: Failed → Queued via ScheduleRetry
+        let target_snapshot = self
+            .node_snapshots
+            .get(&target_node_id)
+            .ok_or(StateTransitionError::NodeNotFound { node_id: target_node_id })?;
+
+        if target_snapshot.status == NodeStatus::Failed {
+            self.transition_node(
+                target_node_id,
+                NodeTransitionInput::ScheduleRetry {
+                    reason: "retry requested via human review".to_owned(),
+                    delay_ms: 0,
+                },
+            )?;
+        }
 
         Ok(())
     }

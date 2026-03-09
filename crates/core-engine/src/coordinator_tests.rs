@@ -323,18 +323,19 @@ mod tests {
 
         // Approve the review
         coordinator
-            .approve_review(review_node_id)
+            .approve_review(review_node_id, None)
             .expect("approve_review must succeed from Paused");
 
         assert_eq!(
-            coordinator.run_status(),
-            &RunStatus::Running,
-            "run must resume to Running after review approval"
-        );
-        assert_eq!(
             coordinator.node_status(&review_node_id),
-            Some(&NodeStatus::Running),
-            "review node must return to Running after approval"
+            Some(&NodeStatus::Succeeded),
+            "review node must be Succeeded after approval"
+        );
+        // With all nodes terminal, the run auto-succeeds
+        assert_eq!(
+            coordinator.run_status(),
+            &RunStatus::Succeeded,
+            "run must succeed when all nodes are terminal after review approval"
         );
     }
 

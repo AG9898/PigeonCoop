@@ -7,11 +7,13 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
 
 use chrono::Utc;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, State};
+use tokio::sync::mpsc;
 use uuid::Uuid;
 
 use core_engine::coordinator::RunCoordinator;
+use core_engine::review::{handle_review_decision, ReviewDecision};
 use core_engine::scheduler::RunScheduler;
 use core_engine::state_machine::{node::NodeTransitionInput, RunTransitionInput};
 use persistence::{
@@ -25,6 +27,7 @@ use persistence::{
     sqlite::Db,
 };
 use workflow_model::{
+    node::NodeKind,
     run::{NodeSnapshot, NodeStatus, RunInstance, RunStatus},
     workflow::WorkflowDefinition,
 };
@@ -43,6 +46,8 @@ pub struct AppState {
     pub db: Arc<Mutex<Db>>,
     /// Cancellation flags for active runs. Keyed by run_id.
     pub active_runs: Mutex<HashMap<Uuid, Arc<AtomicBool>>>,
+    /// Channels for sending review decisions to paused runs. Keyed by run_id.
+    pub review_senders: Mutex<HashMap<Uuid, mpsc::Sender<ReviewMessage>>>,
 }
 
 impl AppState {
@@ -50,8 +55,39 @@ impl AppState {
         Self {
             db: Arc::new(Mutex::new(db)),
             active_runs: Mutex::new(HashMap::new()),
+            review_senders: Mutex::new(HashMap::new()),
         }
     }
+}
+
+/// Message sent through the review channel to the background execution task.
+pub struct ReviewMessage {
+    pub node_id: Uuid,
+    pub decision: ReviewDecision,
+}
+
+/// IPC-facing review decision enum. Tagged by `type` for JSON serialization.
+/// Maps to `core_engine::review::ReviewDecision` internally.
+#[derive(Debug, Clone, Deserialize)]
+#[serde(tag = "type")]
+pub enum HumanReviewDecision {
+    #[serde(rename = "approved")]
+    Approved {
+        #[serde(default)]
+        comment: Option<String>,
+    },
+    #[serde(rename = "rejected")]
+    Rejected {
+        #[serde(default)]
+        reason: Option<String>,
+    },
+    #[serde(rename = "retry_requested")]
+    RetryRequested {
+        #[serde(default)]
+        target_node_id: Option<String>,
+        #[serde(default)]
+        comment: Option<String>,
+    },
 }
 
 // ---------------------------------------------------------------------------
@@ -132,6 +168,67 @@ pub fn export_workflow(state: State<AppState>, id: String) -> CmdResult<String> 
 }
 
 // ---------------------------------------------------------------------------
+// Human review commands (TAURI-003)
+// ---------------------------------------------------------------------------
+
+/// Submit an operator decision for a paused human-review node.
+///
+/// The decision is sent to the background execution task via a channel.
+/// The engine applies the decision and resumes or terminates the run.
+#[tauri::command]
+pub async fn submit_human_review_decision(
+    state: State<'_, AppState>,
+    run_id: String,
+    node_id: String,
+    decision: HumanReviewDecision,
+) -> CmdResult<()> {
+    let run_uuid = Uuid::parse_str(&run_id).map_err(cmd_err)?;
+    let node_uuid = Uuid::parse_str(&node_id).map_err(cmd_err)?;
+
+    // Convert IPC decision to engine ReviewDecision.
+    let engine_decision = match decision {
+        HumanReviewDecision::Approved { comment } => {
+            ReviewDecision::Approve { comment }
+        }
+        HumanReviewDecision::Rejected { reason } => {
+            ReviewDecision::Reject {
+                reason: reason.unwrap_or_else(|| "rejected".to_owned()),
+            }
+        }
+        HumanReviewDecision::RetryRequested { target_node_id, comment } => {
+            let target = target_node_id
+                .ok_or_else(|| cmd_err("target_node_id is required for retry decisions"))?;
+            let target_uuid = Uuid::parse_str(&target).map_err(cmd_err)?;
+            ReviewDecision::Retry {
+                target_node_id: target_uuid,
+                comment,
+            }
+        }
+    };
+
+    // Look up the review channel for this run.
+    let sender = {
+        let senders = state.review_senders.lock().unwrap();
+        senders.get(&run_uuid).cloned()
+    };
+
+    match sender {
+        Some(tx) => {
+            tx.send(ReviewMessage {
+                node_id: node_uuid,
+                decision: engine_decision,
+            })
+            .await
+            .map_err(|_| cmd_err("run is no longer waiting for review"))?;
+            Ok(())
+        }
+        None => Err(cmd_err(format!(
+            "run {run_id} is not waiting for a review decision"
+        ))),
+    }
+}
+
+// ---------------------------------------------------------------------------
 // Run lifecycle commands (TAURI-002)
 // ---------------------------------------------------------------------------
 
@@ -200,9 +297,17 @@ pub async fn start_run(
         .unwrap()
         .insert(run_uuid, Arc::clone(&cancel_flag));
 
+    // Create a review channel so the background task can wait for decisions.
+    let (review_tx, review_rx) = mpsc::channel::<ReviewMessage>(1);
+    state
+        .review_senders
+        .lock()
+        .unwrap()
+        .insert(run_uuid, review_tx);
+
     // Spawn the engine in a background task — returns immediately to frontend.
     tokio::spawn(async move {
-        run_workflow_background(app, db_arc, run, workflow, cancel_flag).await;
+        run_workflow_background(app, db_arc, run, workflow, cancel_flag, review_rx).await;
     });
 
     Ok(())
@@ -251,12 +356,16 @@ pub fn list_runs_for_workflow(
 ///
 /// Uses `StubNodeExecutor` semantics (all nodes succeed immediately) for v1.
 /// Real adapter dispatch will be wired in a later task (ADAPT-001, ADAPT-002).
+///
+/// When a HumanReview node is encountered, the loop pauses the run and waits
+/// on `review_rx` for a `ReviewMessage` from `submit_human_review_decision`.
 async fn run_workflow_background(
     app: AppHandle,
     db: Arc<Mutex<Db>>,
     run: RunInstance,
     workflow: WorkflowDefinition,
     cancel_flag: Arc<AtomicBool>,
+    mut review_rx: mpsc::Receiver<ReviewMessage>,
 ) {
     let run_id = run.run_id;
     let node_count = workflow.nodes.len() as u32;
@@ -302,7 +411,7 @@ async fn run_workflow_background(
         None,
     );
 
-    // Step-by-step execution loop with cancellation support.
+    // Step-by-step execution loop with cancellation and review support.
     let scheduler = RunScheduler::new();
 
     loop {
@@ -312,13 +421,51 @@ async fn run_workflow_background(
             break;
         }
 
-        // Stop when run reaches a terminal or paused state.
+        // Stop when run reaches a terminal state.
         match coordinator.run_status() {
             RunStatus::Succeeded
             | RunStatus::Failed
             | RunStatus::Cancelled => break,
-            RunStatus::Paused => break,
             _ => {}
+        }
+
+        // If paused (waiting for review), wait for a decision on the channel.
+        if *coordinator.run_status() == RunStatus::Paused {
+            persist_run_status(&db, run_id, coordinator.run_status());
+
+            // Wait for either a review decision or cancellation.
+            tokio::select! {
+                msg = review_rx.recv() => {
+                    match msg {
+                        Some(review_msg) => {
+                            let _ = handle_review_decision(
+                                &mut coordinator,
+                                review_msg.node_id,
+                                review_msg.decision,
+                            );
+                            persist_run_status(&db, run_id, coordinator.run_status());
+                            // Continue the loop — the run may have resumed or terminated.
+                            continue;
+                        }
+                        None => {
+                            // Channel closed — no one can send decisions; cancel the run.
+                            let _ = coordinator.cancel(Some("review channel closed".to_owned()));
+                            break;
+                        }
+                    }
+                }
+                _ = async {
+                    loop {
+                        tokio::time::sleep(std::time::Duration::from_millis(100)).await;
+                        if cancel_flag.load(Ordering::SeqCst) {
+                            break;
+                        }
+                    }
+                } => {
+                    let _ = coordinator.cancel(Some("cancelled by user".to_owned()));
+                    break;
+                }
+            }
         }
 
         // Find nodes eligible to execute this step.
@@ -344,7 +491,7 @@ async fn run_workflow_background(
                 .transition_node(
                     node_id,
                     NodeTransitionInput::Start {
-                        node_type,
+                        node_type: node_type.clone(),
                         input_refs: vec![],
                         workspace_root,
                     },
@@ -352,6 +499,15 @@ async fn run_workflow_background(
                 .is_err()
             {
                 continue;
+            }
+
+            // Check if this is a HumanReview node — pause for review instead
+            // of auto-completing.
+            if is_human_review_node(&workflow, node_id) {
+                let reason = human_review_reason(&workflow, node_id);
+                let _ = coordinator.pause_for_review(node_id, reason);
+                // The next loop iteration will detect Paused and wait on the channel.
+                break;
             }
 
             // Stub execution: all nodes succeed in 1 ms.
@@ -372,6 +528,31 @@ async fn run_workflow_background(
 // ---------------------------------------------------------------------------
 // Private helpers
 // ---------------------------------------------------------------------------
+
+/// Check if a node in the workflow is a HumanReview node.
+fn is_human_review_node(workflow: &WorkflowDefinition, node_id: Uuid) -> bool {
+    workflow
+        .nodes
+        .iter()
+        .find(|n| n.node_id == node_id)
+        .map(|n| n.node_type == NodeKind::HumanReview)
+        .unwrap_or(false)
+}
+
+/// Extract the review reason from a HumanReview node's config, if available.
+fn human_review_reason(workflow: &WorkflowDefinition, node_id: Uuid) -> Option<String> {
+    workflow
+        .nodes
+        .iter()
+        .find(|n| n.node_id == node_id)
+        .and_then(|n| {
+            if let workflow_model::node_config::NodeConfig::HumanReview(cfg) = &n.config {
+                cfg.reason.clone().or_else(|| cfg.prompt.clone())
+            } else {
+                None
+            }
+        })
+}
 
 fn node_type_label(workflow: &WorkflowDefinition, node_id: Uuid) -> String {
     workflow
