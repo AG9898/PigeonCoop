@@ -315,6 +315,234 @@ describe("LiveRunView", () => {
     expect(nodeBadge!.classList.contains("lr-node-status--running")).toBe(true);
   });
 
+  it("subscribes to human_review_requested events", async () => {
+    await act(async () => {
+      render(<LiveRunView runId="aaaa-1111" />);
+    });
+
+    const eventNames = mockListen.mock.calls.map(
+      (call: unknown[]) => call[0]
+    );
+    expect(eventNames).toContain("human_review_requested");
+  });
+
+  it("shows HumanReviewPanel when human_review_requested fires for this run", async () => {
+    let reviewCallback: ((ev: unknown) => void) | undefined;
+    mockListen.mockImplementation(
+      (event: string, cb: (ev: unknown) => void) => {
+        if (event === "human_review_requested") reviewCallback = cb;
+        return Promise.resolve(() => {});
+      }
+    );
+
+    await act(async () => {
+      render(<LiveRunView runId="aaaa-1111" />);
+    });
+
+    // Panel should not be visible yet
+    expect(screen.queryByTestId("human-review-panel")).toBeNull();
+
+    // Fire the event
+    await act(async () => {
+      reviewCallback?.({
+        payload: {
+          run_id: "aaaa-1111",
+          node_id: "node-review",
+          node_label: "Human Review",
+          reason: "Please approve the generated plan",
+          available_actions: ["approve", "reject", "retry"],
+          timestamp: "2026-03-09T10:01:00Z",
+        },
+      });
+    });
+
+    // Panel should now be visible
+    expect(screen.getByTestId("human-review-panel")).toBeTruthy();
+    expect(screen.getByTestId("hr-reason").textContent).toBe(
+      "Please approve the generated plan"
+    );
+    expect(screen.getByTestId("hr-node-label").textContent).toBe(
+      "Human Review"
+    );
+    // All three action buttons should appear
+    expect(screen.getByTestId("hr-btn-approve")).toBeTruthy();
+    expect(screen.getByTestId("hr-btn-reject")).toBeTruthy();
+    expect(screen.getByTestId("hr-btn-retry")).toBeTruthy();
+  });
+
+  it("ignores human_review_requested events for other run IDs", async () => {
+    let reviewCallback: ((ev: unknown) => void) | undefined;
+    mockListen.mockImplementation(
+      (event: string, cb: (ev: unknown) => void) => {
+        if (event === "human_review_requested") reviewCallback = cb;
+        return Promise.resolve(() => {});
+      }
+    );
+
+    await act(async () => {
+      render(<LiveRunView runId="aaaa-1111" />);
+    });
+
+    await act(async () => {
+      reviewCallback?.({
+        payload: {
+          run_id: "bbbb-2222",
+          node_id: "node-review",
+          node_label: "Human Review",
+          reason: "Different run",
+          available_actions: ["approve"],
+          timestamp: "2026-03-09T10:01:00Z",
+        },
+      });
+    });
+
+    expect(screen.queryByTestId("human-review-panel")).toBeNull();
+  });
+
+  it("calls submitHumanReviewDecision and closes panel when Approve is clicked", async () => {
+    let reviewCallback: ((ev: unknown) => void) | undefined;
+    mockListen.mockImplementation(
+      (event: string, cb: (ev: unknown) => void) => {
+        if (event === "human_review_requested") reviewCallback = cb;
+        return Promise.resolve(() => {});
+      }
+    );
+    mockInvoke.mockImplementation((cmd: string) => {
+      if (cmd === "get_run") return Promise.resolve(mockRun());
+      if (cmd === "get_workflow") return Promise.resolve(mockWorkflow());
+      if (cmd === "submit_human_review_decision") return Promise.resolve();
+      return Promise.resolve(null);
+    });
+
+    await act(async () => {
+      render(<LiveRunView runId="aaaa-1111" />);
+    });
+
+    await act(async () => {
+      reviewCallback?.({
+        payload: {
+          run_id: "aaaa-1111",
+          node_id: "node-review",
+          node_label: "Human Review",
+          reason: "Approve the plan",
+          available_actions: ["approve", "reject", "retry"],
+          timestamp: "2026-03-09T10:01:00Z",
+        },
+      });
+    });
+
+    expect(screen.getByTestId("human-review-panel")).toBeTruthy();
+
+    // Click approve
+    await act(async () => {
+      fireEvent.click(screen.getByTestId("hr-btn-approve"));
+    });
+
+    // invoke should have been called with approve decision
+    const reviewCall = mockInvoke.mock.calls.find(
+      (c: unknown[]) => c[0] === "submit_human_review_decision"
+    );
+    expect(reviewCall).toBeTruthy();
+    expect((reviewCall as unknown[])[1]).toMatchObject({
+      run_id: "aaaa-1111",
+      node_id: "node-review",
+      decision: { type: "approved" },
+    });
+
+    // Panel should close
+    expect(screen.queryByTestId("human-review-panel")).toBeNull();
+  });
+
+  it("closes panel when Reject is clicked and sends rejected decision", async () => {
+    let reviewCallback: ((ev: unknown) => void) | undefined;
+    mockListen.mockImplementation(
+      (event: string, cb: (ev: unknown) => void) => {
+        if (event === "human_review_requested") reviewCallback = cb;
+        return Promise.resolve(() => {});
+      }
+    );
+    mockInvoke.mockImplementation((cmd: string) => {
+      if (cmd === "get_run") return Promise.resolve(mockRun());
+      if (cmd === "get_workflow") return Promise.resolve(mockWorkflow());
+      if (cmd === "submit_human_review_decision") return Promise.resolve();
+      return Promise.resolve(null);
+    });
+
+    await act(async () => {
+      render(<LiveRunView runId="aaaa-1111" />);
+    });
+
+    await act(async () => {
+      reviewCallback?.({
+        payload: {
+          run_id: "aaaa-1111",
+          node_id: "node-review",
+          node_label: "Human Review",
+          reason: "Reject test",
+          available_actions: ["approve", "reject", "retry"],
+          timestamp: "2026-03-09T10:01:00Z",
+        },
+      });
+    });
+
+    await act(async () => {
+      fireEvent.click(screen.getByTestId("hr-btn-reject"));
+    });
+
+    const reviewCall = mockInvoke.mock.calls.find(
+      (c: unknown[]) => c[0] === "submit_human_review_decision"
+    );
+    expect((reviewCall as unknown[])[1]).toMatchObject({
+      decision: { type: "rejected" },
+    });
+    expect(screen.queryByTestId("human-review-panel")).toBeNull();
+  });
+
+  it("keyboard shortcut A triggers Approve", async () => {
+    let reviewCallback: ((ev: unknown) => void) | undefined;
+    mockListen.mockImplementation(
+      (event: string, cb: (ev: unknown) => void) => {
+        if (event === "human_review_requested") reviewCallback = cb;
+        return Promise.resolve(() => {});
+      }
+    );
+    mockInvoke.mockImplementation((cmd: string) => {
+      if (cmd === "get_run") return Promise.resolve(mockRun());
+      if (cmd === "get_workflow") return Promise.resolve(mockWorkflow());
+      if (cmd === "submit_human_review_decision") return Promise.resolve();
+      return Promise.resolve(null);
+    });
+
+    await act(async () => {
+      render(<LiveRunView runId="aaaa-1111" />);
+    });
+
+    await act(async () => {
+      reviewCallback?.({
+        payload: {
+          run_id: "aaaa-1111",
+          node_id: "node-review",
+          node_label: "Human Review",
+          reason: "Keyboard test",
+          available_actions: ["approve", "reject", "retry"],
+          timestamp: "2026-03-09T10:01:00Z",
+        },
+      });
+    });
+
+    await act(async () => {
+      fireEvent.keyDown(window, { key: "a" });
+    });
+
+    const reviewCall = mockInvoke.mock.calls.find(
+      (c: unknown[]) => c[0] === "submit_human_review_decision"
+    );
+    expect(reviewCall).toBeTruthy();
+    expect((reviewCall as unknown[])[1]).toMatchObject({
+      decision: { type: "approved" },
+    });
+  });
+
   it("cleans up listeners on unmount", async () => {
     const unlisten = vi.fn();
     mockListen.mockImplementation(() => Promise.resolve(unlisten));

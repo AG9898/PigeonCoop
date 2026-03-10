@@ -25,11 +25,14 @@ import type {
   WorkflowDefinition,
 } from "../types/workflow";
 import type {
+  HumanReviewDecision,
+  HumanReviewRequestedPayload,
   NodeStatusChangedPayload,
   RunEventAppendedPayload,
   RunStatusChangedPayload,
 } from "../types/ipc";
 import { ipc } from "../types/ipc";
+import { HumanReviewPanel } from "../components/panels/HumanReviewPanel";
 
 // All 7 node types share the WorkflowNode component.
 const NODE_TYPES: NodeTypes = {
@@ -86,9 +89,27 @@ export function LiveRunView({ runId }: LiveRunViewProps) {
   const [selectedEvent, setSelectedEvent] = useState<RunEvent | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [workflow, setWorkflow] = useState<WorkflowDefinition | null>(null);
+  const [reviewRequest, setReviewRequest] =
+    useState<HumanReviewRequestedPayload | null>(null);
+  const [reviewSubmitting, setReviewSubmitting] = useState(false);
 
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const eventFeedRef = useRef<HTMLUListElement>(null);
+
+  async function handleReviewDecision(decision: HumanReviewDecision) {
+    if (!reviewRequest) return;
+    setReviewSubmitting(true);
+    try {
+      await ipc.submitHumanReviewDecision({
+        run_id: reviewRequest.run_id,
+        node_id: reviewRequest.node_id,
+        decision,
+      });
+    } finally {
+      setReviewSubmitting(false);
+      setReviewRequest(null);
+    }
+  }
 
   // Load initial run data when runId changes
   useEffect(() => {
@@ -98,6 +119,8 @@ export function LiveRunView({ runId }: LiveRunViewProps) {
     setNodeStatuses(new Map());
     setSelectedEvent(null);
     setWorkflow(null);
+    setReviewRequest(null);
+    setReviewSubmitting(false);
 
     (async () => {
       try {
@@ -185,6 +208,16 @@ export function LiveRunView({ runId }: LiveRunViewProps) {
           }
         )
       );
+
+      unlisteners.push(
+        await listen<HumanReviewRequestedPayload>(
+          "human_review_requested",
+          (ev) => {
+            if (ev.payload.run_id !== runId) return;
+            setReviewRequest(ev.payload);
+          }
+        )
+      );
     }
 
     subscribe();
@@ -224,6 +257,13 @@ export function LiveRunView({ runId }: LiveRunViewProps) {
         <span className="view-subtitle">active execution monitor</span>
       </div>
       {error && <div className="lr-error">{error}</div>}
+      {reviewRequest && (
+        <HumanReviewPanel
+          request={reviewRequest}
+          onDecision={handleReviewDecision}
+          submitting={reviewSubmitting}
+        />
+      )}
       <div className="view-body lr-body">
         {/* ── Run HUD ── */}
         <div className="lr-hud" data-testid="run-hud">

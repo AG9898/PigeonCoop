@@ -14,3 +14,6 @@ mod validator_tests;
 
 #[cfg(test)]
 mod coordinator_tests;
+
+#[cfg(test)]
+mod tests;

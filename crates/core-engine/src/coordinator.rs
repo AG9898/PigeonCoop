@@ -9,6 +9,9 @@ use uuid::Uuid;
 use chrono::Utc;
 use workflow_model::run::{RunInstance, RunStatus, NodeSnapshot, NodeStatus};
 use event_model::event::RunEvent;
+use event_model::guardrail_events::{
+    GuardrailEventKind, GuardrailExceededPayload, GuardrailSeverity, GuardrailWarningPayload,
+};
 use event_model::human_review_events::{
     HumanReviewEventKind, ReviewRequiredPayload, ReviewApprovedPayload,
     ReviewRejectedPayload, ReviewRetryRequestedPayload,
@@ -80,6 +83,9 @@ pub struct RunCoordinator<L: EventLog> {
 
     /// Count of node steps executed so far (used for max_steps guardrail).
     steps_executed: u32,
+
+    /// Wall-clock time when the coordinator was created, used for max_runtime_ms checks.
+    started_at: chrono::DateTime<chrono::Utc>,
 }
 
 impl<L: EventLog> RunCoordinator<L> {
@@ -92,6 +98,7 @@ impl<L: EventLog> RunCoordinator<L> {
             node_snapshots: HashMap::new(),
             event_log,
             steps_executed: 0,
+            started_at: Utc::now(),
         }
     }
 
@@ -182,12 +189,32 @@ impl<L: EventLog> RunCoordinator<L> {
 
         // Guardrail: max_steps
         if let Some(max) = self.run.constraints.max_steps {
-            if self.steps_executed >= max {
+            let steps = self.steps_executed;
+            let warn_threshold = (max as f64 * 0.8) as u32;
+            if steps == warn_threshold && steps < max {
+                self.emit_guardrail_warning(
+                    "max_steps",
+                    GuardrailSeverity::High,
+                    &format!("Approaching max_steps limit: {}/{}", steps, max),
+                    steps as f64,
+                    max as f64,
+                    Some(node_id),
+                );
+            }
+            if steps >= max {
+                self.emit_guardrail_exceeded(
+                    "max_steps",
+                    &format!("Run exceeded max_steps limit: {}/{}", steps, max),
+                    steps as f64,
+                    max as f64,
+                    "fail_run",
+                    Some(node_id),
+                );
                 if self.run.status == RunStatus::Running {
                     self.transition_run(RunTransitionInput::Fail {
                         reason: format!(
                             "guardrail exceeded: steps_executed={} >= max_steps={}",
-                            self.steps_executed, max
+                            steps, max
                         ),
                         failed_node_id: Some(node_id),
                         duration_ms: None,
@@ -454,5 +481,65 @@ impl<L: EventLog> RunCoordinator<L> {
         })?;
 
         Ok(())
+    }
+
+    /// Returns the elapsed milliseconds since the coordinator was created.
+    pub fn elapsed_ms(&self) -> u64 {
+        let elapsed = Utc::now().signed_duration_since(self.started_at);
+        elapsed.num_milliseconds().max(0) as u64
+    }
+
+    /// Emit a `guardrail.warning` event.
+    pub fn emit_guardrail_warning(
+        &mut self,
+        guardrail: &str,
+        severity: GuardrailSeverity,
+        message: &str,
+        current_value: f64,
+        threshold: f64,
+        node_id: Option<Uuid>,
+    ) {
+        let event = RunEvent::from_guardrail_kind(
+            self.run.run_id,
+            self.run.workflow_id,
+            node_id,
+            &GuardrailEventKind::Warning(GuardrailWarningPayload {
+                guardrail: guardrail.to_owned(),
+                severity,
+                message: message.to_owned(),
+                current_value,
+                threshold,
+            }),
+            None,
+            None,
+        );
+        let _ = self.event_log.append(event);
+    }
+
+    /// Emit a `guardrail.exceeded` event.
+    pub fn emit_guardrail_exceeded(
+        &mut self,
+        guardrail: &str,
+        message: &str,
+        final_value: f64,
+        threshold: f64,
+        enforcement_action: &str,
+        node_id: Option<Uuid>,
+    ) {
+        let event = RunEvent::from_guardrail_kind(
+            self.run.run_id,
+            self.run.workflow_id,
+            node_id,
+            &GuardrailEventKind::Exceeded(GuardrailExceededPayload {
+                guardrail: guardrail.to_owned(),
+                message: message.to_owned(),
+                final_value,
+                threshold,
+                enforcement_action: enforcement_action.to_owned(),
+            }),
+            None,
+            None,
+        );
+        let _ = self.event_log.append(event);
     }
 }

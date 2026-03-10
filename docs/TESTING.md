@@ -43,6 +43,35 @@ cargo test -p core-engine scheduler  # specific module
 - Mock CLI adapter execution; do not spawn real processes in unit tests
 - Keep tests deterministic — no timers, no randomness, no external I/O
 
+### core-engine test suite (ENGINE-008)
+
+The `core-engine` crate has comprehensive unit tests organized in two layers:
+
+**Inline tests** (in each module):
+- `state_machine/mod.rs` — run state machine happy paths, invalid transitions, lifecycle walkthroughs
+- `state_machine/node.rs` — node state machine happy paths, retry semantics, lifecycle walkthroughs
+- `scheduler/mod.rs` — next_ready_nodes, topological ordering
+- `execution/mod.rs` — RouterEvaluator, ExecutionDriver with StubNodeExecutor, guardrail integration
+- `review/mod.rs` — review handler dispatch (approve/reject/retry)
+
+**Dedicated test suite** (`src/tests/`):
+- `run_transitions.rs` — **exhaustive** run state machine matrix: all 10 valid and all 62 invalid (status, trigger) pairs verified, event payload data assertions, terminal state verification
+- `node_transitions.rs` — **exhaustive** node state machine matrix: all 12 valid and all 78 invalid (status, trigger) pairs verified, attempt counter semantics, event payload assertions
+- `validation.rs` — validate_to_result wrapper, combined error reporting, edge reference validation, large graph (20-node chain, diamond)
+- `scheduler.rs` — predecessor terminal states (Succeeded, Skipped, Failed, Cancelled), diamond graph parallelism, missing snapshots, empty workflows
+- `routing.rs` — all ConditionKind variants (Always, OnSuccess, OnFailure, Expression), mixed-edge routing, malformed payloads, type mismatches
+- `review.rs` — pause/approve/reject/retry flows, event emission assertions, error cases (nonexistent nodes, invalid states)
+- `guardrails.rs` — max_steps (warning threshold, exceeded, unlimited), max_runtime_ms, max_retries exhaustion, warning/exceeded ordering, within-limits workflow
+
+**Running specific test groups:**
+```bash
+cargo test -p core-engine tests::run_transitions    # exhaustive run state machine
+cargo test -p core-engine tests::node_transitions   # exhaustive node state machine
+cargo test -p core-engine tests::routing            # routing rules
+cargo test -p core-engine tests::review             # human review flows
+cargo test -p core-engine tests::guardrails         # guardrail enforcement
+```
+
 ---
 
 ## 2. Frontend component tests
@@ -156,16 +185,38 @@ export const config = {
 
 ### Priority E2E flows for v1
 1. **Builder flow** — open app, create a workflow with all node types, save it
-2. **Run flow** — load the demo workflow, start a run, observe node state transitions
+2. **Run flow** — load the demo workflow, start a run, observe node state transitions (**implemented: `tests/e2e/specs/run.spec.js`**)
 3. **Human review gate** — run reaches a Human Review node, user approves, run continues
 4. **Replay flow** — open a completed run, scrub the timeline, inspect events
 5. **Failure handling** — run a workflow where a Tool node fails, verify Failed state is shown
+
+### Implemented specs
+
+| Spec | Covers |
+|---|---|
+| `tests/e2e/specs/app.spec.js` | Smoke test — app launches, window title, root DOM element |
+| `tests/e2e/specs/run.spec.js` | Run flow — demo workflow visible, create/start run, node state transitions, HumanReview pause |
+
+### IPC access pattern in E2E tests
+
+Because `LibraryView` does not yet expose a "Start Run" button, run creation and
+start are invoked directly via `window.__TAURI_INTERNALS__.invoke()` inside
+`browser.executeAsync()`. Node state transitions are verified by polling
+`list_events_for_run` and inspecting `payload.new_status` on each event.
+
+### Test workspace fixture
+
+Dedicated workspace: `tests/e2e/fixtures/test-workspace/`
+
+Never substitute a real project directory. The demo workflow's Tool node runs
+`echo 'tool executed'` so no files in the workspace are read or written.
 
 ### Guidelines
 - E2E tests are slow; run them in CI on PRs, not on every save
 - Use a dedicated test workspace directory — never point E2E tests at a real project
 - Assert against state that originates from the Rust engine, not UI-derived assumptions
 - Keep E2E specs narrowly scoped to critical user paths; avoid testing every UI detail here
+- Use `browser.executeAsync()` + `window.__TAURI_INTERNALS__.invoke()` for IPC in E2E tests
 
 ---
 

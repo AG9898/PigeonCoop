@@ -75,6 +75,27 @@ pub enum GuardrailEventKind {
     BudgetUpdated(BudgetUpdatedPayload),
 }
 
+impl GuardrailEventKind {
+    /// Returns the canonical event_type string for this variant.
+    pub fn event_type_str(&self) -> &'static str {
+        match self {
+            GuardrailEventKind::Warning(_) => "guardrail.warning",
+            GuardrailEventKind::Exceeded(_) => "guardrail.exceeded",
+            GuardrailEventKind::BudgetUpdated(_) => "budget.updated",
+        }
+    }
+
+    /// Serialise the inner payload to a `serde_json::Value`.
+    pub fn payload_value(&self) -> serde_json::Value {
+        match self {
+            GuardrailEventKind::Warning(p) => serde_json::to_value(p),
+            GuardrailEventKind::Exceeded(p) => serde_json::to_value(p),
+            GuardrailEventKind::BudgetUpdated(p) => serde_json::to_value(p),
+        }
+        .unwrap_or(serde_json::Value::Null)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

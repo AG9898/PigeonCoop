@@ -2,6 +2,7 @@ use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 use chrono::{DateTime, Utc};
 
+use crate::guardrail_events::GuardrailEventKind;
 use crate::human_review_events::HumanReviewEventKind;
 use crate::node_events::NodeEventKind;
 use crate::run_events::RunEventKind;
@@ -80,6 +81,28 @@ impl RunEvent {
             run_id,
             workflow_id,
             node_id: Some(node_id),
+            event_type: kind.event_type_str().to_owned(),
+            timestamp: Utc::now(),
+            payload: kind.payload_value(),
+            causation_id,
+            correlation_id,
+        }
+    }
+
+    /// Construct a `RunEvent` envelope from a typed `GuardrailEventKind`.
+    pub fn from_guardrail_kind(
+        run_id: Uuid,
+        workflow_id: Uuid,
+        node_id: Option<Uuid>,
+        kind: &GuardrailEventKind,
+        causation_id: Option<Uuid>,
+        correlation_id: Option<Uuid>,
+    ) -> Self {
+        Self {
+            event_id: Uuid::new_v4(),
+            run_id,
+            workflow_id,
+            node_id,
             event_type: kind.event_type_str().to_owned(),
             timestamp: Utc::now(),
             payload: kind.payload_value(),

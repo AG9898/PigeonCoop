@@ -7,6 +7,7 @@ use uuid::Uuid;
 use workflow_model::workflow::WorkflowDefinition;
 use workflow_model::edge::{ConditionKind, EdgeDefinition};
 use workflow_model::run::NodeStatus;
+use event_model::guardrail_events::GuardrailSeverity;
 use event_model::event::RunEvent;
 use event_model::routing_events::{
     EdgeRoutedPayload, RouterBranchSelectedPayload, RouterEvaluatedPayload,
@@ -177,6 +178,44 @@ impl<'a, L: EventLog, E: NodeExecutor> ExecutionDriver<'a, L, E> {
     /// queues them, and dispatches execution. Returns the list of node IDs that
     /// were dispatched in this step.
     pub async fn step(&mut self, workflow: &WorkflowDefinition) -> Vec<Uuid> {
+        // Guardrail: max_runtime_ms — checked before dispatching each step.
+        if let Some(max_ms) = self.coordinator.run.constraints.max_runtime_ms {
+            let elapsed = self.coordinator.elapsed_ms();
+            let warn_threshold = (max_ms as f64 * 0.8) as u64;
+            if elapsed >= warn_threshold && elapsed < max_ms {
+                self.coordinator.emit_guardrail_warning(
+                    "max_runtime_ms",
+                    GuardrailSeverity::High,
+                    &format!("Approaching max_runtime_ms limit: {}ms / {}ms", elapsed, max_ms),
+                    elapsed as f64,
+                    max_ms as f64,
+                    None,
+                );
+            }
+            if elapsed >= max_ms {
+                self.coordinator.emit_guardrail_exceeded(
+                    "max_runtime_ms",
+                    &format!("Run exceeded max_runtime_ms limit: {}ms / {}ms", elapsed, max_ms),
+                    elapsed as f64,
+                    max_ms as f64,
+                    "fail_run",
+                    None,
+                );
+                use workflow_model::run::RunStatus;
+                if self.coordinator.run_status() == &RunStatus::Running {
+                    let _ = self.coordinator.transition_run(crate::state_machine::RunTransitionInput::Fail {
+                        reason: format!(
+                            "guardrail exceeded: elapsed_ms={} >= max_runtime_ms={}",
+                            elapsed, max_ms
+                        ),
+                        failed_node_id: None,
+                        duration_ms: Some(elapsed),
+                    });
+                }
+                return vec![];
+            }
+        }
+
         let ready = self
             .scheduler
             .next_ready_nodes(workflow, &self.coordinator.node_snapshots);
@@ -241,11 +280,36 @@ impl<'a, L: EventLog, E: NodeExecutor> ExecutionDriver<'a, L, E> {
                 }
                 NodeResult::Failed { reason, retries_remaining } => {
                     if retries_remaining > 0 {
+                        // Emit guardrail.warning when on the last retry.
+                        if retries_remaining == 1 {
+                            let max_retries = node_max_retries(workflow, node_id);
+                            self.coordinator.emit_guardrail_warning(
+                                "max_retries",
+                                GuardrailSeverity::High,
+                                &format!(
+                                    "Node {} on last retry ({}/{})",
+                                    node_id, max_retries.saturating_sub(1), max_retries
+                                ),
+                                (max_retries.saturating_sub(1)) as f64,
+                                max_retries as f64,
+                                Some(node_id),
+                            );
+                        }
                         let _ = self
                             .coordinator
                             .fail_node(node_id, reason, retries_remaining);
                         // Retry scheduled — no routing yet; node will re-execute.
                     } else {
+                        // All retries exhausted — emit guardrail.exceeded.
+                        let max_retries = node_max_retries(workflow, node_id);
+                        self.coordinator.emit_guardrail_exceeded(
+                            "max_retries",
+                            &format!("Node {} exhausted all {} retries", node_id, max_retries),
+                            max_retries as f64,
+                            max_retries as f64,
+                            "fail_node",
+                            Some(node_id),
+                        );
                         // No retries left: evaluate routing before deciding to fail the run.
                         let _ = self
                             .coordinator
@@ -475,6 +539,15 @@ fn node_type_for(workflow: &WorkflowDefinition, node_id: Uuid) -> String {
         .find(|n| n.node_id == node_id)
         .map(|n| format!("{:?}", n.node_type).to_lowercase())
         .unwrap_or_else(|| "unknown".to_owned())
+}
+
+fn node_max_retries(workflow: &WorkflowDefinition, node_id: Uuid) -> u32 {
+    workflow
+        .nodes
+        .iter()
+        .find(|n| n.node_id == node_id)
+        .map(|n| n.retry_policy.max_retries)
+        .unwrap_or(0)
 }
 
 // ---------------------------------------------------------------------------
@@ -854,5 +927,198 @@ mod tests {
         assert_eq!(coordinator.node_status(&start_id), Some(&NodeStatus::Succeeded));
         assert_eq!(coordinator.node_status(&tool_id), Some(&NodeStatus::Succeeded));
         assert_eq!(coordinator.node_status(&end_id), Some(&NodeStatus::Succeeded));
+    }
+
+    // -----------------------------------------------------------------------
+    // Guardrail enforcement tests
+    // -----------------------------------------------------------------------
+
+    /// A run with max_steps=1 on a 3-node workflow should halt with guardrail.exceeded
+    /// and transition to Failed after the first step.
+    #[tokio::test]
+    async fn max_steps_guardrail_halts_run_with_exceeded_event() {
+        let start_id = Uuid::new_v4();
+        let tool_id = Uuid::new_v4();
+        let end_id = Uuid::new_v4();
+
+        let workflow = make_workflow(
+            vec![
+                make_node(start_id, NodeKind::Start),
+                make_node(tool_id, NodeKind::Tool),
+                make_node(end_id, NodeKind::End),
+            ],
+            vec![make_edge(start_id, tool_id), make_edge(tool_id, end_id)],
+        );
+
+        let mut run = make_run(workflow.workflow_id);
+        run.constraints = RunConstraints { max_steps: Some(1), ..RunConstraints::default() };
+
+        let mut coordinator = RunCoordinator::new(run, InMemoryEventLog::new());
+        for id in [start_id, tool_id, end_id] {
+            coordinator.node_snapshots.insert(id, make_snapshot(id, NodeStatus::Ready));
+        }
+
+        let executor = StubNodeExecutor;
+        let mut driver = ExecutionDriver::new(&mut coordinator, executor);
+        driver.run_to_completion(&workflow).await;
+
+        assert_eq!(coordinator.run_status(), &RunStatus::Failed, "run must fail when max_steps exceeded");
+
+        let events = coordinator.emitted_events();
+        assert!(
+            events.iter().any(|e| e.event_type == "guardrail.exceeded"),
+            "guardrail.exceeded must be emitted"
+        );
+    }
+
+    /// A run with max_steps=5 should emit guardrail.warning at step 4 (80%)
+    /// and guardrail.exceeded at step 5.
+    #[tokio::test]
+    async fn max_steps_warning_emitted_before_exceeded() {
+        let start_id = Uuid::new_v4();
+        let tool_id = Uuid::new_v4();
+        let end_id = Uuid::new_v4();
+
+        let workflow = make_workflow(
+            vec![
+                make_node(start_id, NodeKind::Start),
+                make_node(tool_id, NodeKind::Tool),
+                make_node(end_id, NodeKind::End),
+            ],
+            vec![make_edge(start_id, tool_id), make_edge(tool_id, end_id)],
+        );
+
+        let mut run = make_run(workflow.workflow_id);
+        // max_steps=5 → warn at step 4, exceed at step 5; 3-node workflow
+        // won't actually hit 5 steps, but we set it low enough that warn threshold
+        // (80% of 5 = 4) is below 3 nodes, so we test warn is not spuriously emitted.
+        // Let's set max_steps=2 → warn at 1 (80% rounded), exceed at 2.
+        run.constraints = RunConstraints { max_steps: Some(2), ..RunConstraints::default() };
+
+        let mut coordinator = RunCoordinator::new(run, InMemoryEventLog::new());
+        for id in [start_id, tool_id, end_id] {
+            coordinator.node_snapshots.insert(id, make_snapshot(id, NodeStatus::Ready));
+        }
+
+        let executor = StubNodeExecutor;
+        let mut driver = ExecutionDriver::new(&mut coordinator, executor);
+        driver.run_to_completion(&workflow).await;
+
+        let events = coordinator.emitted_events();
+        let has_warning = events.iter().any(|e| e.event_type == "guardrail.warning");
+        let has_exceeded = events.iter().any(|e| e.event_type == "guardrail.exceeded");
+
+        // With max_steps=2, warning threshold is (2*0.8)=1, so warning at step 1,
+        // exceeded at step 2. Both should be emitted.
+        assert!(has_warning, "guardrail.warning must be emitted before exceeded");
+        assert!(has_exceeded, "guardrail.exceeded must be emitted");
+
+        // Warning must appear before exceeded in the event log.
+        let warning_idx = events.iter().position(|e| e.event_type == "guardrail.warning").unwrap();
+        let exceeded_idx = events.iter().position(|e| e.event_type == "guardrail.exceeded").unwrap();
+        assert!(warning_idx < exceeded_idx, "guardrail.warning must precede guardrail.exceeded");
+    }
+
+    /// A run with max_runtime_ms=0 should halt immediately on the first step.
+    #[tokio::test]
+    async fn max_runtime_ms_guardrail_halts_run() {
+        let start_id = Uuid::new_v4();
+        let tool_id = Uuid::new_v4();
+        let end_id = Uuid::new_v4();
+
+        let workflow = make_workflow(
+            vec![
+                make_node(start_id, NodeKind::Start),
+                make_node(tool_id, NodeKind::Tool),
+                make_node(end_id, NodeKind::End),
+            ],
+            vec![make_edge(start_id, tool_id), make_edge(tool_id, end_id)],
+        );
+
+        let mut run = make_run(workflow.workflow_id);
+        // max_runtime_ms=0 means any elapsed time exceeds the limit immediately.
+        run.constraints = RunConstraints { max_runtime_ms: Some(0), ..RunConstraints::default() };
+
+        let mut coordinator = RunCoordinator::new(run, InMemoryEventLog::new());
+        for id in [start_id, tool_id, end_id] {
+            coordinator.node_snapshots.insert(id, make_snapshot(id, NodeStatus::Ready));
+        }
+
+        let executor = StubNodeExecutor;
+        let mut driver = ExecutionDriver::new(&mut coordinator, executor);
+        driver.run_to_completion(&workflow).await;
+
+        assert_eq!(coordinator.run_status(), &RunStatus::Failed, "run must fail when max_runtime_ms exceeded");
+
+        let events = coordinator.emitted_events();
+        assert!(
+            events.iter().any(|e| e.event_type == "guardrail.exceeded"),
+            "guardrail.exceeded must be emitted for max_runtime_ms"
+        );
+    }
+
+    /// Node with retries=1: when the executor returns retries_remaining=0, the node is failed
+    /// and guardrail.exceeded is emitted.
+    #[tokio::test]
+    async fn node_retry_exhausted_emits_guardrail_exceeded() {
+        let start_id = Uuid::new_v4();
+        let tool_id = Uuid::new_v4();
+        let end_id = Uuid::new_v4();
+
+        // Tool node with max_retries=1
+        let tool_node = {
+            let mut n = make_node(tool_id, NodeKind::Tool);
+            n.retry_policy = workflow_model::node::RetryPolicy { max_retries: 1, max_runtime_ms: None };
+            n
+        };
+
+        let workflow = make_workflow(
+            vec![
+                make_node(start_id, NodeKind::Start),
+                tool_node,
+                make_node(end_id, NodeKind::End),
+            ],
+            vec![
+                make_edge(start_id, tool_id),
+                make_edge_conditional(tool_id, end_id, ConditionKind::OnFailure),
+            ],
+        );
+
+        // Executor that always fails the tool node with 0 retries remaining.
+        struct AlwaysFailExecutor { tool_id: Uuid }
+        impl NodeExecutor for AlwaysFailExecutor {
+            fn execute(
+                &self,
+                node_id: Uuid,
+            ) -> std::pin::Pin<Box<dyn std::future::Future<Output = NodeResult> + Send + '_>> {
+                let tool_id = self.tool_id;
+                Box::pin(async move {
+                    if node_id == tool_id {
+                        NodeResult::Failed { reason: "test failure".into(), retries_remaining: 0 }
+                    } else {
+                        NodeResult::Succeeded { duration_ms: 1 }
+                    }
+                })
+            }
+        }
+
+        let run = make_run(workflow.workflow_id);
+        let mut coordinator = RunCoordinator::new(run, InMemoryEventLog::new());
+        for id in [start_id, tool_id, end_id] {
+            coordinator.node_snapshots.insert(id, make_snapshot(id, NodeStatus::Ready));
+        }
+
+        let executor = AlwaysFailExecutor { tool_id };
+        let mut driver = ExecutionDriver::new(&mut coordinator, executor);
+        driver.run_to_completion(&workflow).await;
+
+        let events = coordinator.emitted_events();
+        assert!(
+            events.iter().any(|e| e.event_type == "guardrail.exceeded"),
+            "guardrail.exceeded must be emitted when node retries exhausted"
+        );
+        // The guardrail.exceeded event should reference max_retries.
+        let exceeded = events.iter().find(|e| e.event_type == "guardrail.exceeded").unwrap();
+        assert_eq!(exceeded.payload["guardrail"], "max_retries");
     }
 }

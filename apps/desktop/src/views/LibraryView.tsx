@@ -9,6 +9,7 @@ import type { RunInstance, WorkflowDefinition } from "../types/workflow";
 interface Props {
   onOpenReplay: (runId: string) => void;
   onOpenBuilder?: (workflowId?: string) => void;
+  onOpenLiveRun?: (runId: string) => void;
   /** When true, shows a welcome banner highlighting the demo workflow. */
   isFirstRun?: boolean;
 }
@@ -38,12 +39,19 @@ const STATUS_CLASS: Record<string, string> = {
   running: "run-status--running",
 };
 
-export function LibraryView({ onOpenReplay, onOpenBuilder, isFirstRun }: Props) {
+interface StartRunForm {
+  workspace: string;
+  running: boolean;
+  error: string | null;
+}
+
+export function LibraryView({ onOpenReplay, onOpenBuilder, onOpenLiveRun, isFirstRun }: Props) {
   const [workflows, setWorkflows] = useState<WorkflowDefinition[]>([]);
   const [runs, setRuns] = useState<Record<string, RunInstance[]>>({});
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [importError, setImportError] = useState<string | null>(null);
+  const [startRunForms, setStartRunForms] = useState<Record<string, StartRunForm>>({});
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   async function loadWorkflows() {
@@ -108,6 +116,48 @@ export function LibraryView({ onOpenReplay, onOpenBuilder, isFirstRun }: Props) 
     }
   }
 
+  function toggleStartRunForm(workflowId: string) {
+    setStartRunForms((prev) => {
+      if (prev[workflowId]) {
+        const next = { ...prev };
+        delete next[workflowId];
+        return next;
+      }
+      return { ...prev, [workflowId]: { workspace: "", running: false, error: null } };
+    });
+  }
+
+  function updateWorkspace(workflowId: string, value: string) {
+    setStartRunForms((prev) => ({
+      ...prev,
+      [workflowId]: { ...prev[workflowId], workspace: value, error: null },
+    }));
+  }
+
+  async function submitStartRun(workflowId: string) {
+    const form = startRunForms[workflowId];
+    if (!form || form.running) return;
+    setStartRunForms((prev) => ({
+      ...prev,
+      [workflowId]: { ...prev[workflowId], running: true, error: null },
+    }));
+    try {
+      const run = await ipc.createRun({ workflow_id: workflowId, workspace_root: form.workspace });
+      await ipc.startRun({ run_id: run.run_id });
+      setStartRunForms((prev) => {
+        const next = { ...prev };
+        delete next[workflowId];
+        return next;
+      });
+      onOpenLiveRun?.(run.run_id);
+    } catch (e) {
+      setStartRunForms((prev) => ({
+        ...prev,
+        [workflowId]: { ...prev[workflowId], running: false, error: String(e) },
+      }));
+    }
+  }
+
   const selected = selectedId ? workflows.find((w) => w.workflow_id === selectedId) : null;
   const selectedRuns = selectedId ? (runs[selectedId] ?? null) : null;
   const recentRun = (wfId: string) => runs[wfId]?.[0] ?? null;
@@ -165,6 +215,7 @@ export function LibraryView({ onOpenReplay, onOpenBuilder, isFirstRun }: Props) 
               {workflows.map((wf) => {
                 const latest = recentRun(wf.workflow_id);
                 const isSelected = selectedId === wf.workflow_id;
+                const form = startRunForms[wf.workflow_id];
                 return (
                   <li
                     key={wf.workflow_id}
@@ -206,7 +257,49 @@ export function LibraryView({ onOpenReplay, onOpenBuilder, isFirstRun }: Props) 
                       >
                         Export
                       </button>
+                      <button
+                        className="lib-btn lib-btn--sm lib-btn--run"
+                        data-testid={`start-run-${wf.workflow_id}`}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          toggleStartRunForm(wf.workflow_id);
+                        }}
+                      >
+                        Start Run
+                      </button>
                     </div>
+                    {form && (
+                      <div
+                        className="lib-start-run-form"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <input
+                          className="lib-workspace-input"
+                          type="text"
+                          placeholder="workspace path"
+                          data-testid={`workspace-input-${wf.workflow_id}`}
+                          value={form.workspace}
+                          onChange={(e) => updateWorkspace(wf.workflow_id, e.target.value)}
+                          disabled={form.running}
+                        />
+                        <button
+                          className="lib-btn lib-btn--sm"
+                          data-testid={`submit-run-${wf.workflow_id}`}
+                          disabled={form.running}
+                          onClick={() => submitStartRun(wf.workflow_id)}
+                        >
+                          {form.running ? "Starting…" : "Run"}
+                        </button>
+                        {form.error && (
+                          <span
+                            className="lib-run-error"
+                            data-testid={`start-run-error-${wf.workflow_id}`}
+                          >
+                            {form.error}
+                          </span>
+                        )}
+                      </div>
+                    )}
                   </li>
                 );
               })}
@@ -249,6 +342,15 @@ export function LibraryView({ onOpenReplay, onOpenBuilder, isFirstRun }: Props) 
                     </span>
                     <span className="lib-card-id">{run.run_id.slice(0, 8)}</span>
                   </div>
+                  {onOpenLiveRun && (
+                    <button
+                      className="lib-btn lib-btn--sm"
+                      data-testid={`open-liverun-${run.run_id}`}
+                      onClick={() => onOpenLiveRun(run.run_id)}
+                    >
+                      Live Run
+                    </button>
+                  )}
                   <button
                     className="lib-btn lib-btn--sm"
                     data-testid={`open-replay-${run.run_id}`}

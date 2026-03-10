@@ -83,7 +83,7 @@ export function App() {
         {activeView === "liverun" && <LiveRunView runId={liveRunId} />}
         {activeView === "replay" && <ReplayView runId={replayRunId} />}
         {activeView === "library" && (
-          <LibraryView onOpenReplay={openReplay} onOpenBuilder={openBuilder} isFirstRun={isFirstRun} />
+          <LibraryView onOpenReplay={openReplay} onOpenBuilder={openBuilder} onOpenLiveRun={openLiveRun} isFirstRun={isFirstRun} />
         )}
       </main>
     </div>
