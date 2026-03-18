@@ -195,14 +195,15 @@ export const config = {
 | Spec | Covers |
 |---|---|
 | `tests/e2e/specs/app.spec.js` | Smoke test — app launches, window title, root DOM element |
-| `tests/e2e/specs/run.spec.js` | Run flow — demo workflow visible, create/start run, node state transitions, HumanReview pause |
+| `tests/e2e/specs/run.spec.js` | Partial run flow — demo workflow visible plus create/start run coverage; event-log assertions still assume a Tauri command that is not yet registered |
 
 ### IPC access pattern in E2E tests
 
-Because `LibraryView` does not yet expose a "Start Run" button, run creation and
-start are invoked directly via `window.__TAURI_INTERNALS__.invoke()` inside
-`browser.executeAsync()`. Node state transitions are verified by polling
-`list_events_for_run` and inspecting `payload.new_status` on each event.
+`LibraryView` now exposes a Start Run button, but the current E2E run spec still
+uses `window.__TAURI_INTERNALS__.invoke()` inside `browser.executeAsync()` to set
+up runs deterministically. Some of that spec's assertions still rely on a planned
+`list_events_for_run` Tauri command, so event-log/replay coverage remains partial
+until that IPC surface is exposed.
 
 ### Test workspace fixture
 

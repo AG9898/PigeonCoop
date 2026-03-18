@@ -1,7 +1,7 @@
 {
   "project": {
     "name": "PigeonCoop",
-    "updated_at": "2026-03-07T00:00:00Z",
+    "updated_at": "2026-03-18T00:00:00Z",
     "source_docs": [
       "docs/README.md",
       "docs/PRD.md",
@@ -11,7 +11,8 @@
       "docs/DECISIONS.md",
       "docs/EVENT_SCHEMA.md",
       "docs/REPO_STRUCTURE.md",
-      "docs/TESTING.md"
+      "docs/TESTING.md",
+      "docs/TAURI_IPC_CONTRACT.md"
     ]
   },
   "statuses": [
@@ -27,67 +28,67 @@
     {
       "group_id": "FOUND",
       "title": "Foundations and repository scaffolding",
-      "description": "Core repo setup, workspace structure, and project baseline. Mostly complete."
+      "description": "Workspace scaffolding, schema files, example workflow, and CI baseline are in place."
     },
     {
       "group_id": "MODEL",
       "title": "Workflow model and schemas",
-      "description": "Rust types for WorkflowDefinition, NodeDefinition, RunInstance, and related structs. Core structs exist; RunInstance and typed node configs are missing."
+      "description": "Workflow, run, memory, constraints, and typed node-config models are implemented with unit coverage."
     },
     {
       "group_id": "EVENT",
       "title": "Event system and typed events",
-      "description": "Typed event families for replay, monitoring, and audit. Envelope exists; all typed event modules are placeholders."
+      "description": "Typed event families are implemented in the event-model crate; dedicated event-model test cleanup remains."
     },
     {
       "group_id": "ENGINE",
       "title": "Core execution engine",
-      "description": "State machines, scheduler, validation, execution coordinator, and guardrails. All placeholders."
+      "description": "State machines, validator, scheduler, coordinator, human review handling, and guardrails are implemented with broad tests."
     },
     {
       "group_id": "PERSIST",
       "title": "SQLite persistence layer",
-      "description": "Database schema, migrations, and repository access. All placeholders."
+      "description": "SQLite schema, migrations, and workflow/run/event repositories exist; settings repository and persistence-specific tests are still missing."
     },
     {
       "group_id": "ADAPT",
       "title": "Runtime adapters",
-      "description": "CLI shell adapter and agent CLI adapter for executing commands in a workspace. All placeholders."
+      "description": "Adapter trait plus CLI, tool, agent, and mock adapters exist; adapter tests and engine dispatch integration remain."
     },
     {
       "group_id": "TAURI",
       "title": "Tauri desktop shell and bridge",
-      "description": "Tauri command handlers and event bridge wiring the Rust engine to the React frontend. All stubs."
+      "description": "Workflow/run/review commands and the event bridge exist; replay event-log queries, settings/workspace commands, and real runtime adapter dispatch are not yet fully exposed through the desktop execution path."
     },
     {
       "group_id": "UI-BLD",
       "title": "Builder view",
-      "description": "React/TypeScript workflow builder canvas, node palette, property inspector, and save/load. Not started."
+      "description": "The builder shell, canvas, node rendering, and save/load flows exist; palette, inspector, validation feedback, and richer tests are still pending."
     },
     {
       "group_id": "UI-RUN",
       "title": "Live run monitor view",
-      "description": "Animated graph state, event feed, command output panel, and human review interaction. Not started."
+      "description": "The live view has a HUD, animated graph, event feed/detail inspector, and review overlay; command-output specific UX and complete tests remain."
     },
     {
       "group_id": "UI-RPL",
       "title": "Replay and debugging view",
-      "description": "Timeline scrubber, event inspector, graph playback, and diff panes. Not started."
+      "description": "Replay layout, scrubber, event list, and inspector exist in the frontend; graph playback, diff panes, and backend event-log wiring remain incomplete."
     },
     {
       "group_id": "UX",
       "title": "UX, library view, and distribution",
-      "description": "Library view, global keyboard navigation, visual theme, first-run experience, and distribution artifacts."
+      "description": "Library view, onboarding, keyboard UX, theming, and distribution tasks."
     },
     {
       "group_id": "DOCS",
       "title": "Documentation upkeep",
-      "description": "Keeping docs in sync with implementation as the system is built."
+      "description": "Keeping repo, IPC, testing, and schema docs aligned with implementation as it changes."
     },
     {
       "group_id": "TEST",
       "title": "Testing",
-      "description": "Rust unit tests, frontend component tests, and E2E tests via tauri-driver + WebdriverIO."
+      "description": "Rust unit tests, frontend component tests, and E2E coverage; several end-to-end flows are still partial."
     },
     {
       "group_id": "DEC",
@@ -896,7 +897,7 @@
       "priority": "high",
       "type": "implementation",
       "summary": "Implement the engine-side handler that pauses a run at HumanReview nodes and resumes on decision.",
-      "description": "Implement in crates/core-engine/src/review/. When a HumanReview node is reached: (1) emit review.required event with blocking=true, (2) transition node to Waiting state, (3) transition run to Paused state, (4) wait for an external signal (approve/reject/retry/edit_memory), (5) on receipt, apply the decision, emit the correct review event, and resume/fail/retry accordingly.",
+      "description": "Implement in crates/core-engine/src/review/. When a HumanReview node is reached: (1) emit review.required event with blocking=true, (2) transition node to Waiting state, (3) transition run to Paused state, (4) wait for an external signal (approve/reject/retry), (5) on receipt, apply the decision, emit the correct review event, and resume/fail/retry accordingly. Memory editing remains planned in the event model but is not handled by the current review coordinator.",
       "acceptance_criteria": [
         "Run correctly pauses at HumanReview nodes",
         "review.required event is emitted",
@@ -1097,10 +1098,10 @@
       "priority": "critical",
       "type": "implementation",
       "summary": "Implement an append-only event log repository supporting replay and timeline queries.",
-      "description": "The event log is the foundation of replay. Provide: append_event (insert-only, never update), list_events_for_run (ordered by timestamp), get_event_by_id, list_events_for_node. Store the full RunEvent JSON payload. Support pagination for large runs. Never allow deletion or mutation of stored events.",
+      "description": "The event log is the foundation of replay. Provide: append_event (insert-only, never update), list_events_for_run (ordered by per-run sequence), get_event_by_id, list_events_for_node. Store the full RunEvent JSON payload. Support pagination for large runs. Never allow deletion or mutation of stored events.",
       "acceptance_criteria": [
         "append_event inserts an event and never updates existing rows",
-        "list_events_for_run returns all events in timestamp order",
+        "list_events_for_run returns all events in sequence order",
         "Replay can reconstruct node states from stored events for the demo workflow",
         "Unit tests pass with in-memory SQLite"
       ],
@@ -1110,7 +1111,7 @@
       ],
       "blocked_by": [],
       "files": [
-        "crates/persistence/src/repositories/mod.rs"
+        "crates/persistence/src/repositories/events.rs"
       ],
       "docs": [
         "docs/ARCHITECTURE.md",
@@ -1347,13 +1348,13 @@
       "status": "done",
       "priority": "high",
       "type": "implementation",
-      "summary": "Implement Tauri command handlers for creating, starting, pausing, resuming, and cancelling runs.",
-      "description": "Add commands: create_run, start_run, pause_run, resume_run, cancel_run, get_run, list_runs. start_run initiates engine execution asynchronously — the engine emits events to the frontend via the event bridge. Commands must not block the frontend.",
+      "summary": "Implement Tauri command handlers for creating, starting, cancelling, and querying runs.",
+      "description": "Add commands: create_run, start_run, cancel_run, get_run, list_runs_for_workflow. start_run initiates engine execution asynchronously — the engine emits events to the frontend via the event bridge. Pause/resume remain internal engine transitions, not public Tauri commands in the current app. Commands must not block the frontend.",
       "acceptance_criteria": [
-        "All run lifecycle commands are registered with Tauri",
+        "create_run, start_run, cancel_run, get_run, and list_runs_for_workflow are registered with Tauri",
         "start_run launches engine execution without blocking the invoke() call",
         "cancel_run correctly signals the engine to stop",
-        "get_run returns current RunInstance state"
+        "get_run and list_runs_for_workflow return persisted RunInstance state"
       ],
       "depends_on": [
         "PERSIST-003",
@@ -1380,9 +1381,9 @@
       "priority": "high",
       "type": "implementation",
       "summary": "Implement Tauri commands for approve, reject, and retry decisions on HumanReview nodes.",
-      "description": "Add commands: submit_review_decision(run_id, node_id, decision: approve|reject|retry|edit_memory). The command signals the engine's human review gate handler to resume execution. Return the updated run state to the frontend.",
+      "description": "Add command: submit_human_review_decision(run_id, node_id, decision: approve|reject|retry). The command signals the engine's human review gate handler to resume execution. It currently returns void on success. Memory editing remains planned in the event model but is not accepted by the backend command yet.",
       "acceptance_criteria": [
-        "submit_review_decision command is registered",
+        "submit_human_review_decision command is registered",
         "Approve signals the engine to resume the run",
         "Reject signals the engine to fail the run",
         "Retry signals the engine to re-queue the predecessor node",
@@ -1468,6 +1469,55 @@
       "notes": [],
       "commands": [],
       "estimate": "S"
+    },
+    {
+      "id": "TAURI-006",
+      "group_id": "TAURI",
+      "title": "Wire runtime adapter dispatch into desktop execution",
+      "status": "todo",
+      "priority": "critical",
+      "type": "implementation",
+      "summary": "Replace the desktop app's stub node completion path with real runtime adapter dispatch so Tool and Agent nodes can execute actual workspace tasks.",
+      "description": "The adapter layer exists in crates/runtime-adapters and the engine execution module already defines a NodeExecutor abstraction, but apps/desktop/src-tauri/src/commands/mod.rs still auto-completes nodes with a 1 ms success stub. Wire the desktop execution path to dispatch Tool nodes through the CLI/tool adapter and Agent nodes through the agent CLI adapter, using real adapter results to drive node/run success, failure, retries, and emitted command/agent events. Keep HumanReview behavior intact. This is the gate between the current demo-only run loop and real task execution from the desktop app.",
+      "acceptance_criteria": [
+        "The hardcoded complete_node_success(…, 1) stub is removed from the desktop run loop",
+        "Tool nodes execute through the runtime adapter layer against the selected workspace_root",
+        "Agent nodes execute through the agent CLI adapter and surface agent events",
+        "Adapter exit codes and errors drive node/run failure states instead of unconditional success",
+        "Command and agent events emitted during execution reach the existing Tauri event bridge",
+        "Retry and human-review flows still function when execution is adapter-backed"
+      ],
+      "depends_on": [
+        "ENGINE-004",
+        "ADAPT-002",
+        "ADAPT-003",
+        "TAURI-002",
+        "TAURI-004",
+        "DEC-005"
+      ],
+      "blocked_by": [],
+      "files": [
+        "apps/desktop/src-tauri/src/commands/mod.rs",
+        "crates/core-engine/src/execution/mod.rs",
+        "crates/runtime-adapters/src/cli/mod.rs",
+        "crates/runtime-adapters/src/agent.rs",
+        "crates/runtime-adapters/src/tools/mod.rs"
+      ],
+      "docs": [
+        "docs/ARCHITECTURE.md",
+        "docs/TESTING.md",
+        "AGENTS.md"
+      ],
+      "notes": [
+        "This task is the explicit gate between the current stubbed demo workflow and real task execution in the desktop app.",
+        "Do not treat ADAPT-002 or ADAPT-003 as sufficient for end-to-end execution until this task is complete."
+      ],
+      "commands": [
+        "cargo test -p core-engine",
+        "cargo test -p runtime-adapters",
+        "cargo tauri build --debug"
+      ],
+      "estimate": "L"
     },
     {
       "id": "UI-BLD-001",
@@ -1664,8 +1714,8 @@
       "status": "todo",
       "priority": "medium",
       "type": "testing",
-      "summary": "Vitest + React Testing Library tests for the Builder view components.",
-      "description": "Write tests in apps/desktop/src/__tests__/. Mock Tauri invoke(). Test: canvas renders a workflow definition, node palette creates nodes, node selection opens inspector, edge creation adds an edge to graph state, validation error display. Use the Tauri API mock pattern from TESTING.md.",
+      "summary": "Builder tests exist for save/load flows, but palette, inspector, and validation cases are still missing.",
+      "description": "Write tests in apps/desktop/src/__tests__/. The current BuilderView tests mock Tauri invoke() and cover save/load flows, picker behavior, and error states. Coverage for node palette creation, inspector editing, edge creation, and validation feedback will follow as those builder features land.",
       "acceptance_criteria": [
         "npm test passes for builder-related tests",
         "All Tauri invoke() calls are mocked",
@@ -1680,7 +1730,7 @@
       ],
       "blocked_by": [],
       "files": [
-        "apps/desktop/src/__tests__/"
+        "apps/desktop/src/__tests__/BuilderView.test.tsx"
       ],
       "docs": [
         "docs/TESTING.md"
@@ -1760,8 +1810,8 @@
       "status": "todo",
       "priority": "medium",
       "type": "implementation",
-      "summary": "Implement a scrolling event feed panel showing live events as they arrive.",
-      "description": "Render a chronological event feed as events are received. Show event_type, timestamp, associated node label, and a summary of the payload. Auto-scroll to the latest event. Allow clicking an event to show full payload details. Color-code by event family.",
+      "summary": "Live Run already renders an auto-scrolling event feed with selectable event detail; richer summaries and family-specific styling are still missing.",
+      "description": "Render a chronological event feed as events are received. The current implementation shows sequence, event_type, and node id, auto-scrolls to the latest event, and allows clicking an event to inspect the full payload. Remaining work includes timestamps, node labels, payload summaries, and event-family color coding.",
       "acceptance_criteria": [
         "Events appear in the feed as they are received",
         "Feed auto-scrolls to latest event",
@@ -1773,7 +1823,7 @@
       ],
       "blocked_by": [],
       "files": [
-        "apps/desktop/src/components/panels/EventFeed.tsx"
+        "apps/desktop/src/views/LiveRunView.tsx"
       ],
       "docs": [
         "docs/DESIGN_SPEC.md"
@@ -1789,8 +1839,8 @@
       "status": "todo",
       "priority": "medium",
       "type": "implementation",
-      "summary": "Implement a terminal-like output panel showing stdout/stderr from the active node.",
-      "description": "Show stdout and stderr streams from command events in a scrollable panel. Separate stdout and stderr visually if available. Show timestamps or event associations. Support copy/select. Allow collapse/expand for noisy output. Link output to the originating node. Per DESIGN_SPEC.md §9.",
+      "summary": "The live view has a generic event detail panel; a dedicated stdout/stderr output surface is still pending.",
+      "description": "Show stdout and stderr streams from command events in a scrollable panel. The current implementation exposes generic event payload detail, which is enough to inspect command events manually, but it does not yet separate stdout/stderr, provide terminal-like affordances, or support collapse/expand behavior.",
       "acceptance_criteria": [
         "Stdout and stderr from command events appear in the panel",
         "Panel is within the app layout, not full-screen",
@@ -1804,7 +1854,7 @@
         "DEC-004"
       ],
       "files": [
-        "apps/desktop/src/components/panels/OutputPanel.tsx"
+        "apps/desktop/src/views/LiveRunView.tsx"
       ],
       "docs": [
         "docs/DESIGN_SPEC.md"
@@ -1823,7 +1873,7 @@
       "priority": "high",
       "type": "implementation",
       "summary": "Implement the human review UI that surfaces when the run is paused at a HumanReview node.",
-      "description": "When a review.required event arrives, surface a modal or prominent panel showing: reason for review, relevant outputs and memory from the current run, and action buttons (Approve, Reject, Retry). Keyboard shortcuts for each action. Actions call submit_review_decision via Tauri. Per DESIGN_SPEC.md §10.",
+      "description": "When a review.required event arrives, surface a modal or prominent panel showing: reason for review, relevant outputs and memory from the current run, and action buttons (Approve, Reject, Retry). Keyboard shortcuts for each action. Actions call submit_human_review_decision via Tauri. Per DESIGN_SPEC.md §10.",
       "acceptance_criteria": [
         "review.required event triggers the review panel",
         "Panel shows reason, outputs, and available actions",
@@ -1853,8 +1903,8 @@
       "status": "todo",
       "priority": "medium",
       "type": "testing",
-      "summary": "Vitest + React Testing Library tests for the Live Run view components.",
-      "description": "Mock Tauri event subscriptions and invoke(). Test: node state badges render correctly for each NodeStatus, event feed populates from mocked events, human review panel appears on review.required, command output panel shows stdout/stderr content.",
+      "summary": "Live Run tests cover HUD, event streaming, and review interactions; command-output specific assertions remain pending.",
+      "description": "Mock Tauri event subscriptions and invoke(). The current tests cover placeholder state, HUD loading, event subscriptions, event-feed population, event-detail selection, and human-review shortcuts. Dedicated stdout/stderr output-panel assertions remain pending because the live view still uses a generic detail panel.",
       "acceptance_criteria": [
         "npm test passes for live run tests",
         "All 8 node state visuals are tested",
@@ -1869,7 +1919,7 @@
       ],
       "blocked_by": [],
       "files": [
-        "apps/desktop/src/__tests__/"
+        "apps/desktop/src/__tests__/LiveRunView.test.tsx"
       ],
       "docs": [
         "docs/TESTING.md"
@@ -1884,11 +1934,11 @@
       "id": "UI-RPL-001",
       "group_id": "UI-RPL",
       "title": "Replay view layout and event loading",
-      "status": "done",
+      "status": "todo",
       "priority": "high",
       "type": "implementation",
-      "summary": "Implement the Replay view shell that loads a completed run's event log for inspection.",
-      "description": "Create the Replay view with panels: timeline scrubber, event list, graph playback, and event detail inspector. On entering replay view for a run, invoke list_events_for_run and load the event sequence into local state. All state in replay view is derived from the stored event sequence — never from current engine state.",
+      "summary": "The Replay view shell exists on the frontend, but event-log loading is ahead of the current Tauri wiring.",
+      "description": "Create the Replay view with panels: timeline scrubber, event list, graph playback, and event detail inspector. The frontend currently invokes list_events_for_run and can render the resulting event sequence locally, but the backend Tauri command is not yet registered, so replay is not end-to-end complete.",
       "acceptance_criteria": [
         "Replay view is accessible from the Library view",
         "Events for the selected run are loaded via Tauri command",
@@ -1916,11 +1966,11 @@
       "id": "UI-RPL-002",
       "group_id": "UI-RPL",
       "title": "Timeline scrubber component",
-      "status": "done",
+      "status": "todo",
       "priority": "high",
       "type": "implementation",
-      "summary": "Implement a timeline scrubber that navigates the event sequence by position or event.",
-      "description": "Implement a scrubber component that allows the user to move backward and forward through the event sequence. Scrubbing to a position derives node states at that moment by replaying events up to that point. Support keyboard-based scrubbing (arrow keys). Per DESIGN_SPEC.md §4.3.",
+      "summary": "The scrubber UI and keyboard controls are implemented; graph playback from scrub position is still pending.",
+      "description": "Implement a scrubber component that allows the user to move backward and forward through the event sequence. The current component supports buttons, a range input, and keyboard-based scrubbing. Deriving graph state from the selected position remains future work in ReplayView.",
       "acceptance_criteria": [
         "Scrubber moves forward/backward through events",
         "Keyboard arrow keys scrub the timeline",
@@ -1949,8 +1999,8 @@
       "status": "todo",
       "priority": "medium",
       "type": "implementation",
-      "summary": "Implement an event inspector showing full payload details and input/output diff panes for the selected event.",
-      "description": "When an event is selected in the replay view, show the full event payload (formatted JSON), and for node.started/node.succeeded events, show input and output diffs or memory state changes. Support inspecting: routing decisions, command details, agent outputs, memory reads/writes, and review actions.",
+      "summary": "Selected-event inspection exists; diff panes and richer typed context are still pending.",
+      "description": "When an event is selected in the replay view, the current implementation shows the full event payload as formatted JSON. Input/output diff panes, memory-change views, and specialized rendering for routing, command, agent, and review events remain to be added.",
       "acceptance_criteria": [
         "Selected event shows full typed payload",
         "Node-related events show input/output context",
@@ -1962,7 +2012,7 @@
       ],
       "blocked_by": [],
       "files": [
-        "apps/desktop/src/components/panels/EventInspector.tsx"
+        "apps/desktop/src/views/ReplayView.tsx"
       ],
       "docs": [
         "docs/DESIGN_SPEC.md",
@@ -1979,8 +2029,8 @@
       "status": "todo",
       "priority": "medium",
       "type": "testing",
-      "summary": "Vitest + React Testing Library tests for the Replay view.",
-      "description": "Mock list_events_for_run response with a fixed event sequence. Test: events load and populate the timeline, scrubber position changes update graph node states, clicking an event shows its payload in the inspector.",
+      "summary": "Replay tests cover event loading and event selection; graph-playback assertions are still pending.",
+      "description": "Mock list_events_for_run response with a fixed event sequence. The current ReplayView tests cover loading, chronological rendering, scrubber initialization, and event-detail selection. Tests for graph/node-state playback from scrub position will follow when replay reconstruction is implemented.",
       "acceptance_criteria": [
         "npm test passes for replay tests",
         "Scrubber position affects node states (tested with mocked event sequence)",
@@ -1993,7 +2043,7 @@
       ],
       "blocked_by": [],
       "files": [
-        "apps/desktop/src/__tests__/"
+        "apps/desktop/src/__tests__/ReplayView.test.tsx"
       ],
       "docs": [
         "docs/TESTING.md"
@@ -2043,8 +2093,8 @@
       "status": "todo",
       "priority": "medium",
       "type": "implementation",
-      "summary": "Implement keyboard shortcuts for all major actions across all views.",
-      "description": "Implement keyboard-driven navigation per DESIGN_SPEC.md §13: (1) view switching shortcuts, (2) canvas navigation (arrow keys, zoom), (3) node selection and connection, (4) run start/stop/pause, (5) human review approve/reject, (6) timeline scrubbing in Replay. A power user should complete a full workflow — build, run, inspect, replay — primarily by keyboard.",
+      "summary": "View switching, human-review actions, and replay scrubbing are keyboard-accessible; broader keyboard-first coverage is still pending.",
+      "description": "Implement keyboard-driven navigation per DESIGN_SPEC.md §13: (1) view switching shortcuts, (2) canvas navigation (arrow keys, zoom), (3) node selection and connection, (4) run start/stop/pause, (5) human review approve/reject, (6) timeline scrubbing in Replay. The current app supports view switching, human review shortcuts, and replay scrubbing, but canvas navigation and run-control shortcuts are not implemented yet.",
       "acceptance_criteria": [
         "View switching is keyboard-accessible",
         "Canvas can be navigated without a mouse",
@@ -2060,7 +2110,9 @@
       ],
       "blocked_by": [],
       "files": [
-        "apps/desktop/src/hooks/useKeybindings.ts"
+        "apps/desktop/src/app/App.tsx",
+        "apps/desktop/src/components/panels/HumanReviewPanel.tsx",
+        "apps/desktop/src/components/panels/TimelineScrubber.tsx"
       ],
       "docs": [
         "docs/DESIGN_SPEC.md"
@@ -2175,11 +2227,11 @@
       "id": "DOCS-001",
       "group_id": "DOCS",
       "title": "Keep REPO_STRUCTURE.md in sync with actual layout",
-      "status": "todo",
+      "status": "done",
       "priority": "low",
       "type": "docs",
-      "summary": "Update REPO_STRUCTURE.md to reflect the actual repository layout as implementation progresses.",
-      "description": "As new files and directories are created, update docs/REPO_STRUCTURE.md. Specifically: add apps/desktop/src/views/, components/, hooks/, state/; add tests/e2e/; confirm crate module structures. Run this update after each major phase completes.",
+      "summary": "REPO_STRUCTURE.md reflects the current repository layout.",
+      "description": "docs/REPO_STRUCTURE.md has been reconciled with the actual repository. It now documents the current desktop frontend folders, Tauri bridge layout, runtime adapter modules, persistence migration location, and E2E fixture/test directories.",
       "acceptance_criteria": [
         "REPO_STRUCTURE.md matches the actual directory layout",
         "All new view, component, and hook directories are documented"
@@ -2319,11 +2371,11 @@
       "id": "TEST-003",
       "group_id": "TEST",
       "title": "E2E test: run flow and node state transitions",
-      "status": "done",
+      "status": "todo",
       "priority": "high",
       "type": "testing",
-      "summary": "E2E test loading the demo workflow, starting a run, and verifying node state transitions.",
-      "description": "Write a WebdriverIO spec that: loads the plan-execute-critique-approve workflow, selects a test workspace, starts a run, and asserts that each node transitions through correct states (queued, running, waiting/succeeded). Use a dedicated test workspace — never a real project.",
+      "summary": "A run-flow E2E spec exists, but its event-log assertions depend on an unregistered Tauri command.",
+      "description": "Write a WebdriverIO spec that: loads the plan-execute-critique-approve workflow, selects a test workspace, starts a run, and asserts that each node transitions through correct states (queued, running, waiting/succeeded). The current spec file exists and covers most of that flow, but it still assumes list_events_for_run is available over Tauri IPC, which is not true in the current desktop build. This task validates the demo/stubbed run path; real adapter-backed execution is separately gated by TAURI-006.",
       "acceptance_criteria": [
         "Demo workflow loads and run starts",
         "Node states are observed transitioning via the live run view",
@@ -2342,7 +2394,9 @@
       "docs": [
         "docs/TESTING.md"
       ],
-      "notes": [],
+      "notes": [
+        "This task does not prove real Tool/Agent execution. TAURI-006 is the gate for adapter-backed desktop execution."
+      ],
       "commands": [
         "cd tests/e2e && npm test"
       ],
@@ -2431,14 +2485,18 @@
         "TEST-003",
         "UI-RUN-002"
       ],
-      "blocked_by": [],
+      "blocked_by": [
+        "TAURI-006"
+      ],
       "files": [
         "tests/e2e/specs/failure.spec.js"
       ],
       "docs": [
         "docs/TESTING.md"
       ],
-      "notes": [],
+      "notes": [
+        "A real failing Tool node requires adapter-backed desktop execution. This task should not be picked up before TAURI-006."
+      ],
       "commands": [
         "cd tests/e2e && npm test"
       ],
@@ -2594,7 +2652,7 @@
       "priority": "critical",
       "estimate": "S",
       "summary": "Define and document every Tauri invoke() command and listen() event payload before any run-lifecycle or event-bridge implementation begins.",
-      "description": "Create docs/TAURI_IPC_CONTRACT.md that specifies:\n1. Every invoke() command name, its exact Rust argument struct (as TypeScript interface), and return type.\n2. Every listen() event name emitted by the backend, its exact payload shape, and which frontend component subscribes.\n3. Error variant shapes returned from each command (Tauri serialises Rust Result::Err as a string or typed object — document which).\n\nThe contract must cover at minimum:\n- create_run / start_run / cancel_run / get_run / list_runs_for_workflow\n- get_run_events (for replay)\n- submit_human_review_decision\n- Events: run_status_changed, node_status_changed, run_event_appended, human_review_requested\n\nThe TypeScript interfaces defined here become the canonical source for UI-RUN, UI-RPL, and TAURI-002/003/004 implementation. Any deviation between Rust impl and this contract is a bug, not a design choice.\n\nAlso create apps/desktop/src/types/ipc.ts mirroring every interface from the contract so TypeScript consumers have a typed invoke wrapper rather than casting unknown at every call site.",
+      "description": "Create docs/TAURI_IPC_CONTRACT.md that specifies:\n1. Every invoke() command name, its exact Rust argument struct (as TypeScript interface), and return type.\n2. Every listen() event name emitted by the backend, its exact payload shape, and which frontend component subscribes.\n3. Error variant shapes returned from each command (Tauri serialises Rust Result::Err as a string or typed object — document which).\n\nThe contract must cover at minimum:\n- create_run / start_run / cancel_run / get_run / list_runs_for_workflow\n- list_events_for_run (for replay; currently planned rather than registered)\n- submit_human_review_decision\n- Events: run_status_changed, node_status_changed, run_event_appended, human_review_requested\n\nThe TypeScript interfaces defined here become the canonical source for UI-RUN, UI-RPL, and TAURI-002/003/004 implementation. Any deviation between Rust impl and this contract is a bug, not a design choice.\n\nAlso create apps/desktop/src/types/ipc.ts mirroring every interface from the contract so TypeScript consumers have a typed invoke wrapper rather than casting unknown at every call site.",
       "acceptance_criteria": [
         "docs/TAURI_IPC_CONTRACT.md exists and covers all run-lifecycle and event-bridge commands/events",
         "apps/desktop/src/types/ipc.ts exports TypeScript interfaces for every invoke arg, return, and event payload",

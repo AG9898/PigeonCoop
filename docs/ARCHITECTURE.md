@@ -360,7 +360,7 @@ Representative execution flow:
 9. engine emits `edge.routed`
 10. next node(s) activate
 11. run continues until terminal condition
-12. engine emits `run.completed` or `run.failed`
+12. engine emits `run.succeeded`, `run.failed`, or `run.cancelled`
 
 This flow must be reconstructable from persisted events.
 
@@ -418,15 +418,18 @@ Purpose:
 Key panels:
 - timeline scrubber
 - event inspector
-- node state playback
-- command/prompt/output details
+- event list
+- command/payload details
 
 Implementation notes (UI-RPL-001):
 - `apps/desktop/src/views/ReplayView.tsx`
 - Accepts `runId: string | null` prop from App shell
-- On mount/runId change, calls `invoke("list_events_for_run", { runId, offset, limit })` to load events
-- All state is derived from the persisted event sequence — never from live engine state
+- On mount/runId change, the frontend currently calls `invoke("list_events_for_run", { runId, offset, limit })`
+- The matching Tauri command is not yet registered, so replay wiring is currently ahead of the backend IPC surface
+- All replay state is intended to be derived from the persisted event sequence — never from live engine state
 - Scrubber starts at index 0 (first event); prev/next buttons + range input control position
+- Current frontend implementation renders the event list, selected-event detail, and scrubber chrome
+- Graph playback and diff panes remain planned work on top of the current shell
 - Accessible from Library view via "Open in Replay" button (`LibraryView.onOpenReplay` callback)
 - `RunEvent` and `RunInstance` types defined in `apps/desktop/src/types/workflow.ts`
 

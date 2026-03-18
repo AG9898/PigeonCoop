@@ -7,43 +7,56 @@
   workflows/
     ci.yml               # CI: cargo test (--exclude agent-arcade) + npm test
 
+AGENTS.md
+CLAUDE.md               # Symlink to AGENTS.md
+Cargo.lock
+Cargo.toml
+
 docs/
-  AGENTS.md
-  PRD.md
   ARCHITECTURE.md
+  DECISIONS.md
   DESIGN_SPEC.md
   EVENT_SCHEMA.md
+  PRD.md
+  README.md
   REPO_STRUCTURE.md
-  DECISIONS.md
   TAURI_IPC_CONTRACT.md
   TESTING.md
-  README.md
+  workboard.json
 
 apps/
   desktop/
-    dist/                    # Frontend build output (placeholder until npm run build)
+    package-lock.json
     package.json
     src/
+      __mocks__/
+      __tests__/
       app/
       components/
+        canvas/
+        nodes/
+        panels/
       data/               # Embedded static data (e.g. demo workflow for first-run seeding)
-      views/
       hooks/              # React hooks (e.g. useFirstRun for demo seeding)
-      state/
+      main.tsx
       styles/
+      types/
+      views/
     src-tauri/
       build.rs               # Required: calls tauri_build::build() for generate_context!()
       Cargo.toml
+      gen/
+        schemas/
       tauri.conf.json        # Tauri app config (read at compile time by generate_context!())
       icons/
         icon.png             # App icon (RGBA PNG required by tauri_build)
       src/
-        main.rs
-        lib.rs               # Tauri setup, invoke_handler registration
-        commands/
-          mod.rs             # All Tauri command handlers
         bridge/
           mod.rs             # TauriEventLog + frontend event payload types
+        commands/
+          mod.rs             # All Tauri command handlers
+        lib.rs               # Tauri setup, invoke_handler registration
+        main.rs
 
 crates/
   workflow-model/
@@ -62,10 +75,13 @@ crates/
       agent.rs        # Agent CLI adapter (ADAPT-003)
       cli/
       mock/
+      tools/
   persistence/
+    migrations/
+      001_initial_schema.sql
     src/
-      sqlite/
       repositories/
+      sqlite/
   simulation/
     src/
 
@@ -80,6 +96,10 @@ examples/
 
 tests/
   e2e/
+    fixtures/
+      test-workspace/
+    package-lock.json
+    package.json
     specs/                   # WebdriverIO E2E test specs
     wdio.conf.js             # tauri-driver + WebdriverIO config
 ```
@@ -89,7 +109,7 @@ tests/
 ## Structure rationale
 
 ### Root docs
-Keep the core markdown docs in the root during early development so implementation agents and contributors see them immediately.
+Core product and architecture docs live under `docs/`, while `AGENTS.md` remains at the repository root so implementation agents see it immediately.
 
 ### `apps/desktop`
 Contains the Tauri application and frontend. Avoid putting core engine logic here beyond bridge concerns.

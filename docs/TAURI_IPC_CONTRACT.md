@@ -306,13 +306,13 @@ workflow_id: String,  // UUID
 
 ---
 
-### Event log (TAURI-003)
+### Event log (planned; not yet registered)
 
 ---
 
 #### `list_events_for_run`
 
-Paginated event log for a run, ordered by `sequence ASC`. Used by Replay View.
+Planned paginated event log for a run, ordered by `sequence ASC`. The persistence repository implements this query, and the frontend Replay view already expects it, but the Tauri `invoke_handler` does not currently register this command.
 
 **Rust arg struct:**
 ```rust
@@ -365,13 +365,12 @@ node_id: String,  // UUID
 decision: HumanReviewDecision,
 ```
 
-Where `HumanReviewDecision` is:
+Where the backend currently accepts:
 ```rust
 pub enum HumanReviewDecision {
     Approved,
     Rejected,
     RetryRequested,
-    Edited { memory_patch: serde_json::Value },
 }
 ```
 
@@ -380,14 +379,18 @@ pub enum HumanReviewDecision {
 { run_id: string; node_id: string; decision: HumanReviewDecision }
 ```
 
-Where `HumanReviewDecision` is:
+Where the backend currently accepts:
 ```ts
 type HumanReviewDecision =
   | { type: "approved" }
   | { type: "rejected" }
-  | { type: "retry_requested" }
-  | { type: "edited"; memory_patch: unknown };
+  | { type: "retry_requested" };
 ```
+
+Note:
+- `apps/desktop/src/types/ipc.ts` still carries a planned `{ type: "edited"; memory_patch: unknown }` variant.
+- The Rust command layer does not currently deserialize or handle that variant.
+- `human_review_requested.available_actions` may still include `"edit_memory"` because the event model supports it, but the submit command does not yet accept it.
 
 **Return type:** `void`
 

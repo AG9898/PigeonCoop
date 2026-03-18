@@ -14,13 +14,11 @@
 //   Never points at a real project directory.
 //
 // Implementation note:
-//   LibraryView does not yet expose a "Start Run" button. Until it does, the
-//   test creates and starts the run directly via Tauri IPC using
-//   browser.executeAsync(). Node state transitions are verified both via IPC
-//   polling and via the Live Run View UI (once the run ID is injected through
-//   the IPC-level approach). HumanReviewPanel observation is via the UI element
-//   [data-testid="human-review-panel"] which is rendered by LiveRunView when a
-//   `human_review_requested` event arrives for the active runId.
+//   LibraryView now exposes a "Start Run" button, but this spec still creates
+//   and starts the run directly via Tauri IPC using browser.executeAsync() so
+//   setup stays deterministic. Some assertions below still rely on a planned
+//   `list_events_for_run` IPC command that is not currently registered by the
+//   desktop app.
 
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -199,20 +197,14 @@ describe('Agent Arcade — run flow and node state transitions', () => {
       expect(text).toBe('LIVE RUN');
     });
 
-    // NOTE: The following assertions require a Start Run button in LibraryView
-    // that calls openLiveRun(runId) to wire the run ID into the LiveRunView.
-    // Until that UI path exists, the LiveRunView renders the placeholder (no
-    // active run selected via UI interaction). These tests document the
-    // intended behaviour and will pass once TAURI-002 / UI plumbing is complete.
-    //
-    // Tracking: add a "Start Run" button to LibraryView that sets liveRunId in
-    // App.tsx state. See ARCHITECTURE.md §10.4.
+    // NOTE: The UI path for starting a run now exists in LibraryView, but this
+    // spec still bypasses it and drives the run through IPC. That means the
+    // live view here is only partially wired to the active run unless the test
+    // also navigates through the UI-owned run-selection state.
 
     it('HumanReviewPanel appears when run_id is linked to the view', async () => {
-      // This assertion is aspirational: it will pass once the Library exposes a
-      // "Start Run" button that navigates to the Live Run view with the run ID.
-      // For now we verify that the panel element is NOT shown when no run is
-      // linked (i.e. the conditional rendering is correct).
+      // This remains limited by how the spec injects run state: the panel only
+      // renders when the active runId is linked through the UI shell.
       const panel = await $('[data-testid="human-review-panel"]');
       // Expect not to exist when no runId is passed to LiveRunView.
       const exists = await panel.isExisting();
