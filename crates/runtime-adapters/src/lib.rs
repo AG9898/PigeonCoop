@@ -6,6 +6,9 @@ pub mod cli;
 pub mod tools;
 pub mod mock;
 
+#[cfg(test)]
+pub mod tests;
+
 use std::future::Future;
 use std::pin::Pin;
 

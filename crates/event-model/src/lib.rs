@@ -10,3 +10,6 @@ pub mod human_review_events;
 pub mod guardrail_events;
 pub mod memory_events;
 pub mod agent_events;
+
+#[cfg(test)]
+mod tests;

@@ -43,6 +43,25 @@ cargo test -p core-engine scheduler  # specific module
 - Mock CLI adapter execution; do not spawn real processes in unit tests
 - Keep tests deterministic — no timers, no randomness, no external I/O
 
+### runtime-adapters test suite (ADAPT-004)
+
+The `runtime-adapters` crate has tests at two levels:
+
+**Inline tests** (in each module):
+- `cli/mod.rs` — prepare/execute/abort for CliAdapter; stdout, stderr, nonzero exit, timeout
+- `mock/mod.rs` — MockAdapter configure/emit/error
+- `agent.rs` — AgentCliAdapter prepare, execute, output modes, timeout
+
+**Dedicated test suite** (`src/tests/`):
+- `cli_adapter.rs` — **strict event ordering** (Prepared → Started → Stdout* → Completed, Prepared → Started → Failed on timeout), timeout reason string assertions, stderr event emission, nonzero exit behavior
+- `mock_adapter.rs` — MockAdapter via `dyn Adapter` trait dispatch, event emission order preservation, empty/multi-event configs, abort idempotency
+
+**Running specific test groups:**
+```bash
+cargo test -p runtime-adapters tests::cli_adapter    # strict ordering + timeout reason
+cargo test -p runtime-adapters tests::mock_adapter   # mock/dyn-trait tests
+```
+
 ### core-engine test suite (ENGINE-008)
 
 The `core-engine` crate has comprehensive unit tests organized in two layers:
@@ -186,7 +205,7 @@ export const config = {
 ### Priority E2E flows for v1
 1. **Builder flow** — open app, create a workflow with all node types, save it
 2. **Run flow** — load the demo workflow, start a run, observe node state transitions (**implemented: `tests/e2e/specs/run.spec.js`**)
-3. **Human review gate** — run reaches a Human Review node, user approves, run continues
+3. **Human review gate** — run reaches a Human Review node, user approves, run continues (**implemented: `tests/e2e/specs/review.spec.js`**)
 4. **Replay flow** — open a completed run, scrub the timeline, inspect events
 5. **Failure handling** — run a workflow where a Tool node fails, verify Failed state is shown
 
@@ -196,6 +215,7 @@ export const config = {
 |---|---|
 | `tests/e2e/specs/app.spec.js` | Smoke test — app launches, window title, root DOM element |
 | `tests/e2e/specs/run.spec.js` | Partial run flow — demo workflow visible plus create/start run coverage; event-log assertions still assume a Tauri command that is not yet registered |
+| `tests/e2e/specs/review.spec.js` | Human review gate — run pauses at HumanReview, panel visible, Approve clicked, run resumes to Succeeded |
 
 ### IPC access pattern in E2E tests
 
