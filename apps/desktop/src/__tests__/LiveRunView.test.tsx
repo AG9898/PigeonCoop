@@ -444,8 +444,8 @@ describe("LiveRunView", () => {
     );
     expect(reviewCall).toBeTruthy();
     expect((reviewCall as unknown[])[1]).toMatchObject({
-      run_id: "aaaa-1111",
-      node_id: "node-review",
+      runId: "aaaa-1111",
+      nodeId: "node-review",
       decision: { type: "approved" },
     });
 

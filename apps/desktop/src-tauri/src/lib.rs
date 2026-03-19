@@ -34,6 +34,8 @@ pub fn run() {
             commands::list_runs_for_workflow,
             // Human review (TAURI-003)
             commands::submit_human_review_decision,
+            // Event log / replay (UI-RPL-001)
+            commands::list_events_for_run,
         ])
         .run(tauri::generate_context!())
         .expect("error while running agent arcade");

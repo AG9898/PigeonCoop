@@ -173,6 +173,43 @@ describe("LibraryView — Replay access", () => {
   });
 });
 
+describe("ReplayView — graph state panel", () => {
+  it("shows no-node-events message when no node events have occurred at scrub position 0", async () => {
+    // SAMPLE_EVENTS[0] is run.started (no node_id), so graph state should be empty
+    mockInvoke.mockResolvedValueOnce(SAMPLE_EVENTS);
+    render(<ReplayView runId="run-abc" />);
+    await waitFor(() => screen.getAllByText("run.started"));
+    const panel = screen.getByTestId("graph-state-panel");
+    expect(panel.textContent).toContain("No node events up to this point.");
+  });
+
+  it("shows node state after scrubbing to a node event", async () => {
+    mockInvoke.mockResolvedValueOnce(SAMPLE_EVENTS);
+    render(<ReplayView runId="run-abc" />);
+    await waitFor(() => screen.getByText("node.queued"));
+    // Click the second event (node.queued for node-start)
+    fireEvent.click(screen.getAllByRole("option")[1]);
+    const panel = screen.getByTestId("graph-state-panel");
+    expect(panel.textContent).toContain("node-start");
+    expect(panel.textContent).toContain("queued");
+  });
+
+  it("updates node state when scrubber advances to a later node event", async () => {
+    mockInvoke.mockResolvedValueOnce(SAMPLE_EVENTS);
+    render(<ReplayView runId="run-abc" />);
+    await waitFor(() => screen.getByText("node.succeeded"));
+    // Click the third event (node.succeeded for node-start)
+    fireEvent.click(screen.getAllByRole("option")[2]);
+    const nodeItem = screen.getByTestId("node-state-node-start");
+    expect(nodeItem.textContent).toContain("succeeded");
+  });
+
+  it("graph state panel is present in the DOM", async () => {
+    render(<ReplayView runId={null} />);
+    expect(screen.getByTestId("graph-state-panel")).toBeTruthy();
+  });
+});
+
 describe("App — Library to Replay navigation", () => {
   it("navigates from Library to Replay when a run's Replay button is clicked", async () => {
     mockInvoke.mockImplementation((cmd: string) => {

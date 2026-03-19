@@ -39,6 +39,7 @@ export function demWorkflowJson(): string {
         label: "Plan",
         config: {
           prompt: "Analyze the repository task and produce a plan.",
+          command: "true",
         },
         input_contract: { task: "string" },
         output_contract: { plan: "string" },
@@ -67,6 +68,7 @@ export function demWorkflowJson(): string {
         config: {
           prompt:
             "Critique the tool output and decide if it meets requirements.",
+          command: "true",
         },
         input_contract: { tool_result: "string" },
         output_contract: { verdict: "string", passed: "boolean" },

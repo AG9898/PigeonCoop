@@ -230,6 +230,53 @@ The raw stdout is always captured in `AdapterOutput.stdout` regardless of `outpu
 
 ---
 
+### 2026-03-19 — Tauri 2.x IPC argument casing: camelCase from JavaScript
+
+**Context:** Tauri 2.x `#[tauri::command]` applies `rename_all = "camelCase"` when deserializing arguments from JavaScript. This means `invoke("create_run", { workflow_id: ..., workspace_root: ... })` silently fails — the Rust handler receives `None` for all fields. The correct call is `invoke("create_run", { workflowId: ..., workspaceRoot: ... })`.
+
+This was not obvious because:
+- The Rust struct fields keep their snake_case names
+- Tauri does not emit a warning or error when a camelCase key has no matching field — it just uses the default value (`None`/`""`)
+- The IPC contract doc used snake_case TypeScript interfaces (now corrected)
+
+**Decision:** All TypeScript call sites must send camelCase argument keys. The `apps/desktop/src/types/ipc.ts` interfaces are the canonical source — they are defined with camelCase keys. The `TAURI_IPC_CONTRACT.md` TypeScript arg interfaces have been corrected to reflect this.
+
+**Rule:** When adding a new `#[tauri::command]`, verify that the TypeScript call site uses camelCase for every arg key. Never test with the Rust struct field names directly from JS.
+
+---
+
+### 2026-03-19 — LiveRunView polling fallback for Tauri push events
+
+**Context:** Tauri push events (`listen()`) are emitted as fire-and-forget by the Rust backend. In normal app usage they arrive within milliseconds. In WebKitWebDriver automation (the E2E test environment on Linux), the `listen()` callback in the frontend may never fire even when the backend has emitted the event — this is a WebKitWebDriver limitation, not a Tauri bug.
+
+This caused `HumanReviewPanel` to never appear in E2E tests even though the run correctly paused: the `human_review_requested` Tauri event was emitted by the backend, stored in the DB, but the `listen()` callback in `LiveRunView` was not called.
+
+**Decision:** `LiveRunView` adds a 2-second polling interval (`useEffect` with `setInterval`) that:
+1. Calls `ipc.getRun({ runId })` to sync run status
+2. When status is `"paused"` and no `reviewRequest` is set, calls `ipc.listEventsForRun` to find a `review.required` event and reconstruct the review panel payload
+3. Uses `setReviewRequest(prev => prev ? prev : newValue)` to avoid overwriting state already set by the push-event path
+
+This is production code, not a test workaround. The polling fallback also handles: tabs that were backgrounded during a run, slow event-bridge delivery on lower-end hardware, and any future environment where push events are unreliable.
+
+**Tradeoffs:** Adds 2 IPC round-trips every 2 seconds while a run is active. Negligible in practice (SQLite reads are fast and local). The polling stops when the run is terminal.
+
+**Alternatives considered:**
+- Increasing the subscribe-then-start pause in E2E tests — tried up to 4s; push events still not delivered in WebKitWebDriver
+- Buffering events in the backend and replaying on subscribe — would require persistent event queues per subscriber; over-engineered for v1
+- Accepting the gap for E2E only and relying on push events in prod — rejected; the same failure mode can occur when a tab is hidden during a long run
+
+---
+
+### 2026-03-19 — Demo workflow Agent nodes require an explicit `command` field
+
+**Context:** `AgentCliAdapter` requires either a `command` or `provider_hint` in the agent node config. Without a `command` field, the adapter throws `PreparationFailed` and the run fails before reaching the HumanReview node. The demo workflow embedded in `apps/desktop/src/data/demo-workflow.ts` originally had no `command` field on the Plan and Critique nodes.
+
+**Decision:** All demo workflow Agent nodes have `"command": "true"` in their config. The `true` shell command exits immediately with code 0, making agent nodes behave like stubs during demo/test runs while satisfying the adapter's preparation check. The workflow JSON file at `examples/plan-execute-critique-approve/workflow.json` was also updated for consistency, though the app reads from `demo-workflow.ts`, not the file.
+
+**Important:** When `demo-workflow.ts` is changed, the SQLite DB must be deleted so `useFirstRun` re-seeds the workflow on next launch: `rm -f ~/.local/share/com.agent-arcade.dev/agent-arcade.db`.
+
+---
+
 ## Open decisions
 
 These are not blockers, but should be resolved early during implementation:

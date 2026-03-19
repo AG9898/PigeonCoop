@@ -104,13 +104,13 @@ describe("LibraryView Start Run button", () => {
     const createCall = mockInvoke.mock.calls.find((c: unknown[]) => c[0] === "create_run");
     expect(createCall).toBeTruthy();
     expect((createCall as unknown[])[1]).toMatchObject({
-      workflow_id: DEMO_WF_ID,
-      workspace_root: "/my/project",
+      workflowId: DEMO_WF_ID,
+      workspaceRoot: "/my/project",
     });
 
     const startCall = mockInvoke.mock.calls.find((c: unknown[]) => c[0] === "start_run");
     expect(startCall).toBeTruthy();
-    expect((startCall as unknown[])[1]).toMatchObject({ run_id: run.run_id });
+    expect((startCall as unknown[])[1]).toMatchObject({ runId: run.run_id });
 
     expect(onOpenLiveRun).toHaveBeenCalledWith(run.run_id);
   });

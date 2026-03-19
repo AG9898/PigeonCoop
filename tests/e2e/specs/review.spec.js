@@ -74,8 +74,8 @@ describe('Agent Arcade — human review gate', () => {
   describe('Run creation (IPC)', () => {
     it('creates a run against the test workspace', async () => {
       const run = await tauriInvoke('create_run', {
-        workflow_id: DEMO_WORKFLOW_ID,
-        workspace_root: TEST_WORKSPACE,
+        workflowId: DEMO_WORKFLOW_ID,
+        workspaceRoot: TEST_WORKSPACE,
       });
 
       expect(run).toBeTruthy();
@@ -88,7 +88,7 @@ describe('Agent Arcade — human review gate', () => {
     });
 
     it('new run is in created/ready state (not running)', async () => {
-      const run = await tauriInvoke('get_run', { run_id: runId });
+      const run = await tauriInvoke('get_run', { runId: runId });
       const preStartStates = ['created', 'ready', 'validating'];
       expect(preStartStates).toContain(run.status);
     });
@@ -137,9 +137,10 @@ describe('Agent Arcade — human review gate', () => {
       await expect(liveRunBtn).toExist();
       await liveRunBtn.click();
 
-      // Give React time to navigate and for LiveRunView to mount and subscribe
-      // to Tauri events (including `human_review_requested`).
-      await browser.pause(1000);
+      // Give React time to navigate, for LiveRunView to mount, and for all four
+      // listen() calls inside subscribe() to complete their async IPC registration.
+      // WebKitGTK software rendering can be slower — 4s is conservative.
+      await browser.pause(4000);
 
       // Confirm LiveRunView is now showing.
       const view = await $('.live-run-view');
@@ -155,7 +156,7 @@ describe('Agent Arcade — human review gate', () => {
 
   describe('Run start (IPC)', () => {
     it('starts the run after LiveRunView is mounted', async () => {
-      await tauriInvoke('start_run', { run_id: runId });
+      await tauriInvoke('start_run', { runId: runId });
 
       // Give the background task time to advance past the stub nodes.
       // Stub nodes complete in ~1 ms, so the run should reach HumanReview
@@ -172,7 +173,7 @@ describe('Agent Arcade — human review gate', () => {
     it('run pauses at the HumanReview node', async () => {
       const run = await pollUntil(
         'get_run',
-        { run_id: runId },
+        { runId: runId },
         (r) => r && (r.status === 'paused' || r.status === 'succeeded' || r.status === 'failed'),
         { timeoutMs: 20000, intervalMs: 500 }
       );
@@ -181,11 +182,12 @@ describe('Agent Arcade — human review gate', () => {
 
     it('human_review_requested event is in the event log', async () => {
       const events = await tauriInvoke('list_events_for_run', {
-        run_id: runId,
+        runId: runId,
         offset: 0,
         limit: 100,
       });
-      const reviewEvent = events.find((e) => e.event_type === 'human_review_requested');
+      // Stored event type is 'review.required' (dot-notation used by the engine).
+      const reviewEvent = events.find((e) => e.event_type === 'review.required');
       expect(reviewEvent).toBeTruthy();
       expect(reviewEvent.node_id).toBe(NODE.approve);
     });
@@ -232,7 +234,7 @@ describe('Agent Arcade — human review gate', () => {
     it('run resumes after approval (status is no longer paused)', async () => {
       const run = await pollUntil(
         'get_run',
-        { run_id: runId },
+        { runId: runId },
         (r) => r && r.status !== 'paused',
         { timeoutMs: 15000, intervalMs: 300 }
       );
@@ -245,7 +247,7 @@ describe('Agent Arcade — human review gate', () => {
     it('run reaches Succeeded after approval', async () => {
       const run = await pollUntil(
         'get_run',
-        { run_id: runId },
+        { runId: runId },
         (r) => r && (r.status === 'succeeded' || r.status === 'failed' || r.status === 'cancelled'),
         { timeoutMs: 20000, intervalMs: 500 }
       );
@@ -267,44 +269,40 @@ describe('Agent Arcade — human review gate', () => {
   describe('Post-approval events (IPC)', () => {
     it('End node transitioned to succeeded', async () => {
       const events = await tauriInvoke('list_events_for_run', {
-        run_id: runId,
+        runId: runId,
         offset: 0,
         limit: 200,
       });
 
       const endEvents = events.filter((e) => e.node_id === NODE.end);
-      const statuses = endEvents
-        .map((e) => e.payload && e.payload.new_status)
-        .filter(Boolean);
-
-      expect(statuses).toContain('succeeded');
+      // node.succeeded is emitted when the End node completes.
+      const succeeded = endEvents.some((e) => e.event_type === 'node.succeeded');
+      expect(succeeded).toBe(true);
     });
 
     it('HumanReview (Approve) node transitioned to succeeded after approval', async () => {
       const events = await tauriInvoke('list_events_for_run', {
-        run_id: runId,
+        runId: runId,
         offset: 0,
         limit: 200,
       });
 
       const approveEvents = events.filter((e) => e.node_id === NODE.approve);
-      const statuses = approveEvents
-        .map((e) => e.payload && e.payload.new_status)
-        .filter(Boolean);
-
-      // HumanReview node must have gone through: running → waiting → succeeded
-      expect(statuses).toContain('waiting');
-      expect(statuses).toContain('succeeded');
+      // HumanReview node emits node.waiting (paused) then node.succeeded (after approval).
+      const eventTypes = approveEvents.map((e) => e.event_type);
+      expect(eventTypes).toContain('node.waiting');
+      expect(eventTypes).toContain('node.succeeded');
     });
 
     it('human_review_decided event is recorded in the event log', async () => {
       const events = await tauriInvoke('list_events_for_run', {
-        run_id: runId,
+        runId: runId,
         offset: 0,
         limit: 200,
       });
 
-      const decidedEvent = events.find((e) => e.event_type === 'human_review_decided');
+      // Stored event type is 'review.approved' (dot-notation used by the engine).
+      const decidedEvent = events.find((e) => e.event_type === 'review.approved');
       expect(decidedEvent).toBeTruthy();
       expect(decidedEvent.node_id).toBe(NODE.approve);
       expect(decidedEvent.payload).toBeTruthy();
@@ -312,20 +310,17 @@ describe('Agent Arcade — human review gate', () => {
 
     it('run_status_changed events show complete lifecycle', async () => {
       const events = await tauriInvoke('list_events_for_run', {
-        run_id: runId,
+        runId: runId,
         offset: 0,
         limit: 200,
       });
 
-      const runStatusEvents = events.filter((e) => e.event_type === 'run_status_changed');
-      const statuses = runStatusEvents
-        .map((e) => e.payload && e.payload.new_status)
-        .filter(Boolean);
-
-      // Run must have gone through: running → paused → running → succeeded
-      expect(statuses).toContain('running');
-      expect(statuses).toContain('paused');
-      expect(statuses).toContain('succeeded');
+      // Run lifecycle events use dot-notation: run.started, run.paused, run.succeeded.
+      // The run must have gone through: running → paused → running → succeeded.
+      const eventTypes = events.map((e) => e.event_type);
+      expect(eventTypes).toContain('run.started');   // → running
+      expect(eventTypes).toContain('run.paused');    // → paused
+      expect(eventTypes).toContain('run.succeeded'); // → succeeded
     });
   });
 });

@@ -2,10 +2,11 @@
 // All state is derived from the persisted event log; never from live engine state.
 // See ARCHITECTURE.md §10.3 and DESIGN_SPEC.md §4.3.
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import type { RunEvent } from "../types/workflow";
 import { TimelineScrubber } from "../components/panels/TimelineScrubber";
+import { deriveNodeStates } from "../state/deriveNodeStates";
 
 interface Props {
   runId: string | null;
@@ -40,6 +41,13 @@ export function ReplayView({ runId }: Props) {
 
   const currentEvent = events[scrubIndex] ?? null;
 
+  // Derive graph state from all events up to (and including) the scrub position.
+  // This updates automatically whenever scrubIndex or events change.
+  const nodeStates = useMemo(
+    () => deriveNodeStates(events, scrubIndex),
+    [events, scrubIndex]
+  );
+
   return (
     <div className="view replay-view">
       <div className="view-header">
@@ -56,6 +64,27 @@ export function ReplayView({ runId }: Props) {
           total={events.length}
           onChange={setScrubIndex}
         />
+
+        {/* Graph state panel — node statuses at the selected timeline position */}
+        <div className="replay-graph-state" data-testid="graph-state-panel">
+          <div className="panel-header">GRAPH STATE</div>
+          {Object.keys(nodeStates).length === 0 ? (
+            <div className="replay-status">No node events up to this point.</div>
+          ) : (
+            <ul className="node-state-list">
+              {Object.entries(nodeStates).map(([nodeId, status]) => (
+                <li
+                  key={nodeId}
+                  className={`node-state-item node-state--${status}`}
+                  data-testid={`node-state-${nodeId}`}
+                >
+                  <span className="node-state-id">{nodeId}</span>
+                  <span className="node-state-badge">{status}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
 
         {/* Main panels */}
         <div className="replay-panels">

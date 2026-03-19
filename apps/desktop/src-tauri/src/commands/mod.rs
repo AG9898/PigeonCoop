@@ -16,8 +16,10 @@ use core_engine::coordinator::RunCoordinator;
 use core_engine::review::{handle_review_decision, ReviewDecision};
 use core_engine::scheduler::RunScheduler;
 use core_engine::state_machine::{node::NodeTransitionInput, RunTransitionInput};
+use event_model::event::RunEvent;
 use persistence::{
     repositories::{
+        events::EventRepository,
         runs::RunRepository,
         workflows::{
             delete_workflow as repo_delete_workflow, get_workflow_by_id,
@@ -26,7 +28,11 @@ use persistence::{
     },
     sqlite::Db,
 };
+use runtime_adapters::agent::AgentCliAdapter;
+use runtime_adapters::cli::CliAdapter;
+use runtime_adapters::Adapter;
 use workflow_model::{
+    memory::{MemoryScope, MemoryState},
     node::NodeKind,
     run::{NodeSnapshot, NodeStatus, RunInstance, RunStatus},
     workflow::WorkflowDefinition,
@@ -349,16 +355,74 @@ pub fn list_runs_for_workflow(
 }
 
 // ---------------------------------------------------------------------------
+// Event log query commands (UI-RPL-001)
+// ---------------------------------------------------------------------------
+
+/// IPC-facing event envelope. Mirrors `RunEvent` but uses String UUIDs for JSON
+/// compatibility and adds `sequence` (1-based position in the run's event stream).
+#[derive(Debug, Serialize)]
+pub struct RunEventDto {
+    pub event_id: String,
+    pub run_id: String,
+    pub workflow_id: String,
+    pub node_id: Option<String>,
+    pub event_type: String,
+    pub timestamp: String,
+    pub payload: serde_json::Value,
+    pub causation_id: Option<String>,
+    pub correlation_id: Option<String>,
+    pub sequence: u32,
+}
+
+/// Return up to `limit` events for a run starting at `offset`, in chronological order.
+///
+/// Sequence numbers are 1-based and relative to the run. The frontend Replay view
+/// uses these to drive the timeline scrubber.
+#[tauri::command]
+pub fn list_events_for_run(
+    state: State<AppState>,
+    run_id: String,
+    offset: u32,
+    limit: u32,
+) -> CmdResult<Vec<RunEventDto>> {
+    let run_uuid = Uuid::parse_str(&run_id).map_err(cmd_err)?;
+    let db = state.db.lock().unwrap();
+    let events = EventRepository::new(&db)
+        .list_events_for_run(run_uuid, offset, limit)
+        .map_err(cmd_err)?;
+
+    Ok(events
+        .into_iter()
+        .enumerate()
+        .map(|(i, e)| RunEventDto {
+            event_id: e.event_id.to_string(),
+            run_id: e.run_id.to_string(),
+            workflow_id: e.workflow_id.to_string(),
+            node_id: e.node_id.map(|id| id.to_string()),
+            event_type: e.event_type,
+            timestamp: e.timestamp.to_rfc3339(),
+            payload: e.payload,
+            causation_id: e.causation_id.map(|id| id.to_string()),
+            correlation_id: e.correlation_id.map(|id| id.to_string()),
+            sequence: offset + i as u32 + 1,
+        })
+        .collect())
+}
+
+// ---------------------------------------------------------------------------
 // Background execution task
 // ---------------------------------------------------------------------------
 
 /// Drive a workflow run to completion in a background tokio task.
 ///
-/// Uses `StubNodeExecutor` semantics (all nodes succeed immediately) for v1.
-/// Real adapter dispatch will be wired in a later task (ADAPT-001, ADAPT-002).
+/// Tool nodes are dispatched through `CliAdapter`; Agent nodes through
+/// `AgentCliAdapter`. Start, End, Router, and Memory nodes complete
+/// immediately with success (no real execution in v1). HumanReview nodes
+/// pause the run and wait on `review_rx` for a decision.
 ///
-/// When a HumanReview node is encountered, the loop pauses the run and waits
-/// on `review_rx` for a `ReviewMessage` from `submit_human_review_decision`.
+/// Adapter exit codes and errors drive node/run failure states. All
+/// CommandEventKind and AgentEventKind events are forwarded to the Tauri
+/// event bridge via the coordinator's event log.
 async fn run_workflow_background(
     app: AppHandle,
     db: Arc<Mutex<Db>>,
@@ -510,9 +574,8 @@ async fn run_workflow_background(
                 break;
             }
 
-            // Stub execution: all nodes succeed in 1 ms.
-            // Real adapter dispatch wired in ADAPT-001/ADAPT-002.
-            let _ = coordinator.complete_node_success(node_id, 1);
+            // Dispatch through the appropriate runtime adapter.
+            dispatch_node_execution(&mut coordinator, &workflow, node_id).await;
         }
     }
 
@@ -523,6 +586,167 @@ async fn run_workflow_background(
         _ => None,
     };
     persist_run_status_with_times(&db, run_id, &final_status, None, ended_at);
+}
+
+// ---------------------------------------------------------------------------
+// Adapter dispatch
+// ---------------------------------------------------------------------------
+
+/// Dispatch a single node to the appropriate runtime adapter and update the
+/// coordinator based on the result.
+///
+/// - `Tool` nodes → `CliAdapter` (shell command in workspace_root)
+/// - `Agent` nodes → `AgentCliAdapter` (agent CLI with prompt via stdin)
+/// - All other node types (Start, End, Router, Memory) → immediate success
+///
+/// Command and agent events from adapters are forwarded to the coordinator's
+/// event log, making them available to the Tauri event bridge in real time.
+async fn dispatch_node_execution(
+    coordinator: &mut RunCoordinator<crate::bridge::TauriEventLog>,
+    workflow: &WorkflowDefinition,
+    node_id: Uuid,
+) {
+    let node_def = match workflow.nodes.iter().find(|n| n.node_id == node_id) {
+        Some(n) => n,
+        None => {
+            let _ = coordinator.complete_node_success(node_id, 0);
+            return;
+        }
+    };
+
+    let workspace_root = coordinator.run.workspace_root.clone();
+    let run_id = coordinator.run.run_id;
+    let workflow_id = coordinator.run.workflow_id;
+
+    // Build a minimal run-shared MemoryState for adapters that need memory context.
+    let memory = MemoryState {
+        run_id,
+        node_id: Some(node_id),
+        scope: MemoryScope::RunShared,
+        data: serde_json::Value::Null,
+    };
+
+    let max_retries = node_def.retry_policy.max_retries;
+    let attempt = coordinator
+        .node_snapshots
+        .get(&node_id)
+        .map(|s| s.attempt)
+        .unwrap_or(1);
+    let retries_remaining = max_retries.saturating_sub(attempt.saturating_sub(1));
+
+    match node_def.node_type {
+        NodeKind::Tool => {
+            let adapter = CliAdapter::new();
+            // Use a large buffer so adapter streaming tasks never block.
+            let (tx, mut rx) = mpsc::channel::<event_model::command_events::CommandEventKind>(4096);
+            let start = std::time::Instant::now();
+            let result = adapter.execute(node_def, &workspace_root, &memory, tx).await;
+            let duration_ms = start.elapsed().as_millis() as u64;
+
+            // Forward accumulated CommandEventKind events as RunEvents.
+            while let Ok(kind) = rx.try_recv() {
+                if let Some(event) = command_kind_to_run_event(run_id, workflow_id, node_id, &kind) {
+                    coordinator.emit_event(event);
+                }
+            }
+
+            match result {
+                Ok(output) => {
+                    let success = output.exit_code.map(|c| c == 0).unwrap_or(true);
+                    if success {
+                        let _ = coordinator.complete_node_success(node_id, duration_ms);
+                    } else {
+                        let reason = format!(
+                            "command exited with non-zero code {:?}",
+                            output.exit_code
+                        );
+                        let _ = coordinator.fail_node(node_id, reason, retries_remaining);
+                    }
+                }
+                Err(e) => {
+                    let _ = coordinator.fail_node(node_id, e.to_string(), retries_remaining);
+                }
+            }
+        }
+
+        NodeKind::Agent => {
+            let adapter = AgentCliAdapter::new();
+            let (tx, mut rx) = mpsc::channel::<event_model::agent_events::AgentEventKind>(4096);
+            let start = std::time::Instant::now();
+            let result = adapter.execute(node_def, &workspace_root, &memory, tx).await;
+            let duration_ms = start.elapsed().as_millis() as u64;
+
+            // Forward accumulated AgentEventKind events as RunEvents.
+            while let Ok(kind) = rx.try_recv() {
+                if let Some(event) = agent_kind_to_run_event(run_id, workflow_id, node_id, &kind) {
+                    coordinator.emit_event(event);
+                }
+            }
+
+            match result {
+                Ok(_output) => {
+                    let _ = coordinator.complete_node_success(node_id, duration_ms);
+                }
+                Err(e) => {
+                    let _ = coordinator.fail_node(node_id, e.to_string(), retries_remaining);
+                }
+            }
+        }
+
+        // Start, End, Router, Memory: no real execution in v1 — succeed immediately.
+        _ => {
+            let _ = coordinator.complete_node_success(node_id, 0);
+        }
+    }
+}
+
+/// Convert a `CommandEventKind` to a `RunEvent` envelope for the event log.
+///
+/// Uses the serde `event_type`/`payload` tags to build the envelope without
+/// requiring a dedicated constructor per variant.
+fn command_kind_to_run_event(
+    run_id: Uuid,
+    workflow_id: Uuid,
+    node_id: Uuid,
+    kind: &event_model::command_events::CommandEventKind,
+) -> Option<RunEvent> {
+    let v = serde_json::to_value(kind).ok()?;
+    let event_type = v.get("event_type")?.as_str()?.to_owned();
+    let payload = v.get("payload")?.clone();
+    Some(RunEvent {
+        event_id: Uuid::new_v4(),
+        run_id,
+        workflow_id,
+        node_id: Some(node_id),
+        event_type,
+        timestamp: Utc::now(),
+        payload,
+        causation_id: None,
+        correlation_id: None,
+    })
+}
+
+/// Convert an `AgentEventKind` to a `RunEvent` envelope for the event log.
+fn agent_kind_to_run_event(
+    run_id: Uuid,
+    workflow_id: Uuid,
+    node_id: Uuid,
+    kind: &event_model::agent_events::AgentEventKind,
+) -> Option<RunEvent> {
+    let v = serde_json::to_value(kind).ok()?;
+    let event_type = v.get("event_type")?.as_str()?.to_owned();
+    let payload = v.get("payload")?.clone();
+    Some(RunEvent {
+        event_id: Uuid::new_v4(),
+        run_id,
+        workflow_id,
+        node_id: Some(node_id),
+        event_type,
+        timestamp: Utc::now(),
+        payload,
+        causation_id: None,
+        correlation_id: None,
+    })
 }
 
 // ---------------------------------------------------------------------------

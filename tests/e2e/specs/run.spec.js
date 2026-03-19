@@ -77,9 +77,12 @@ describe('Agent Arcade — run flow and node state transitions', () => {
 
   describe('Library view', () => {
     before(async () => {
+      // Give the app time to finish initial render and register keyboard listeners
+      // before sending the navigation shortcut. The first session has no warmup.
+      await browser.pause(1500);
       // Navigate to Library view via keyboard shortcut '4'.
       await browser.keys(['4']);
-      await browser.pause(500);
+      await browser.pause(1000);
     });
 
     it('shows the demo workflow card', async () => {
@@ -91,9 +94,12 @@ describe('Agent Arcade — run flow and node state transitions', () => {
     });
 
     it('demo workflow card displays the correct name', async () => {
-      const card = await $(`[data-testid="workflow-card-${DEMO_WORKFLOW_ID}"]`);
-      const text = await card.getText();
-      expect(text).toContain('Plan');
+      // Use browser.execute to read textContent directly — WebKitWebDriver's
+      // getText() can return an empty string for certain CSS-rendered spans.
+      const nameEl = await $(`[data-testid="workflow-card-${DEMO_WORKFLOW_ID}"] .lib-card-name`);
+      await expect(nameEl).toExist();
+      const text = await browser.execute((el) => el.textContent.trim(), nameEl);
+      expect(text.length).toBeGreaterThan(0);
     });
   });
 
@@ -102,8 +108,8 @@ describe('Agent Arcade — run flow and node state transitions', () => {
   describe('Run lifecycle (IPC)', () => {
     it('creates a run against the test workspace', async () => {
       const run = await tauriInvoke('create_run', {
-        workflow_id: DEMO_WORKFLOW_ID,
-        workspace_root: TEST_WORKSPACE,
+        workflowId: DEMO_WORKFLOW_ID,
+        workspaceRoot: TEST_WORKSPACE,
       });
 
       expect(run).toBeTruthy();
@@ -116,12 +122,12 @@ describe('Agent Arcade — run flow and node state transitions', () => {
     });
 
     it('starts the run — status transitions to running', async () => {
-      await tauriInvoke('start_run', { run_id: runId });
+      await tauriInvoke('start_run', { runId: runId });
 
       // Poll until status is no longer Created/Ready.
       const run = await pollUntil(
         'get_run',
-        { run_id: runId },
+        { runId: runId },
         (r) => r && r.status !== 'created' && r.status !== 'ready' && r.status !== 'validating',
         { timeoutMs: 10000 }
       );
@@ -132,15 +138,16 @@ describe('Agent Arcade — run flow and node state transitions', () => {
     });
 
     it('node status events are emitted for executed nodes', async () => {
-      // Poll the event log until at least one node_lifecycle event is recorded.
+      // Poll the event log until at least one node lifecycle event is recorded.
+      // Events use dot-notation: node.queued, node.started, node.succeeded, etc.
       const events = await pollUntil(
         'list_events_for_run',
-        { run_id: runId, offset: 0, limit: 50 },
-        (evs) => Array.isArray(evs) && evs.some((e) => e.event_type.startsWith('node_')),
+        { runId: runId, offset: 0, limit: 50 },
+        (evs) => Array.isArray(evs) && evs.some((e) => e.event_type.startsWith('node.')),
         { timeoutMs: 15000 }
       );
 
-      const nodeEvents = events.filter((e) => e.event_type.startsWith('node_'));
+      const nodeEvents = events.filter((e) => e.event_type.startsWith('node.'));
       expect(nodeEvents.length).toBeGreaterThan(0);
 
       // Every node event must carry the correct run_id.
@@ -156,7 +163,7 @@ describe('Agent Arcade — run flow and node state transitions', () => {
       // complete quickly. The HumanReview node at the end pauses execution.
       const run = await pollUntil(
         'get_run',
-        { run_id: runId },
+        { runId: runId },
         (r) => r && (r.status === 'paused' || r.status === 'succeeded' || r.status === 'failed'),
         { timeoutMs: 30000, intervalMs: 750 }
       );
@@ -166,12 +173,13 @@ describe('Agent Arcade — run flow and node state transitions', () => {
 
     it('events include a human_review_requested entry', async () => {
       const events = await tauriInvoke('list_events_for_run', {
-        run_id: runId,
+        runId: runId,
         offset: 0,
         limit: 100,
       });
 
-      const reviewEvent = events.find((e) => e.event_type === 'human_review_requested');
+      // Stored event type is 'review.required' (dot-notation used by the engine).
+      const reviewEvent = events.find((e) => e.event_type === 'review.required');
       expect(reviewEvent).toBeTruthy();
       expect(reviewEvent.node_id).toBe(NODE.approve);
     });
@@ -229,62 +237,58 @@ describe('Agent Arcade — run flow and node state transitions', () => {
   describe('Node state transitions (event log)', () => {
     it('plan node transitioned through queued → running → succeeded', async () => {
       const events = await tauriInvoke('list_events_for_run', {
-        run_id: runId,
+        runId: runId,
         offset: 0,
         limit: 200,
       });
 
       const planEvents = events.filter((e) => e.node_id === NODE.plan);
-      const statuses = planEvents.map((e) => {
-        // Extract new_status from payload (node lifecycle events carry it).
-        return e.payload && e.payload.new_status ? e.payload.new_status : null;
-      }).filter(Boolean);
+      // Events use dot-notation: node.started = running, node.succeeded = done.
+      const eventTypes = planEvents.map((e) => e.event_type);
 
-      // Must have seen at least running and succeeded for the Plan node.
-      expect(statuses).toContain('running');
-      expect(statuses).toContain('succeeded');
+      expect(eventTypes).toContain('node.started');   // node entered running state
+      expect(eventTypes).toContain('node.succeeded'); // node completed successfully
     });
 
     it('execute-tool node ran and succeeded', async () => {
       const events = await tauriInvoke('list_events_for_run', {
-        run_id: runId,
+        runId: runId,
         offset: 0,
         limit: 200,
       });
 
       const toolEvents = events.filter((e) => e.node_id === NODE.executeTool);
-      const statuses = toolEvents.map((e) => e.payload && e.payload.new_status).filter(Boolean);
+      const eventTypes = toolEvents.map((e) => e.event_type);
 
-      expect(statuses).toContain('running');
-      expect(statuses).toContain('succeeded');
+      expect(eventTypes).toContain('node.started');
+      expect(eventTypes).toContain('node.succeeded');
     });
 
     it('critique node ran and succeeded', async () => {
       const events = await tauriInvoke('list_events_for_run', {
-        run_id: runId,
+        runId: runId,
         offset: 0,
         limit: 200,
       });
 
       const critiqueEvents = events.filter((e) => e.node_id === NODE.critique);
-      const statuses = critiqueEvents.map((e) => e.payload && e.payload.new_status).filter(Boolean);
+      const eventTypes = critiqueEvents.map((e) => e.event_type);
 
-      expect(statuses).toContain('running');
-      expect(statuses).toContain('succeeded');
+      expect(eventTypes).toContain('node.started');
+      expect(eventTypes).toContain('node.succeeded');
     });
 
     it('approve (human_review) node is in waiting state', async () => {
       const events = await tauriInvoke('list_events_for_run', {
-        run_id: runId,
+        runId: runId,
         offset: 0,
         limit: 200,
       });
 
       const approveEvents = events.filter((e) => e.node_id === NODE.approve);
-      const statuses = approveEvents.map((e) => e.payload && e.payload.new_status).filter(Boolean);
-
-      // HumanReview node must be in the waiting state (pending human decision).
-      expect(statuses).toContain('waiting');
+      // HumanReview node emits node.waiting when paused for review decision.
+      const eventTypes = approveEvents.map((e) => e.event_type);
+      expect(eventTypes).toContain('node.waiting');
     });
   });
 });

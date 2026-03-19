@@ -69,32 +69,34 @@ export interface ExportWorkflowArgs {
 }
 
 // --- Run lifecycle (TAURI-002) ---
+// Note: Tauri 2.x #[tauri::command] uses rename_all = "camelCase" for JS args.
+// All arg interfaces use camelCase keys to match what the Rust handler expects.
 
 export interface CreateRunArgs {
-  workflow_id: string;
-  workspace_root: string;
+  workflowId: string;
+  workspaceRoot: string;
 }
 
 export interface StartRunArgs {
-  run_id: string;
+  runId: string;
 }
 
 export interface CancelRunArgs {
-  run_id: string;
+  runId: string;
 }
 
 export interface GetRunArgs {
-  run_id: string;
+  runId: string;
 }
 
 export interface ListRunsForWorkflowArgs {
-  workflow_id: string;
+  workflowId: string;
 }
 
 // --- Event log (TAURI-003) ---
 
 export interface ListEventsForRunArgs {
-  run_id: string;
+  runId: string;
   offset: number;
   limit: number;
 }
@@ -108,8 +110,8 @@ export type HumanReviewDecision =
   | { type: "edited"; memory_patch: unknown };
 
 export interface SubmitHumanReviewDecisionArgs {
-  run_id: string;
-  node_id: string;
+  runId: string;
+  nodeId: string;
   decision: HumanReviewDecision;
 }
 

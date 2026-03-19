@@ -640,7 +640,11 @@ Mitigation:
 - `start_run` uses `tokio::spawn` to launch `run_workflow_background` and returns immediately — does not block the `invoke()` call
 - Background task drives run through `Created → Validating → Ready → Running`, initializes node snapshots in `Ready` state, runs step loop with human review support, persists final status
 - Cancellation: `cancel_run` sets the `AtomicBool` flag; the background loop checks it before each step and calls `coordinator.cancel()`
-- Stub execution semantics for v1 (all nodes succeed immediately); HumanReview nodes pause for operator decision; real adapter dispatch wired in ADAPT-001/ADAPT-002
+- Stub execution semantics removed (TAURI-006); HumanReview nodes pause for operator decision
+- `dispatch_node_execution` in `commands/mod.rs` routes by `NodeKind`: `Tool` → `CliAdapter`, `Agent` → `AgentCliAdapter`, Start/End/Router/Memory → immediate success
+- `CommandEventKind`/`AgentEventKind` events from adapters are serialized as `RunEvent`s via `command_kind_to_run_event`/`agent_kind_to_run_event` and forwarded through `coordinator.emit_event` → `TauriEventLog` → Tauri frontend
+- Adapter exit codes and `AdapterError` results drive `fail_node(retries_remaining)` instead of unconditional success
+- `runtime-adapters` added as a direct dependency of `agent-arcade`
 
 ### Implementation notes (TAURI-001)
 - Workflow CRUD commands: `apps/desktop/src-tauri/src/commands/mod.rs`

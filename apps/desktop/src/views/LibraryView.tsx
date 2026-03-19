@@ -66,7 +66,7 @@ export function LibraryView({ onOpenReplay, onOpenBuilder, onOpenLiveRun, isFirs
   async function loadRuns(workflowId: string) {
     if (runs[workflowId]) return;
     try {
-      const r = await ipc.listRunsForWorkflow({ workflow_id: workflowId });
+      const r = await ipc.listRunsForWorkflow({ workflowId });
       setRuns((prev) => ({ ...prev, [workflowId]: r ?? [] }));
     } catch {
       setRuns((prev) => ({ ...prev, [workflowId]: [] }));
@@ -142,8 +142,8 @@ export function LibraryView({ onOpenReplay, onOpenBuilder, onOpenLiveRun, isFirs
       [workflowId]: { ...prev[workflowId], running: true, error: null },
     }));
     try {
-      const run = await ipc.createRun({ workflow_id: workflowId, workspace_root: form.workspace });
-      await ipc.startRun({ run_id: run.run_id });
+      const run = await ipc.createRun({ workflowId, workspaceRoot: form.workspace });
+      await ipc.startRun({ runId: run.run_id });
       setStartRunForms((prev) => {
         const next = { ...prev };
         delete next[workflowId];

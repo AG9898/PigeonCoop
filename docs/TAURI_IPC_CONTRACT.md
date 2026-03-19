@@ -198,8 +198,10 @@ workspace_root: String,
 
 **TypeScript arg interface:**
 ```ts
-{ workflow_id: string; workspace_root: string }
+{ workflowId: string; workspaceRoot: string }
 ```
+
+> **Tauri 2.x camelCase rule:** `#[tauri::command]` applies `rename_all = "camelCase"` when deserializing arguments from JavaScript. All TypeScript arg interfaces must use camelCase keys (`workflowId`, not `workflow_id`). The Rust structs themselves keep snake_case — only the JS-side call site changes. This applies to every command below.
 
 **Return type:** `RunInstance`
 
@@ -232,7 +234,7 @@ run_id: String,  // UUID
 
 **TypeScript arg interface:**
 ```ts
-{ run_id: string }
+{ runId: string }
 ```
 
 **Return type:** `void`
@@ -257,7 +259,7 @@ run_id: String,  // UUID
 
 **TypeScript arg interface:**
 ```ts
-{ run_id: string }
+{ runId: string }
 ```
 
 **Return type:** `void`
@@ -277,7 +279,7 @@ run_id: String,  // UUID
 
 **TypeScript arg interface:**
 ```ts
-{ run_id: string }
+{ runId: string }
 ```
 
 **Return type:** `RunInstance | null`
@@ -297,7 +299,7 @@ workflow_id: String,  // UUID
 
 **TypeScript arg interface:**
 ```ts
-{ workflow_id: string }
+{ workflowId: string }
 ```
 
 **Return type:** `RunInstance[]`
@@ -306,13 +308,13 @@ workflow_id: String,  // UUID
 
 ---
 
-### Event log (planned; not yet registered)
+### Event log
 
 ---
 
 #### `list_events_for_run`
 
-Planned paginated event log for a run, ordered by `sequence ASC`. The persistence repository implements this query, and the frontend Replay view already expects it, but the Tauri `invoke_handler` does not currently register this command.
+Paginated event log for a run, ordered by `sequence ASC`. Used by ReplayView and LiveRunView (polling fallback).
 
 **Rust arg struct:**
 ```rust
@@ -323,7 +325,7 @@ limit: u32,
 
 **TypeScript arg interface:**
 ```ts
-{ run_id: string; offset: number; limit: number }
+{ runId: string; offset: number; limit: number }
 ```
 
 **Return type:** `RunEvent[]`
@@ -376,7 +378,7 @@ pub enum HumanReviewDecision {
 
 **TypeScript arg interface:**
 ```ts
-{ run_id: string; node_id: string; decision: HumanReviewDecision }
+{ runId: string; nodeId: string; decision: HumanReviewDecision }
 ```
 
 Where the backend currently accepts:

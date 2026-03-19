@@ -39,6 +39,8 @@ apps/
       data/               # Embedded static data (e.g. demo workflow for first-run seeding)
       hooks/              # React hooks (e.g. useFirstRun for demo seeding)
       main.tsx
+      state/              # Pure state-derivation utilities (no React, no side effects)
+        deriveNodeStates.ts  # Reconstruct node statuses from an event slice (used by ReplayView)
       styles/
       types/
       views/

@@ -20,6 +20,7 @@ workflow-model = { path = "../../../crates/workflow-model" }
 event-model = { path = "../../../crates/event-model" }
 core-engine = { path = "../../../crates/core-engine" }
 persistence = { path = "../../../crates/persistence" }
+runtime-adapters = { path = "../../../crates/runtime-adapters" }
 
 [build-dependencies]
 tauri-build = { version = "2", features = [] }

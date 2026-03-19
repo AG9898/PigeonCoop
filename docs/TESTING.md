@@ -168,9 +168,16 @@ For typed IPC interactions, use the interfaces from `apps/desktop/src/types/ipc.
 cargo install tauri-driver         # one-time install; installs tauri-driver v2.x
 
 # Step 1: build the debug binary
-cargo tauri build --debug
+cd apps/desktop
+npm run tauri build -- --debug     # builds target/debug/agent-arcade
+cd ../..
 
 # Step 2: in one terminal, start tauri-driver (WebDriver server on localhost:4444)
+# On WSL2 / Linux without GPU/DMA-buf support, use these env vars:
+GDK_BACKEND=x11 \
+WEBKIT_DISABLE_DMABUF_RENDERER=1 \
+WEBKIT_DISABLE_COMPOSITING_MODE=1 \
+LIBGL_ALWAYS_SOFTWARE=1 \
 tauri-driver
 
 # Step 3: in another terminal, run the E2E tests
@@ -181,24 +188,38 @@ npm test
 
 **Note:** `wdio-tauri-service` is not available as an npm package. WebdriverIO connects directly to `tauri-driver` via `hostname: localhost, port: 4444` in `wdio.conf.js`. No wdio service is required — just start `tauri-driver` manually before running tests.
 
+**WSL2 / software rendering:** The four env vars above disable GPU/DMA-buf rendering in WebKitGTK, falling back to software rendering. Without them, `tauri-driver` may fail to open the app window (`DRM_IOCTL_MODE_CREATE_DUMB failed`) on WSL2. The `MESA/ZINK` warnings that appear at startup are harmless.
+
+**Fresh DB on each run:** The app stores its SQLite database at `~/.local/share/com.agent-arcade.dev/agent-arcade.db`. If a previous test run seeded the demo workflow with stale data (e.g. before a `demo-workflow.ts` fix), delete the DB before re-running:
+```bash
+rm -f ~/.local/share/com.agent-arcade.dev/agent-arcade.db
+```
+
 ### WebdriverIO configuration (outline)
 ```js
 // tests/e2e/wdio.conf.js
 export const config = {
   runner: 'local',
   specs: ['./specs/**/*.spec.js'],
+  maxInstances: 1,   // WebKitWebDriver only supports one session at a time
   hostname: 'localhost',
   port: 4444,
   path: '/',
+  // IMPORTANT: tauri:options MUST be in alwaysMatch, not the top-level capability object.
+  // tauri-driver's map_capabilities only reads capabilities.alwaysMatch to convert
+  // tauri:options → webkitgtk:browserOptions. Placing tauri:options at the top level
+  // silently drops it and the binary is never launched.
   capabilities: [{
-    browserName: 'chrome',
-    'tauri:options': {
-      application: '../../target/debug/agent-arcade',
+    alwaysMatch: {
+      'tauri:options': {
+        application: '../../target/debug/agent-arcade',
+      },
     },
   }],
   services: [],   // no service needed; tauri-driver runs as a separate process
   framework: 'mocha',
   reporters: ['spec'],
+  mochaOpts: { timeout: 60000 },
 };
 ```
 
@@ -214,16 +235,30 @@ export const config = {
 | Spec | Covers |
 |---|---|
 | `tests/e2e/specs/app.spec.js` | Smoke test — app launches, window title, root DOM element |
-| `tests/e2e/specs/run.spec.js` | Partial run flow — demo workflow visible plus create/start run coverage; event-log assertions still assume a Tauri command that is not yet registered |
-| `tests/e2e/specs/review.spec.js` | Human review gate — run pauses at HumanReview, panel visible, Approve clicked, run resumes to Succeeded |
+| `tests/e2e/specs/run.spec.js` | Run flow — Library view, create/start run via IPC, node state transitions via `list_events_for_run`, LiveRunView UI assertions |
+| `tests/e2e/specs/review.spec.js` | Human review gate — run pauses at HumanReview, panel visible, Approve clicked, run resumes to Succeeded, post-approval event log assertions |
 
 ### IPC access pattern in E2E tests
 
-`LibraryView` now exposes a Start Run button, but the current E2E run spec still
-uses `window.__TAURI_INTERNALS__.invoke()` inside `browser.executeAsync()` to set
-up runs deterministically. Some of that spec's assertions still rely on a planned
-`list_events_for_run` Tauri command, so event-log/replay coverage remains partial
-until that IPC surface is exposed.
+E2E specs drive runs via `window.__TAURI_INTERNALS__.invoke()` inside `browser.executeAsync()` rather than purely through the UI. This keeps setup deterministic and avoids races between UI state and run progression. The `review.spec.js` spec navigates through the Library UI (clicking the workflow card and the "Live Run" button on a run card) to mount `LiveRunView` before starting the run — this is the critical ordering that ensures event subscriptions are registered before the run fires events.
+
+### WebKitWebDriver quirks
+
+These are known behaviours in the WebKitGTK WebDriver used by tauri-driver on Linux:
+
+1. **`element.getText()` can return an empty string** for elements whose text is rendered inside certain CSS layouts (e.g. `overflow: hidden`, flex containers). Use `browser.execute((el) => el.textContent.trim(), element)` as the reliable fallback:
+   ```js
+   const text = await browser.execute((el) => el.textContent.trim(), nameEl);
+   expect(text.length).toBeGreaterThan(0);
+   ```
+
+2. **Tauri push events (`listen()`) are not reliably delivered** in WebKitWebDriver automation sessions. The Tauri event bridge emits fire-and-forget events; the `listen()` callback in a WebKitWebDriver-automated webview may never fire even when the backend has emitted the event. **Do not rely on push events in E2E specs.** Poll via IPC instead:
+   ```js
+   await pollUntil('get_run', { runId }, (r) => r?.status === 'paused', { timeoutMs: 20000 });
+   ```
+   `LiveRunView` implements a 2-second polling fallback (`ipc.getRun` + `ipc.listEventsForRun`) precisely because push-event delivery cannot be relied upon in this environment. This fallback is production code, not a test-only workaround — it also handles cases where the browser tab is backgrounded or the event bridge is slow.
+
+3. **`expect(element).toExist()` only checks DOM presence**, not visibility. An element can be in the DOM but outside the viewport with `getText()` returning empty. Scroll into view or use `textContent` via `browser.execute` when text content matters.
 
 ### Test workspace fixture
 

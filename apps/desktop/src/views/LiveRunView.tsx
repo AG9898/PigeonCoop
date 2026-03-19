@@ -101,8 +101,8 @@ export function LiveRunView({ runId }: LiveRunViewProps) {
     setReviewSubmitting(true);
     try {
       await ipc.submitHumanReviewDecision({
-        run_id: reviewRequest.run_id,
-        node_id: reviewRequest.node_id,
+        runId: reviewRequest.run_id,
+        nodeId: reviewRequest.node_id,
         decision,
       });
     } finally {
@@ -124,7 +124,7 @@ export function LiveRunView({ runId }: LiveRunViewProps) {
 
     (async () => {
       try {
-        const run = await ipc.getRun({ run_id: runId });
+        const run = await ipc.getRun({ runId });
         if (!run) {
           setError(`Run ${runId} not found`);
           return;
@@ -224,6 +224,60 @@ export function LiveRunView({ runId }: LiveRunViewProps) {
 
     return () => {
       unlisteners.forEach((fn) => fn());
+    };
+  }, [runId]);
+
+  // Polling fallback for run status and review requests.
+  // Tauri push events are the primary update mechanism, but in environments
+  // where event delivery is unreliable (e.g. WebKitWebDriver automation),
+  // this interval ensures the UI stays consistent with backend state.
+  useEffect(() => {
+    if (!runId) return;
+
+    let stopped = false;
+    async function poll() {
+      if (stopped) return;
+      try {
+        const run = await ipc.getRun({ runId: runId! });
+        if (!run || stopped) return;
+        setRunStatus(run.status);
+
+        // When paused with no panel showing, fetch the event log for the
+        // review.required event and reconstruct the review request payload.
+        if (run.status === "paused") {
+          const evs = await ipc.listEventsForRun({ runId: runId!, offset: 0, limit: 200 });
+          if (stopped) return;
+          const reviewEv = evs.find((e) => e.event_type === "review.required");
+          if (reviewEv && reviewEv.node_id) {
+            const p = reviewEv.payload as {
+              reason?: string;
+              available_actions?: string[];
+            } | null;
+            setReviewRequest((prev) => {
+              if (prev) return prev; // already set by event — don't overwrite
+              return {
+                run_id: run.run_id,
+                node_id: reviewEv.node_id!,
+                node_label: reviewEv.node_id!,
+                reason: p?.reason ?? "",
+                available_actions: (p?.available_actions ?? []) as Array<
+                  "approve" | "reject" | "retry" | "edit_memory"
+                >,
+                timestamp: reviewEv.timestamp,
+              };
+            });
+          }
+        }
+      } catch {
+        // Ignore transient errors from polling
+      }
+    }
+
+    const id = setInterval(poll, 2000);
+    poll(); // immediate first check
+    return () => {
+      stopped = true;
+      clearInterval(id);
     };
   }, [runId]);
 
