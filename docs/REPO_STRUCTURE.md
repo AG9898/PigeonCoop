@@ -37,7 +37,7 @@ apps/
         nodes/
         panels/
       data/               # Embedded static data (e.g. demo workflow for first-run seeding)
-      hooks/              # React hooks (e.g. useFirstRun for demo seeding)
+      hooks/              # React hooks (useFirstRun for demo seeding, useCanvasKeyboard for keyboard-driven canvas navigation)
       main.tsx
       state/              # Pure state-derivation utilities (no React, no side effects)
         deriveNodeStates.ts  # Reconstruct node statuses from an event slice (used by ReplayView)

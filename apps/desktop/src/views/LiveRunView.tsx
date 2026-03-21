@@ -3,7 +3,7 @@
 // Renders a read-only React Flow graph with per-node state animations.
 // See ARCHITECTURE.md §10.2 and DESIGN_SPEC.md §4.2, §7.
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 import ReactFlow, {
   Background,
@@ -288,6 +288,48 @@ export function LiveRunView({ runId }: LiveRunViewProps) {
     }
   }, [events]);
 
+  // Run control keyboard shortcuts: Ctrl+Enter → start, Ctrl+. → cancel
+  const handleRunStart = useCallback(async () => {
+    if (!runId || runStatus === "running" || runStatus === "cancelled") return;
+    try {
+      await ipc.startRun({ runId });
+    } catch {
+      // handled by event subscription
+    }
+  }, [runId, runStatus]);
+
+  const handleRunCancel = useCallback(async () => {
+    if (!runId || !runStatus || isTerminal(runStatus)) return;
+    try {
+      await ipc.cancelRun({ runId });
+    } catch {
+      // handled by event subscription
+    }
+  }, [runId, runStatus]);
+
+  useEffect(() => {
+    if (!runId) return;
+    function onKey(e: KeyboardEvent) {
+      const tag = (e.target as HTMLElement).tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
+
+      // Ctrl+Enter or Cmd+Enter → start run
+      if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
+        e.preventDefault();
+        handleRunStart();
+        return;
+      }
+      // Ctrl+. or Cmd+. → cancel run
+      if (e.key === "." && (e.ctrlKey || e.metaKey)) {
+        e.preventDefault();
+        handleRunCancel();
+        return;
+      }
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [runId, handleRunStart, handleRunCancel]);
+
   if (!runId) {
     return (
       <div className="view live-run-view">
@@ -349,6 +391,26 @@ export function LiveRunView({ runId }: LiveRunViewProps) {
           <div className="lr-hud-row">
             <span className="lr-hud-label">ELAPSED</span>
             <span className="lr-hud-value lr-hud-elapsed">{elapsed}</span>
+          </div>
+          <div className="lr-hud-row lr-hud-controls">
+            <button
+              className="toolbar-btn toolbar-btn--start"
+              onClick={handleRunStart}
+              disabled={runStatus === "running" || runStatus === "cancelled" || isTerminal(runStatus)}
+              title="Start run (Ctrl+Enter)"
+              data-testid="run-start-btn"
+            >
+              Start <kbd>Ctrl+Enter</kbd>
+            </button>
+            <button
+              className="toolbar-btn toolbar-btn--cancel"
+              onClick={handleRunCancel}
+              disabled={!runStatus || isTerminal(runStatus)}
+              title="Cancel run (Ctrl+.)"
+              data-testid="run-cancel-btn"
+            >
+              Cancel <kbd>Ctrl+.</kbd>
+            </button>
           </div>
         </div>
 

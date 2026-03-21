@@ -2090,7 +2090,7 @@
       "id": "UX-002",
       "group_id": "UX",
       "title": "Global keyboard navigation",
-      "status": "todo",
+      "status": "done",
       "priority": "medium",
       "type": "implementation",
       "summary": "View switching, human-review actions, and replay scrubbing are keyboard-accessible; broader keyboard-first coverage is still pending.",

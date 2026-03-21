@@ -625,6 +625,107 @@ describe("LiveRunView", () => {
     expect(timeEls[0].textContent).toMatch(/\d{2}:\d{2}:\d{2}\.\d{3}/);
   });
 
+  it("renders start and cancel buttons with shortcut hints", async () => {
+    await act(async () => {
+      render(<LiveRunView runId="aaaa-1111" />);
+    });
+
+    expect(screen.getByTestId("run-start-btn")).toBeTruthy();
+    expect(screen.getByTestId("run-cancel-btn")).toBeTruthy();
+    expect(screen.getByTestId("run-start-btn").textContent).toContain("Ctrl+Enter");
+    expect(screen.getByTestId("run-cancel-btn").textContent).toContain("Ctrl+.");
+  });
+
+  it("calls start_run when Ctrl+Enter is pressed", async () => {
+    mockInvoke.mockImplementation((cmd: string) => {
+      if (cmd === "get_run") return Promise.resolve(mockRun({ status: "ready" }));
+      if (cmd === "get_workflow") return Promise.resolve(mockWorkflow());
+      if (cmd === "start_run") return Promise.resolve();
+      return Promise.resolve(null);
+    });
+
+    await act(async () => {
+      render(<LiveRunView runId="aaaa-1111" />);
+    });
+
+    await act(async () => {
+      fireEvent.keyDown(window, { key: "Enter", ctrlKey: true });
+    });
+
+    const startCall = mockInvoke.mock.calls.find(
+      (c: unknown[]) => c[0] === "start_run"
+    );
+    expect(startCall).toBeTruthy();
+    expect((startCall as unknown[])[1]).toMatchObject({ runId: "aaaa-1111" });
+  });
+
+  it("calls cancel_run when Ctrl+. is pressed", async () => {
+    mockInvoke.mockImplementation((cmd: string) => {
+      if (cmd === "get_run") return Promise.resolve(mockRun({ status: "running" }));
+      if (cmd === "get_workflow") return Promise.resolve(mockWorkflow());
+      if (cmd === "cancel_run") return Promise.resolve();
+      return Promise.resolve(null);
+    });
+
+    await act(async () => {
+      render(<LiveRunView runId="aaaa-1111" />);
+    });
+
+    await act(async () => {
+      fireEvent.keyDown(window, { key: ".", ctrlKey: true });
+    });
+
+    const cancelCall = mockInvoke.mock.calls.find(
+      (c: unknown[]) => c[0] === "cancel_run"
+    );
+    expect(cancelCall).toBeTruthy();
+    expect((cancelCall as unknown[])[1]).toMatchObject({ runId: "aaaa-1111" });
+  });
+
+  it("does not call start_run when already running", async () => {
+    mockInvoke.mockImplementation((cmd: string) => {
+      if (cmd === "get_run") return Promise.resolve(mockRun({ status: "running" }));
+      if (cmd === "get_workflow") return Promise.resolve(mockWorkflow());
+      if (cmd === "start_run") return Promise.resolve();
+      return Promise.resolve(null);
+    });
+
+    await act(async () => {
+      render(<LiveRunView runId="aaaa-1111" />);
+    });
+
+    await act(async () => {
+      fireEvent.keyDown(window, { key: "Enter", ctrlKey: true });
+    });
+
+    const startCall = mockInvoke.mock.calls.find(
+      (c: unknown[]) => c[0] === "start_run"
+    );
+    expect(startCall).toBeUndefined();
+  });
+
+  it("does not call cancel_run when already terminal", async () => {
+    mockInvoke.mockImplementation((cmd: string) => {
+      if (cmd === "get_run") return Promise.resolve(mockRun({ status: "succeeded" }));
+      if (cmd === "get_workflow") return Promise.resolve(mockWorkflow());
+      if (cmd === "cancel_run") return Promise.resolve();
+      return Promise.resolve(null);
+    });
+
+    await act(async () => {
+      render(<LiveRunView runId="aaaa-1111" />);
+    });
+
+    await act(async () => {
+      fireEvent.keyDown(window, { key: ".", ctrlKey: true });
+    });
+
+    const cancelCall = mockInvoke.mock.calls.find(
+      (c: unknown[]) => c[0] === "cancel_run"
+    );
+    expect(cancelCall).toBeUndefined();
+  });
+
   it("cleans up listeners on unmount", async () => {
     const unlisten = vi.fn();
     mockListen.mockImplementation(() => Promise.resolve(unlisten));

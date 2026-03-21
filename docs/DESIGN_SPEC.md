@@ -307,6 +307,30 @@ Keyboard-driven workflows are a priority, not an afterthought. Experienced devel
 - human review approve/reject from keyboard
 - timeline scrubbing in Replay View from keyboard
 
+### Implemented keyboard shortcut map
+
+| Context | Key | Action |
+|---|---|---|
+| Global | `1` / `2` / `3` / `4` | Switch to Builder / Live Run / Replay / Library |
+| Canvas (Builder) | `Arrow keys` | Pan canvas (50px per step) |
+| Canvas (Builder) | `+` / `=` | Zoom in |
+| Canvas (Builder) | `-` | Zoom out |
+| Canvas (Builder) | `F` | Fit view (reset zoom to show all nodes) |
+| Canvas (Builder) | `Tab` / `Shift+Tab` | Cycle node selection forward / backward |
+| Canvas (Builder) | `Escape` | Deselect all nodes |
+| Canvas (Builder) | `Delete` | Delete selected node/edge (React Flow built-in) |
+| Live Run | `Ctrl+Enter` | Start run |
+| Live Run | `Ctrl+.` | Cancel (stop) run |
+| Human Review | `A` | Approve |
+| Human Review | `R` | Reject |
+| Human Review | `T` | Retry |
+| Replay | `Arrow Left/Down` | Previous event |
+| Replay | `Arrow Right/Up` | Next event |
+| Replay | `Home` | Jump to first event |
+| Replay | `End` | Jump to last event |
+
+Canvas keyboard navigation is implemented in `useCanvasKeyboard` hook (`src/hooks/useCanvasKeyboard.ts`), which requires the canvas container to have `tabIndex={0}` for focus. Shortcuts are suppressed when focus is on form elements (input, textarea, select).
+
 ### Design stance
 If a power user cannot perform a complete workflow — build, run, inspect, replay — without reaching for the mouse for more than edge cases, the keyboard support is insufficient.
 

@@ -23,6 +23,7 @@ import ReactFlow, {
 import "reactflow/dist/style.css";
 import WorkflowNode, { WorkflowNodeData } from "../nodes/WorkflowNode";
 import type { ConditionKind, NodeKind, WorkflowDefinition } from "../../types/workflow";
+import { useCanvasKeyboard } from "../../hooks/useCanvasKeyboard";
 
 // All 7 node types mapped to the single WorkflowNode component.
 const NODE_TYPES: NodeTypes = {
@@ -142,6 +143,9 @@ const CanvasInner = forwardRef<WorkflowCanvasHandle, WorkflowCanvasProps>(
     const { project } = useReactFlow();
     const containerRef = useRef<HTMLDivElement>(null);
 
+    // Keyboard-driven canvas navigation (pan, zoom, node selection).
+    useCanvasKeyboard(containerRef);
+
     const initial = useMemo(
       () =>
         workflow
@@ -249,6 +253,7 @@ const CanvasInner = forwardRef<WorkflowCanvasHandle, WorkflowCanvasProps>(
       <div
         ref={containerRef}
         className="wf-canvas"
+        tabIndex={0}
         onDrop={handleDrop}
         onDragOver={handleDragOver}
       >

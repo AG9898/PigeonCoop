@@ -35,7 +35,18 @@ vi.mock("reactflow", () => ({
   },
   useEdgesState: (init: unknown[]) => [init, vi.fn(), vi.fn()],
   addEdge: vi.fn((_params: unknown, edges: unknown[]) => edges),
-  useReactFlow: () => ({
-    project: vi.fn(({ x, y }: { x: number; y: number }) => ({ x, y })),
-  }),
+  useReactFlow: (() => {
+    // Shared singleton so hook and test code see the same spy instances.
+    const instance = {
+      project: vi.fn(({ x, y }: { x: number; y: number }) => ({ x, y })),
+      getViewport: vi.fn(() => ({ x: 0, y: 0, zoom: 1 })),
+      setViewport: vi.fn(),
+      zoomIn: vi.fn(),
+      zoomOut: vi.fn(),
+      fitView: vi.fn(),
+      getNodes: vi.fn(() => []),
+      setNodes: vi.fn(),
+    };
+    return () => instance;
+  })(),
 }));
