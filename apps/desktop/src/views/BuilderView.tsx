@@ -1,6 +1,7 @@
-import { useRef, useState } from "react";
+import { useRef, useState, useCallback } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { WorkflowCanvas, WorkflowCanvasHandle } from "../components/canvas/WorkflowCanvas";
+import { NodePalette } from "../components/panels/NodePalette";
 import type { NodeKind, WorkflowDefinition } from "../types/workflow";
 import type { WorkflowNodeData } from "../components/nodes/WorkflowNode";
 
@@ -88,6 +89,10 @@ export function BuilderView() {
     setStatus("Loaded");
   }
 
+  const handleAddNode = useCallback((kind: NodeKind) => {
+    canvasRef.current?.addNode(kind);
+  }, []);
+
   return (
     <div className="view builder-view">
       <div className="view-header">
@@ -119,7 +124,8 @@ export function BuilderView() {
           </ul>
         </div>
       )}
-      <div className="view-body" style={{ overflow: "hidden" }}>
+      <div className="view-body builder-body">
+        <NodePalette onAddNode={handleAddNode} />
         <WorkflowCanvas key={canvasKey} ref={canvasRef} workflow={loadedWorkflow} />
       </div>
     </div>

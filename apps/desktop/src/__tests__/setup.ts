@@ -22,13 +22,20 @@ vi.mock("@tauri-apps/api/event", () => ({
 // real library. Tests that exercise the canvas mount it as a plain div.
 vi.mock("reactflow", () => ({
   default: ({ children }: { children?: unknown }) => children ?? null,
+  ReactFlowProvider: ({ children }: { children?: unknown }) => children,
   Background: () => null,
   BackgroundVariant: { Dots: "dots", Lines: "lines", Cross: "cross" },
   Controls: () => null,
   MiniMap: () => null,
   Handle: () => null,
   Position: { Top: "top", Bottom: "bottom", Left: "left", Right: "right" },
-  useNodesState: (init: unknown[]) => [init, vi.fn(), vi.fn()],
+  useNodesState: (init: unknown[]) => {
+    const setNodes = vi.fn();
+    return [init, setNodes, vi.fn()];
+  },
   useEdgesState: (init: unknown[]) => [init, vi.fn(), vi.fn()],
   addEdge: vi.fn((_params: unknown, edges: unknown[]) => edges),
+  useReactFlow: () => ({
+    project: vi.fn(({ x, y }: { x: number; y: number }) => ({ x, y })),
+  }),
 }));

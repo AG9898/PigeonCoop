@@ -1590,7 +1590,7 @@
       "id": "UI-BLD-003",
       "group_id": "UI-BLD",
       "title": "Node palette panel",
-      "status": "todo",
+      "status": "done",
       "priority": "medium",
       "type": "implementation",
       "summary": "Implement a node palette panel for dragging new nodes onto the canvas.",
