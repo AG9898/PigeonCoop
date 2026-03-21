@@ -193,3 +193,15 @@ The event stream must support:
 - review action inspection
 
 If replay cannot explain a run from stored events, the schema is incomplete.
+
+### 6.1 UI inspection support
+
+The Replay View's `EventInspector` component renders typed panes for the following event families, pulling structured fields from the payload:
+
+| Family | Pane | Payload fields rendered |
+|--------|------|------------------------|
+| `node.*` | NODE CONTEXT | `node_type`, `attempt`, `workspace_root`, `input_refs[]`, `output`, `error` |
+| `router.*` / `edge.*` | ROUTING DECISION | `router_node_id`, `reason`, `selected_edge_ids[]` |
+| `command.*` | COMMAND | `command`, `shell`, `cwd`, `exit_code`, `duration_ms`, `stdout_bytes`, `stderr_bytes`, `timeout_ms` |
+
+All events additionally show the envelope fields and full JSON payload. New event families (agent, memory, review, guardrail) can be added by creating a new pane component in `EventInspector.tsx`.

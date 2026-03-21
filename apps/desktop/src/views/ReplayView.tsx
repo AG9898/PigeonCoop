@@ -6,6 +6,7 @@ import { useEffect, useState, useMemo } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import type { RunEvent } from "../types/workflow";
 import { TimelineScrubber } from "../components/panels/TimelineScrubber";
+import { EventInspector } from "../components/panels/EventInspector";
 import { deriveNodeStates } from "../state/deriveNodeStates";
 
 interface Props {
@@ -130,38 +131,9 @@ export function ReplayView({ runId }: Props) {
           </div>
 
           {/* Event detail inspector */}
-          <div className="replay-event-detail">
+          <div className="replay-event-detail" data-testid="event-detail">
             <div className="panel-header">EVENT DETAIL</div>
-            {currentEvent ? (
-              <dl className="event-detail-list" data-testid="event-detail">
-                <dt>event_id</dt>
-                <dd>{currentEvent.event_id}</dd>
-                <dt>event_type</dt>
-                <dd>{currentEvent.event_type}</dd>
-                <dt>timestamp</dt>
-                <dd>{currentEvent.timestamp}</dd>
-                {currentEvent.node_id && (
-                  <>
-                    <dt>node_id</dt>
-                    <dd>{currentEvent.node_id}</dd>
-                  </>
-                )}
-                {currentEvent.causation_id && (
-                  <>
-                    <dt>causation_id</dt>
-                    <dd>{currentEvent.causation_id}</dd>
-                  </>
-                )}
-                <dt>payload</dt>
-                <dd>
-                  <pre className="event-payload">
-                    {JSON.stringify(currentEvent.payload, null, 2)}
-                  </pre>
-                </dd>
-              </dl>
-            ) : (
-              <div className="replay-status">Select an event to inspect.</div>
-            )}
+            <EventInspector event={currentEvent} />
           </div>
         </div>
       </div>

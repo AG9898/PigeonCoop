@@ -25,7 +25,7 @@ const SAMPLE_EVENTS: RunEvent[] = [
     node_id: "node-start",
     event_type: "node.queued",
     timestamp: "2026-03-08T10:00:01.000Z",
-    payload: {},
+    payload: { node_type: "tool", attempt: 1, input_refs: ["mem:run_shared:task_brief"] },
     sequence: 2,
   },
   {
@@ -39,6 +39,38 @@ const SAMPLE_EVENTS: RunEvent[] = [
     sequence: 3,
   },
 ];
+
+const ROUTING_EVENT: RunEvent = {
+  event_id: "evt-r01",
+  run_id: "run-abc",
+  workflow_id: "wf-001",
+  node_id: "node-router-1",
+  event_type: "router.branch_selected",
+  timestamp: "2026-03-08T10:00:03.000Z",
+  payload: {
+    router_node_id: "node_router_1",
+    selected_edge_ids: ["edge_ok"],
+    reason: "exit_code == 0",
+  },
+  sequence: 4,
+};
+
+const COMMAND_EVENT: RunEvent = {
+  event_id: "evt-c01",
+  run_id: "run-abc",
+  workflow_id: "wf-001",
+  node_id: "node-tool-1",
+  event_type: "command.completed",
+  timestamp: "2026-03-08T10:00:04.000Z",
+  payload: {
+    command: "npm test",
+    exit_code: 0,
+    duration_ms: 4123,
+    stdout_bytes: 12044,
+    stderr_bytes: 0,
+  },
+  sequence: 5,
+};
 
 const SAMPLE_WORKFLOW: WorkflowDefinition = {
   workflow_id: "wf-001",
@@ -232,5 +264,85 @@ describe("App — Library to Replay navigation", () => {
     fireEvent.click(screen.getByTestId(`open-replay-${SAMPLE_RUN.run_id}`));
     // Should now be in Replay view
     expect(screen.getByText("REPLAY")).toBeTruthy();
+  });
+});
+
+describe("EventInspector — typed panes", () => {
+  it("shows full typed payload for any event", async () => {
+    mockInvoke.mockResolvedValueOnce(SAMPLE_EVENTS);
+    render(<ReplayView runId="run-abc" />);
+    await waitFor(() => screen.getAllByText("run.started"));
+    // The envelope pane should show event_id and event_type
+    const envelope = screen.getByTestId("ei-envelope");
+    expect(envelope.textContent).toContain("evt-001");
+    expect(envelope.textContent).toContain("run.started");
+    // The payload pane should show the full JSON
+    const payload = screen.getByTestId("ei-payload");
+    expect(payload.textContent).toContain("run began");
+  });
+
+  it("shows node context pane for node events with input/output", async () => {
+    mockInvoke.mockResolvedValueOnce(SAMPLE_EVENTS);
+    render(<ReplayView runId="run-abc" />);
+    await waitFor(() => screen.getByText("node.queued"));
+    // Click the node.queued event
+    fireEvent.click(screen.getAllByRole("option")[1]);
+    const nodePane = screen.getByTestId("ei-node-pane");
+    expect(nodePane.textContent).toContain("node-start");
+    expect(nodePane.textContent).toContain("tool");
+    expect(nodePane.textContent).toContain("mem:run_shared:task_brief");
+  });
+
+  it("shows node output in node context pane", async () => {
+    mockInvoke.mockResolvedValueOnce(SAMPLE_EVENTS);
+    render(<ReplayView runId="run-abc" />);
+    await waitFor(() => screen.getByText("node.succeeded"));
+    // Click the node.succeeded event
+    fireEvent.click(screen.getAllByRole("option")[2]);
+    const nodePane = screen.getByTestId("ei-node-pane");
+    expect(nodePane.textContent).toContain("done");
+  });
+
+  it("shows routing pane with branch_selected reason", async () => {
+    const eventsWithRouting = [...SAMPLE_EVENTS, ROUTING_EVENT];
+    mockInvoke.mockResolvedValueOnce(eventsWithRouting);
+    render(<ReplayView runId="run-abc" />);
+    await waitFor(() => screen.getByText("router.branch_selected"));
+    // Click the routing event
+    fireEvent.click(screen.getAllByRole("option")[3]);
+    const routePane = screen.getByTestId("ei-routing-pane");
+    expect(routePane.textContent).toContain("exit_code == 0");
+    expect(routePane.textContent).toContain("node_router_1");
+    expect(routePane.textContent).toContain("edge_ok");
+  });
+
+  it("shows command pane with command, exit_code, stdout/stderr", async () => {
+    const eventsWithCommand = [...SAMPLE_EVENTS, COMMAND_EVENT];
+    mockInvoke.mockResolvedValueOnce(eventsWithCommand);
+    render(<ReplayView runId="run-abc" />);
+    await waitFor(() => screen.getByText("command.completed"));
+    // Click the command event
+    fireEvent.click(screen.getAllByRole("option")[3]);
+    const cmdPane = screen.getByTestId("ei-command-pane");
+    expect(cmdPane.textContent).toContain("npm test");
+    expect(cmdPane.textContent).toContain("0");
+    expect(cmdPane.textContent).toContain("4123");
+    expect(cmdPane.textContent).toContain("12044");
+  });
+
+  it("does not show node/routing/command pane for run-level events", async () => {
+    mockInvoke.mockResolvedValueOnce(SAMPLE_EVENTS);
+    render(<ReplayView runId="run-abc" />);
+    await waitFor(() => screen.getAllByText("run.started"));
+    // First event is run.started — no family-specific pane
+    expect(screen.queryByTestId("ei-node-pane")).toBeNull();
+    expect(screen.queryByTestId("ei-routing-pane")).toBeNull();
+    expect(screen.queryByTestId("ei-command-pane")).toBeNull();
+  });
+
+  it("shows select prompt when no event is selected", () => {
+    render(<ReplayView runId={null} />);
+    const detail = screen.getByTestId("event-detail");
+    expect(detail.textContent).toContain("Select an event to inspect");
   });
 });

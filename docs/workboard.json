@@ -1996,7 +1996,7 @@
       "id": "UI-RPL-003",
       "group_id": "UI-RPL",
       "title": "Event inspector and diff panes",
-      "status": "todo",
+      "status": "done",
       "priority": "medium",
       "type": "implementation",
       "summary": "Selected-event inspection exists; diff panes and richer typed context are still pending.",

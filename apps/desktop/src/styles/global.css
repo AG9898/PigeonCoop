@@ -1010,7 +1010,130 @@ body {
   stroke-width: 2;
 }
 
-/* Event detail panel */
+/* ── Event Inspector (Replay View) ─────────────────────────────────── */
+
+.ei-root {
+  padding: 0.5rem;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.ei-pane {
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  background: var(--color-bg);
+  overflow: hidden;
+}
+
+.ei-pane-header {
+  font-size: 0.55rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: var(--color-text-muted);
+  padding: 0.3rem 0.5rem;
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-surface);
+}
+
+.ei-fields {
+  display: flex;
+  flex-direction: column;
+}
+
+.ei-field {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  padding: 0.2rem 0.5rem;
+  border-bottom: 1px solid color-mix(in srgb, var(--color-border) 50%, transparent);
+  font-size: 0.65rem;
+}
+
+.ei-field:last-child {
+  border-bottom: none;
+}
+
+.ei-field--col {
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.ei-label {
+  color: var(--color-text-muted);
+  min-width: 80px;
+  flex-shrink: 0;
+  font-size: 0.6rem;
+}
+
+.ei-value {
+  color: var(--color-text);
+  word-break: break-all;
+}
+
+.ei-value--mono {
+  font-family: "JetBrains Mono", "Fira Code", monospace;
+  font-size: 0.6rem;
+}
+
+.ei-value--highlight {
+  color: var(--ev-routing);
+}
+
+.ei-value--ok {
+  color: var(--node-start);
+}
+
+.ei-value--fail {
+  color: #ef4444;
+}
+
+.ei-value--warn {
+  color: var(--ev-routing);
+}
+
+.ei-ref-list {
+  list-style: none;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+.ei-ref-item {
+  font-size: 0.6rem;
+  color: var(--color-text);
+  font-family: "JetBrains Mono", "Fira Code", monospace;
+  padding-left: 0.5rem;
+  border-left: 2px solid var(--ev-node);
+}
+
+.ei-pre {
+  font-family: "JetBrains Mono", "Fira Code", monospace;
+  font-size: 0.6rem;
+  white-space: pre-wrap;
+  word-break: break-all;
+  color: var(--color-text);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 3px;
+  padding: 0.35rem;
+  margin: 0;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.ei-pre--error {
+  color: #ef4444;
+  border-color: color-mix(in srgb, #ef4444 30%, var(--color-border));
+}
+
+.ei-pre--payload {
+  max-height: 300px;
+}
+
+/* ── Event detail panel (Live Run View) ────────────────────────────── */
 .lr-detail-content {
   padding: 0.5rem;
   overflow-y: auto;

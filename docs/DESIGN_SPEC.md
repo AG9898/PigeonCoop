@@ -116,6 +116,20 @@ Behavior:
 - graph state updates to selected point in run
 - route decisions and memory updates are inspectable
 
+#### Event inspector panel
+
+The event detail panel uses `EventInspector` (`components/panels/EventInspector.tsx`) to render selected events with typed, context-aware panes instead of raw JSON.
+
+Every selected event shows:
+1. **Envelope pane** — core fields: event_id, event_type, timestamp, node_id, causation_id, correlation_id
+2. **Family-specific pane** (conditional, based on the event_type prefix):
+   - **Node events** (`node.*`): node_id, node_type, attempt, workspace, input refs list, output, and error fields from the payload
+   - **Routing events** (`router.*`, `edge.*`): router_node_id, reason (the branch selection rationale), and selected_edge_ids
+   - **Command events** (`command.*`): command string, shell, cwd, exit_code (color-coded green/red), duration_ms, stdout_bytes, stderr_bytes, timeout_ms
+3. **Full payload pane** — always rendered last as formatted JSON for complete transparency
+
+Run-level events (e.g. `run.started`) show only the envelope and payload panes — no family-specific context.
+
 ### 4.4 Library View
 Purpose: browse workflows and past runs.
 
