@@ -2125,7 +2125,7 @@
       "id": "UX-003",
       "group_id": "UX",
       "title": "Mission control visual theme",
-      "status": "todo",
+      "status": "done",
       "priority": "medium",
       "type": "implementation",
       "summary": "Implement the mission control / strategy HUD visual design system.",

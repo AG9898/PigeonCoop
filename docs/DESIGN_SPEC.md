@@ -163,6 +163,32 @@ Required elements:
 - layered panel depth
 - restrained motion
 
+### Implemented design system (`styles/global.css`)
+
+The mission-control visual theme is implemented via CSS custom properties and consistent layering:
+
+**Surfaces and depth:**
+- Three background tiers: `--color-bg` (#0d0f14), `--color-surface` (#141720), `--color-surface-raised` (#181c28)
+- Panels use `--shadow-panel` for baseline depth; cards and nodes get `--shadow-panel-hover` on hover
+- Nav bar, view headers, and HUD bars use `linear-gradient` from `--color-surface-raised` to `--color-surface` for top-lit layering
+- The `--glow-accent` variable provides a subtle blue glow for selected/focused elements
+
+**Grid overlay:**
+- The `.app` root renders a 48px CSS grid via `linear-gradient` lines at `--grid-color` (rgba(42,47,61,0.35)), giving the background a tactical-map texture
+
+**State glows and rings:**
+- Running nodes: `node-pulse` animation (2s, cubic-bezier) oscillates a blue glow ring from 4px to 12px spread
+- Failed nodes: `node-fail-flash` animation flashes a red glow ring twice then holds at a static red ring
+- Paused nodes: `node-paused-blink` animation (3s) breathes an orange glow to signal "waiting on you"
+- Waiting/succeeded: static glow rings (amber/green) with no animation — motion is reserved for states that demand attention
+
+**Edge flow:**
+- Active edges (`.lr-edge--active`) use `stroke-dasharray: 8 4` with a `stroke-dashoffset` animation (`edge-flow`, 0.8s linear) for directional marching dashes
+- Selected/hovered edges get a subtle blue `drop-shadow` filter
+
+**Accessibility:**
+- A `prefers-reduced-motion: reduce` media query disables all node and edge animations for users who request reduced motion
+
 ---
 
 ## 6. Canvas behavior

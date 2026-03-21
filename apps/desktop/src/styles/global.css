@@ -7,11 +7,22 @@
 :root {
   --color-bg: #0d0f14;
   --color-surface: #141720;
+  --color-surface-raised: #181c28;
   --color-border: #2a2f3d;
+  --color-border-subtle: #1e2230;
   --color-accent: #3b82f6;
   --color-text: #e2e8f0;
   --color-text-muted: #64748b;
   font-family: "JetBrains Mono", "Fira Code", monospace;
+
+  /* Depth / glow */
+  --shadow-panel: 0 1px 3px rgba(0, 0, 0, 0.4), 0 0 1px rgba(59, 130, 246, 0.05);
+  --shadow-panel-hover: 0 2px 8px rgba(0, 0, 0, 0.5), 0 0 1px rgba(59, 130, 246, 0.1);
+  --glow-accent: 0 0 12px -3px rgba(59, 130, 246, 0.25);
+
+  /* Grid overlay */
+  --grid-color: rgba(42, 47, 61, 0.35);
+  --grid-size: 48px;
 
   /* Node type accent colors */
   --node-start:  #22c55e;
@@ -50,6 +61,11 @@ body {
   height: 100%;
   display: flex;
   flex-direction: column;
+  background:
+    linear-gradient(var(--grid-color) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-color) 1px, transparent 1px),
+    var(--color-bg);
+  background-size: var(--grid-size) var(--grid-size);
 }
 
 /* Nav bar */
@@ -59,9 +75,12 @@ body {
   gap: 1rem;
   padding: 0 1rem;
   height: 40px;
-  background: var(--color-surface);
+  background: linear-gradient(180deg, var(--color-surface-raised) 0%, var(--color-surface) 100%);
   border-bottom: 1px solid var(--color-border);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
   flex-shrink: 0;
+  position: relative;
+  z-index: 10;
 }
 
 .app-nav-brand {
@@ -137,6 +156,8 @@ body {
   gap: 0.75rem;
   padding: 0.75rem 1.25rem;
   border-bottom: 1px solid var(--color-border);
+  background: var(--color-surface);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
   flex-shrink: 0;
 }
 
@@ -256,13 +277,13 @@ body {
 }
 
 .edge-condition-dialog {
-  background: var(--color-surface);
+  background: linear-gradient(180deg, var(--color-surface-raised) 0%, var(--color-surface) 100%);
   border: 1px solid var(--color-border);
   border-radius: 6px;
   padding: 1rem;
   min-width: 280px;
   max-width: 340px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5), 0 0 1px rgba(59, 130, 246, 0.1);
 }
 
 .edge-condition-header {
@@ -347,9 +368,12 @@ body {
   flex-direction: column;
   width: 80px;
   flex-shrink: 0;
-  background: var(--color-surface);
+  background: linear-gradient(90deg, var(--color-surface) 0%, var(--color-surface-raised) 100%);
   border-right: 1px solid var(--color-border);
+  box-shadow: 1px 0 4px rgba(0, 0, 0, 0.25);
   overflow-y: auto;
+  position: relative;
+  z-index: 2;
 }
 
 .node-palette-header {
@@ -437,33 +461,38 @@ body {
 .wf-canvas .react-flow__edge-path {
   stroke: var(--color-border);
   stroke-width: 1.5;
+  transition: stroke 0.15s ease, stroke-width 0.15s ease;
 }
 
 .wf-canvas .react-flow__edge.selected .react-flow__edge-path,
 .wf-canvas .react-flow__edge:hover .react-flow__edge-path {
   stroke: var(--color-accent);
+  stroke-width: 2;
+  filter: drop-shadow(0 0 3px rgba(59, 130, 246, 0.2));
 }
 
 /* ── Workflow nodes ───────────────────────────────────────────────────── */
 
 .wf-node {
-  background: var(--color-surface);
+  background: linear-gradient(180deg, var(--color-surface-raised) 0%, var(--color-surface) 100%);
   border: 1px solid var(--color-border);
   border-radius: 5px;
   min-width: 140px;
   font-family: "JetBrains Mono", "Fira Code", monospace;
   font-size: 0.7rem;
   cursor: grab;
-  transition: border-color 0.1s, box-shadow 0.1s;
+  box-shadow: var(--shadow-panel);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
 .wf-node:hover {
   border-color: var(--color-accent);
+  box-shadow: var(--shadow-panel-hover);
 }
 
 .wf-node--selected {
   border-color: var(--color-accent);
-  box-shadow: 0 0 0 1px var(--color-accent);
+  box-shadow: 0 0 0 1px var(--color-accent), var(--glow-accent);
 }
 
 /* ── Node state styles (8 states per DESIGN_SPEC §7) ──────────────────── */
@@ -476,56 +505,73 @@ body {
   border-color: var(--color-text-muted);
 }
 
-/* running: subtle animated pulse glow */
+/* running: subtle pulse glow ring — the primary "alive" indicator */
 .wf-node--running {
   border-color: var(--color-accent);
-  animation: node-pulse 1.5s ease-in-out infinite;
+  animation: node-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 
 @keyframes node-pulse {
-  0%, 100% { box-shadow: 0 0 4px 0 var(--color-accent); }
-  50%       { box-shadow: 0 0 10px 2px var(--color-accent); }
+  0%, 100% {
+    box-shadow:
+      0 0 0 1px var(--color-accent),
+      0 0 4px 0 rgba(59, 130, 246, 0.15);
+  }
+  50% {
+    box-shadow:
+      0 0 0 1px var(--color-accent),
+      0 0 12px 3px rgba(59, 130, 246, 0.3);
+  }
 }
 
-/* waiting: amber hold state */
+/* waiting: amber hold state with static glow ring */
 .wf-node--waiting {
   border-color: #f59e0b;
-  box-shadow: 0 0 0 1px #f59e0b;
+  box-shadow: 0 0 0 1px #f59e0b, 0 0 6px -1px rgba(245, 158, 11, 0.2);
 }
 
-/* succeeded: green confirmation */
+/* succeeded: green confirmation ring */
 .wf-node--succeeded {
   border-color: #22c55e;
-  box-shadow: 0 0 0 1px #22c55e;
+  box-shadow: 0 0 0 1px #22c55e, 0 0 6px -1px rgba(34, 197, 94, 0.2);
 }
 
-/* failed: high-contrast alert */
+/* failed: high-contrast alert — flashes twice then holds */
 .wf-node--failed {
   border-color: #ef4444;
-  box-shadow: 0 0 0 1px #ef4444;
-  animation: node-fail-flash 2s ease-in-out 2;
+  box-shadow: 0 0 0 1px #ef4444, 0 0 8px -1px rgba(239, 68, 68, 0.3);
+  animation: node-fail-flash 1.8s ease-in-out 2;
 }
 
 @keyframes node-fail-flash {
-  0%, 100% { box-shadow: 0 0 0 1px #ef4444; }
-  50%       { box-shadow: 0 0 8px 2px #ef4444; }
+  0%, 100% {
+    box-shadow: 0 0 0 1px #ef4444, 0 0 4px 0 rgba(239, 68, 68, 0.15);
+  }
+  50% {
+    box-shadow: 0 0 0 2px #ef4444, 0 0 14px 2px rgba(239, 68, 68, 0.4);
+  }
 }
 
 /* skipped: dimmed, muted */
 .wf-node--skipped {
   opacity: 0.45;
   border-color: var(--color-text-muted);
+  box-shadow: none;
 }
 
-/* paused: amber with slow blink to differentiate from waiting */
+/* paused / review: orange slow breathe to signal "waiting on you" */
 .wf-node--paused {
   border-color: #f97316;
-  animation: node-paused-blink 2.5s ease-in-out infinite;
+  animation: node-paused-blink 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 
 @keyframes node-paused-blink {
-  0%, 100% { box-shadow: 0 0 0 1px #f97316; }
-  50%       { box-shadow: 0 0 6px 1px #f97316; }
+  0%, 100% {
+    box-shadow: 0 0 0 1px #f97316, 0 0 4px 0 rgba(249, 115, 22, 0.1);
+  }
+  50% {
+    box-shadow: 0 0 0 1px #f97316, 0 0 10px 2px rgba(249, 115, 22, 0.25);
+  }
 }
 
 .wf-node-header {
@@ -610,10 +656,16 @@ body {
   flex-direction: column;
   overflow: hidden;
   border-right: 1px solid var(--color-border);
+  background: var(--color-bg);
 }
 
 .library-panel:last-child {
   border-right: none;
+}
+
+.library-panel > .panel-header {
+  background: var(--color-surface);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
 }
 
 .library-header-actions {
@@ -629,6 +681,7 @@ body {
   color: var(--color-text-muted);
   padding: 0.5rem 1rem;
   border-bottom: 1px solid var(--color-border);
+  background: var(--color-surface);
   flex-shrink: 0;
 }
 
@@ -659,16 +712,18 @@ body {
   border: 1px solid var(--color-border);
   border-radius: 4px;
   cursor: pointer;
-  transition: border-color 0.1s;
+  box-shadow: var(--shadow-panel);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
 .lib-card:hover {
   border-color: var(--color-accent);
+  box-shadow: var(--shadow-panel-hover);
 }
 
 .lib-card--selected {
   border-color: var(--color-accent);
-  box-shadow: 0 0 0 1px var(--color-accent);
+  box-shadow: 0 0 0 1px var(--color-accent), var(--glow-accent);
 }
 
 .lib-card--run {
@@ -810,7 +865,8 @@ body {
   padding: 0.5rem 1.25rem;
   border-bottom: 1px solid var(--color-border);
   flex-shrink: 0;
-  background: var(--color-surface);
+  background: linear-gradient(180deg, var(--color-surface-raised) 0%, var(--color-surface) 100%);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
 }
 
 .lr-hud-row {
@@ -852,10 +908,18 @@ body {
   flex-direction: column;
   overflow: hidden;
   border-right: 1px solid var(--color-border);
+  background: var(--color-bg);
 }
 
 .lr-panel:last-child {
   border-right: none;
+}
+
+/* Panel headers share mission-control depth */
+.lr-panel > .panel-header {
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
 }
 
 .lr-empty {
@@ -1003,11 +1067,20 @@ body {
   min-height: 0;
 }
 
-/* Active edges: directional flow animation via React Flow's built-in animated prop.
-   Additional visual boost: brighter stroke for active edges. */
+/* Active edges: directional flow via animated dash offset.
+   Marching dashes move along the path to show data flow direction. */
 .lr-edge--active .react-flow__edge-path {
   stroke: var(--color-accent);
   stroke-width: 2;
+  stroke-dasharray: 8 4;
+  animation: edge-flow 0.8s linear infinite;
+  filter: drop-shadow(0 0 2px rgba(59, 130, 246, 0.3));
+}
+
+@keyframes edge-flow {
+  to {
+    stroke-dashoffset: -12;
+  }
 }
 
 /* ── Event Inspector (Replay View) ─────────────────────────────────── */
@@ -1024,6 +1097,7 @@ body {
   border: 1px solid var(--color-border);
   border-radius: 4px;
   background: var(--color-bg);
+  box-shadow: var(--shadow-panel);
   overflow: hidden;
 }
 
@@ -1176,4 +1250,14 @@ body {
   margin-top: 0.25rem;
   max-height: 300px;
   overflow-y: auto;
+}
+
+/* ── Accessibility: respect reduced-motion preference ──────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .wf-node--running,
+  .wf-node--failed,
+  .wf-node--paused,
+  .lr-edge--active .react-flow__edge-path {
+    animation: none;
+  }
 }
