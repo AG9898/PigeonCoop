@@ -50,12 +50,14 @@ Purpose: create and configure workflows.
 
 Required elements:
 - graph canvas
-- node palette
+- node palette (lists all 7 node types: Start, End, Agent, Tool, Router, Memory, Review)
 - inspector panel
 - validation panel
 - run button / test action
 
 Behavior:
+- node palette items drag onto the canvas via `dataTransfer` (MIME type `application/reactflow`); drop position becomes the node's canvas coordinates; new node gets a UUID
+- node palette items can also be clicked to add the node at a default position
 - supports drag/drop node placement
 - supports edge creation; condition_kind (always/on_success/on_failure/expression) selected via dialog on connect
 - surfaces invalid graph structures before run via `validate_workflow` command
