@@ -150,6 +150,26 @@ For typed IPC interactions, use the interfaces from `apps/desktop/src/types/ipc.
 - Do not test Tauri bridge behavior in component tests
 - All new components using `listen()` must have at least one test asserting correct unlisten cleanup
 
+### Replay view test suite (UI-RPL-004)
+
+`apps/desktop/src/__tests__/ReplayView.test.tsx` covers:
+
+**ReplayView core** — event loading via `list_events_for_run`, chronological event list, scrubber initialization, event-detail selection, error state on invoke rejection.
+
+**Graph state panel** — `deriveNodeStates` integration: empty state when no node events are in range, node state appears when scrubbing to a node event, state updates as scrubber advances.
+
+**Scrubber drives node states** — verifies that all scrubber controls (range slider, next/prev buttons) update the graph state panel and event inspector:
+- Range slider changes update `node-state-*` items in the graph panel
+- Scrubbing backward reverts graph state (later-node entries disappear)
+- Next/prev buttons increment node states step-by-step
+- Event inspector payload reflects the event at the current scrubber position
+
+**EventInspector typed panes** — envelope fields for all events, node context pane (node_id, node_type, input_refs, output), routing pane (router_node_id, selected edges, reason), command pane (command, exit_code, duration, stdout/stderr), no family pane for run-level events, select prompt when no event selected.
+
+**Library → Replay navigation** — library view shows replay button for completed runs, clicking it navigates to ReplayView. App-level integration test covers the full Library → Replay navigation flow.
+
+**Testing pattern note:** Use `getAllByRole("option")` to wait for the event list to render rather than `getByText` on event type names, because the same event type string often appears in both the event list and the event inspector simultaneously.
+
 ---
 
 ## 3. End-to-end tests

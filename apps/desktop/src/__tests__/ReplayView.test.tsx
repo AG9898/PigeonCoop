@@ -242,6 +242,202 @@ describe("ReplayView — graph state panel", () => {
   });
 });
 
+describe("ReplayView — scrubber drives node states", () => {
+  const MULTI_NODE_EVENTS: RunEvent[] = [
+    {
+      event_id: "evt-s01",
+      run_id: "run-abc",
+      workflow_id: "wf-001",
+      event_type: "run.started",
+      timestamp: "2026-03-08T10:00:00.000Z",
+      payload: {},
+      sequence: 1,
+    },
+    {
+      event_id: "evt-s02",
+      run_id: "run-abc",
+      workflow_id: "wf-001",
+      node_id: "node-plan",
+      event_type: "node.queued",
+      timestamp: "2026-03-08T10:00:01.000Z",
+      payload: { node_type: "agent" },
+      sequence: 2,
+    },
+    {
+      event_id: "evt-s03",
+      run_id: "run-abc",
+      workflow_id: "wf-001",
+      node_id: "node-plan",
+      event_type: "node.running",
+      timestamp: "2026-03-08T10:00:02.000Z",
+      payload: {},
+      sequence: 3,
+    },
+    {
+      event_id: "evt-s04",
+      run_id: "run-abc",
+      workflow_id: "wf-001",
+      node_id: "node-plan",
+      event_type: "node.succeeded",
+      timestamp: "2026-03-08T10:00:03.000Z",
+      payload: { output: "plan complete" },
+      sequence: 4,
+    },
+    {
+      event_id: "evt-s05",
+      run_id: "run-abc",
+      workflow_id: "wf-001",
+      node_id: "node-tool",
+      event_type: "node.queued",
+      timestamp: "2026-03-08T10:00:04.000Z",
+      payload: { node_type: "tool" },
+      sequence: 5,
+    },
+    {
+      event_id: "evt-s06",
+      run_id: "run-abc",
+      workflow_id: "wf-001",
+      node_id: "node-tool",
+      event_type: "node.running",
+      timestamp: "2026-03-08T10:00:05.000Z",
+      payload: {},
+      sequence: 6,
+    },
+    {
+      event_id: "evt-s07",
+      run_id: "run-abc",
+      workflow_id: "wf-001",
+      node_id: "node-tool",
+      event_type: "node.failed",
+      timestamp: "2026-03-08T10:00:06.000Z",
+      payload: { error: "exit code 1" },
+      sequence: 7,
+    },
+  ];
+
+  it("changing the range slider updates node states in the graph panel", async () => {
+    mockInvoke.mockResolvedValueOnce(MULTI_NODE_EVENTS);
+    render(<ReplayView runId="run-abc" />);
+    await waitFor(() => expect(screen.getAllByRole("option").length).toBe(7));
+
+    // At position 0 (run.started) — no node events yet
+    expect(screen.getByTestId("graph-state-panel").textContent).toContain(
+      "No node events"
+    );
+
+    // Move slider to position 3 (node-plan succeeded)
+    fireEvent.change(screen.getByRole("slider"), { target: { value: "3" } });
+    await waitFor(() => {
+      const planItem = screen.getByTestId("node-state-node-plan");
+      expect(planItem.textContent).toContain("succeeded");
+    });
+
+    // Move slider to position 5 (node-tool running, node-plan still succeeded)
+    fireEvent.change(screen.getByRole("slider"), { target: { value: "5" } });
+    await waitFor(() => {
+      expect(screen.getByTestId("node-state-node-plan").textContent).toContain(
+        "succeeded"
+      );
+      expect(screen.getByTestId("node-state-node-tool").textContent).toContain(
+        "running"
+      );
+    });
+
+    // Move slider to position 6 (node-tool failed)
+    fireEvent.change(screen.getByRole("slider"), { target: { value: "6" } });
+    await waitFor(() => {
+      expect(screen.getByTestId("node-state-node-tool").textContent).toContain(
+        "failed"
+      );
+    });
+  });
+
+  it("scrubbing backward reverts node states to earlier point", async () => {
+    mockInvoke.mockResolvedValueOnce(MULTI_NODE_EVENTS);
+    render(<ReplayView runId="run-abc" />);
+    await waitFor(() => expect(screen.getAllByRole("option").length).toBe(7));
+
+    // Go to end — both nodes have final states
+    fireEvent.change(screen.getByRole("slider"), { target: { value: "6" } });
+    await waitFor(() => {
+      expect(screen.getByTestId("node-state-node-tool").textContent).toContain(
+        "failed"
+      );
+    });
+
+    // Rewind to position 2 — only node-plan running, no node-tool yet
+    fireEvent.change(screen.getByRole("slider"), { target: { value: "2" } });
+    await waitFor(() => {
+      expect(screen.getByTestId("node-state-node-plan").textContent).toContain(
+        "running"
+      );
+      expect(screen.queryByTestId("node-state-node-tool")).toBeNull();
+    });
+  });
+
+  it("next/prev scrubber buttons update node states incrementally", async () => {
+    mockInvoke.mockResolvedValueOnce(MULTI_NODE_EVENTS);
+    render(<ReplayView runId="run-abc" />);
+    await waitFor(() => expect(screen.getAllByRole("option").length).toBe(7));
+
+    const nextBtn = screen.getByLabelText("next event");
+
+    // At position 0 — no node events
+    expect(screen.getByTestId("graph-state-panel").textContent).toContain(
+      "No node events"
+    );
+
+    // Click next → position 1 (node-plan queued)
+    fireEvent.click(nextBtn);
+    await waitFor(() => {
+      expect(screen.getByTestId("node-state-node-plan").textContent).toContain(
+        "queued"
+      );
+    });
+
+    // Click next → position 2 (node-plan running)
+    fireEvent.click(screen.getByLabelText("next event"));
+    await waitFor(() => {
+      expect(screen.getByTestId("node-state-node-plan").textContent).toContain(
+        "running"
+      );
+    });
+
+    // Click prev → back to position 1 (node-plan queued again)
+    fireEvent.click(screen.getByLabelText("previous event"));
+    await waitFor(() => {
+      expect(screen.getByTestId("node-state-node-plan").textContent).toContain(
+        "queued"
+      );
+    });
+  });
+
+  it("event inspector payload updates when scrubber position changes via slider", async () => {
+    mockInvoke.mockResolvedValueOnce(MULTI_NODE_EVENTS);
+    render(<ReplayView runId="run-abc" />);
+    await waitFor(() => expect(screen.getAllByRole("option").length).toBe(7));
+
+    // Position 0: run.started
+    expect(screen.getByTestId("event-detail").textContent).toContain("run.started");
+
+    // Move to position 3: node.succeeded with output
+    fireEvent.change(screen.getByRole("slider"), { target: { value: "3" } });
+    await waitFor(() => {
+      const detail = screen.getByTestId("event-detail");
+      expect(detail.textContent).toContain("node.succeeded");
+      expect(detail.textContent).toContain("plan complete");
+    });
+
+    // Move to position 6: node.failed with error
+    fireEvent.change(screen.getByRole("slider"), { target: { value: "6" } });
+    await waitFor(() => {
+      const detail = screen.getByTestId("event-detail");
+      expect(detail.textContent).toContain("node.failed");
+      expect(detail.textContent).toContain("exit code 1");
+    });
+  });
+});
+
 describe("App — Library to Replay navigation", () => {
   it("navigates from Library to Replay when a run's Replay button is clicked", async () => {
     mockInvoke.mockImplementation((cmd: string) => {

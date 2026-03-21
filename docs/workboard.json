@@ -2026,7 +2026,7 @@
       "id": "UI-RPL-004",
       "group_id": "UI-RPL",
       "title": "Replay view component tests",
-      "status": "todo",
+      "status": "done",
       "priority": "medium",
       "type": "testing",
       "summary": "Replay tests cover event loading and event selection; graph-playback assertions are still pending.",
