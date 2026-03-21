@@ -1,0 +1,18 @@
+# winget manifest for Agent Arcade
+# Submit to https://github.com/microsoft/winget-pkgs via PR
+# Update InstallerUrl and InstallerSha256 on each release.
+
+PackageIdentifier: AgentArcade.AgentArcade
+PackageVersion: 0.1.0
+PackageName: Agent Arcade
+Publisher: Agent Arcade
+License: MIT
+ShortDescription: Visual workflow builder and runtime monitor for agent systems
+PackageUrl: https://github.com/anthropics/agent-arcade
+InstallerType: msi
+Installers:
+  - Architecture: x64
+    InstallerUrl: https://github.com/anthropics/agent-arcade/releases/download/v0.1.0/agent-arcade_0.1.0_x64_en-US.msi
+    InstallerSha256: PLACEHOLDER_SHA256
+ManifestType: singleton
+ManifestVersion: 1.6.0

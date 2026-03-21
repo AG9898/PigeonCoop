@@ -1,0 +1,46 @@
+# Maintainer: Agent Arcade <noreply@agent-arcade.dev>
+# AUR PKGBUILD for Agent Arcade (AppImage-based)
+#
+# To test locally:
+#   makepkg -si
+#
+# Update pkgver, source URL, and sha256sums on each release.
+
+pkgname=agent-arcade-bin
+pkgver=0.1.0
+pkgrel=1
+pkgdesc="Visual workflow builder and runtime monitor for agent systems"
+arch=('x86_64')
+url="https://github.com/anthropics/agent-arcade"
+license=('MIT')
+depends=('webkit2gtk-4.1' 'gtk3' 'libayatana-appindicator')
+provides=('agent-arcade')
+conflicts=('agent-arcade')
+source=("${pkgname}-${pkgver}.AppImage::https://github.com/anthropics/agent-arcade/releases/download/v${pkgver}/agent-arcade_${pkgver}_amd64.AppImage")
+sha256sums=('PLACEHOLDER_SHA256')
+options=('!strip')
+
+prepare() {
+    chmod +x "${pkgname}-${pkgver}.AppImage"
+    "./${pkgname}-${pkgver}.AppImage" --appimage-extract
+}
+
+package() {
+    install -d "${pkgdir}/opt/agent-arcade"
+    cp -r squashfs-root/* "${pkgdir}/opt/agent-arcade/"
+
+    install -d "${pkgdir}/usr/bin"
+    ln -s /opt/agent-arcade/AppRun "${pkgdir}/usr/bin/agent-arcade"
+
+    # Desktop entry
+    install -Dm644 squashfs-root/agent-arcade.desktop \
+        "${pkgdir}/usr/share/applications/agent-arcade.desktop"
+
+    # Icon
+    for size in 32x32 128x128 256x256; do
+        if [ -f "squashfs-root/usr/share/icons/hicolor/${size}/apps/agent-arcade.png" ]; then
+            install -Dm644 "squashfs-root/usr/share/icons/hicolor/${size}/apps/agent-arcade.png" \
+                "${pkgdir}/usr/share/icons/hicolor/${size}/apps/agent-arcade.png"
+        fi
+    done
+}

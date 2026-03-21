@@ -12,7 +12,14 @@
       "Bash(jq *)",
       "Bash(mktemp *)",
       "Bash(rm /tmp/ralph_*)",
-      "Bash(cat /tmp/ralph_*)"
+      "Bash(cat /tmp/ralph_*)",
+      "Bash(which claude *)",
+      "Bash(SKILL_NAME=*)",
+      "Bash(SKILL_FILE=*)",
+      "Bash(RESULT_FILE=*)",
+      "Bash(PROMPT_FILE=*)",
+      "Bash(AGENT_TEXT=*)",
+      "Bash(rm -f /tmp/ralph_*)"
     ]
   }
 }

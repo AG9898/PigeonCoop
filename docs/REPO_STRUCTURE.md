@@ -6,6 +6,7 @@
 .github/
   workflows/
     ci.yml               # CI: cargo test (--exclude agent-arcade) + npm test
+    release.yml          # Release: builds .dmg/.msi/.AppImage on v* tag push, attaches to GitHub Release
 
 AGENTS.md
 CLAUDE.md               # Symlink to AGENTS.md
@@ -23,6 +24,15 @@ docs/
   TAURI_IPC_CONTRACT.md
   TESTING.md
   workboard.json
+
+distribution/
+  homebrew/
+    agent-arcade.rb      # Homebrew formula (macOS arm64/x64)
+  winget/
+    AgentArcade.yaml     # winget manifest (Windows MSI)
+  aur/
+    PKGBUILD             # AUR binary package (Linux AppImage)
+    .SRCINFO             # AUR source info
 
 apps/
   desktop/

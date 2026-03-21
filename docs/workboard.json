@@ -2190,7 +2190,7 @@
       "id": "UX-005",
       "group_id": "UX",
       "title": "Distribution artifacts: GitHub Releases and package managers",
-      "status": "todo",
+      "status": "done",
       "priority": "medium",
       "type": "implementation",
       "summary": "Set up native OS installer builds for GitHub Releases and formulae for Homebrew, winget, and AUR.",

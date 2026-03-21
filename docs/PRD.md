@@ -283,6 +283,22 @@ A developer should be able to install and reach their first meaningful run in un
 
 Package manager support is a trust signal as much as a convenience. It should be set up early, not deferred to post-launch.
 
+### Release build pipeline
+A GitHub Actions workflow (`.github/workflows/release.yml`) runs on every `v*` tag push and produces:
+- `.dmg` — macOS (both `aarch64-apple-darwin` and `x86_64-apple-darwin`)
+- `.msi` — Windows (`x86_64-pc-windows-msvc`)
+- `.AppImage` — Linux (`x86_64-unknown-linux-gnu`)
+
+The workflow uses `tauri-apps/tauri-action` to build, create the GitHub Release, and attach all artifacts automatically. The Tauri bundler config (`tauri.conf.json`) sets `bundle.active: true` with targets `["dmg", "msi", "appimage"]`.
+
+### Package manager manifests
+Maintained under `distribution/`:
+- `distribution/homebrew/agent-arcade.rb` — Homebrew formula with arm64/x64 macOS support
+- `distribution/winget/AgentArcade.yaml` — winget singleton manifest for MSI installer
+- `distribution/aur/PKGBUILD` — AUR binary package using AppImage extraction
+
+Each manifest contains placeholder SHA256 checksums that must be updated on each release. The Homebrew and winget manifests are submitted to their respective package registries via PR.
+
 ### What is not used for distribution
 - npm/npx — inappropriate for a native binary + webview desktop app; adds Node.js as a hard runtime dependency on end users for no functional benefit
 - Electron-style bundling — Tauri's native webview approach is intentional; do not replace it
