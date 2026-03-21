@@ -160,6 +160,168 @@ body {
 
 /* ── Builder view layout ────────────────────────────────────────────── */
 
+/* Validate button variant */
+.toolbar-btn--validate {
+  border-color: var(--color-accent);
+}
+
+/* Status badge for errors */
+.builder-status--error {
+  color: #f97316;
+}
+
+/* ── Validation error panel ─────────────────────────────────────────── */
+
+.validation-panel {
+  background: var(--color-surface);
+  border-bottom: 1px solid #f97316;
+  padding: 0.5rem 0.75rem;
+  flex-shrink: 0;
+}
+
+.validation-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.35rem;
+}
+
+.validation-panel-title {
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: #f97316;
+}
+
+.validation-panel-close {
+  background: none;
+  border: none;
+  color: var(--color-text-muted);
+  font-size: 0.9rem;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+}
+
+.validation-panel-close:hover {
+  color: var(--color-text);
+}
+
+.validation-error-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.validation-error-item {
+  font-size: 0.7rem;
+  color: #fca5a5;
+  padding-left: 0.75rem;
+  position: relative;
+}
+
+.validation-error-item::before {
+  content: "✕";
+  position: absolute;
+  left: 0;
+  color: #f97316;
+  font-size: 0.6rem;
+}
+
+/* ── Edge condition dialog ──────────────────────────────────────────── */
+
+.edge-condition-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.edge-condition-dialog {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  padding: 1rem;
+  min-width: 280px;
+  max-width: 340px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+
+.edge-condition-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+}
+
+.edge-condition-title {
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: var(--color-accent);
+}
+
+.edge-condition-close {
+  background: none;
+  border: none;
+  color: var(--color-text-muted);
+  font-size: 0.9rem;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+}
+
+.edge-condition-close:hover {
+  color: var(--color-text);
+}
+
+.edge-condition-hint {
+  font-size: 0.7rem;
+  color: var(--color-text-muted);
+  margin: 0 0 0.75rem;
+}
+
+.edge-condition-options {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.edge-condition-option {
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  padding: 0.5rem 0.65rem;
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 0.1s, background 0.1s;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.edge-condition-option:hover {
+  border-color: var(--color-accent);
+  background: color-mix(in srgb, var(--color-accent) 8%, var(--color-bg));
+}
+
+.edge-condition-option-label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.edge-condition-option-desc {
+  font-size: 0.62rem;
+  color: var(--color-text-muted);
+}
+
 .builder-body {
   display: flex;
   flex-direction: row;
@@ -226,6 +388,7 @@ body {
 .wf-canvas {
   width: 100%;
   height: 100%;
+  position: relative;
 }
 
 /* Override React Flow defaults to match dark theme */
@@ -392,6 +555,19 @@ body {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+/* invalid: dashed orange outline — build-time error, distinct from failed (runtime) */
+.wf-node--invalid {
+  border-color: #f97316;
+  border-style: dashed;
+  box-shadow: 0 0 0 1px #f97316;
+}
+
+/* invalid edge */
+.wf-canvas .react-flow__edge.wf-edge--invalid .react-flow__edge-path {
+  stroke: #f97316;
+  stroke-dasharray: 5 3;
 }
 
 /* React Flow handle styling */

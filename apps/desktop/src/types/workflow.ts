@@ -100,6 +100,37 @@ export interface RunInstance {
   ended_at?: string;
 }
 
+// ---------------------------------------------------------------------------
+// Validation types (mirrors core-engine/src/validation/mod.rs)
+// ---------------------------------------------------------------------------
+
+export type ValidationErrorKind =
+  | "no_start_node"
+  | "no_end_node"
+  | "multiple_start_nodes"
+  | "multiple_end_nodes"
+  | "cycle_detected"
+  | "invalid_edge_reference"
+  | "unreachable_node";
+
+export interface ValidationError {
+  kind: ValidationErrorKind;
+  /** Populated for unreachable_node */
+  node_id?: string;
+  /** Populated for cycle_detected */
+  node_ids?: string[];
+  /** Populated for invalid_edge_reference */
+  edge_id?: string;
+  missing_node_id?: string;
+  /** Populated for multiple_start_nodes / multiple_end_nodes */
+  count?: number;
+}
+
+export interface ValidationResult {
+  is_valid: boolean;
+  errors: ValidationError[];
+}
+
 export interface RunEvent {
   event_id: string;
   run_id: string;

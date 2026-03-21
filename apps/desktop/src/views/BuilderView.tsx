@@ -2,7 +2,7 @@ import { useRef, useState, useCallback } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { WorkflowCanvas, WorkflowCanvasHandle } from "../components/canvas/WorkflowCanvas";
 import { NodePalette } from "../components/panels/NodePalette";
-import type { NodeKind, WorkflowDefinition } from "../types/workflow";
+import type { ConditionKind, NodeKind, ValidationResult, WorkflowDefinition } from "../types/workflow";
 import type { WorkflowNodeData } from "../components/nodes/WorkflowNode";
 
 function flowToWorkflow(
@@ -32,13 +32,53 @@ function flowToWorkflow(
       edge_id: e.id,
       source_node_id: e.source,
       target_node_id: e.target,
-      condition_kind: "always" as const,
+      // Use condition_kind stored in edge data, falling back to "always".
+      condition_kind: ((e.data as { condition_kind?: ConditionKind } | undefined)?.condition_kind ?? "always"),
       label: typeof e.label === "string" ? e.label : undefined,
     })),
     default_constraints: null,
     created_at: now,
     updated_at: now,
   };
+}
+
+/** Extract node IDs referenced in validation errors (unreachable, cycle). */
+function invalidNodeIdsFromResult(result: ValidationResult): string[] {
+  const ids = new Set<string>();
+  for (const err of result.errors) {
+    if (err.kind === "unreachable_node" && err.node_id) {
+      ids.add(err.node_id);
+    }
+    if (err.kind === "cycle_detected" && err.node_ids) {
+      err.node_ids.forEach((id) => ids.add(id));
+    }
+  }
+  return Array.from(ids);
+}
+
+/** Extract edge IDs referenced in validation errors (invalid_edge_reference). */
+function invalidEdgeIdsFromResult(result: ValidationResult): string[] {
+  const ids = new Set<string>();
+  for (const err of result.errors) {
+    if (err.kind === "invalid_edge_reference" && err.edge_id) {
+      ids.add(err.edge_id);
+    }
+  }
+  return Array.from(ids);
+}
+
+/** Human-readable summary of a single validation error. */
+function errorMessage(err: ValidationResult["errors"][number]): string {
+  switch (err.kind) {
+    case "no_start_node":           return "No Start node — add exactly one Start node.";
+    case "no_end_node":             return "No End node — add at least one End node.";
+    case "multiple_start_nodes":    return `${err.count ?? "?"} Start nodes found — only one is allowed.`;
+    case "multiple_end_nodes":      return `${err.count ?? "?"} End nodes found — only one is allowed.`;
+    case "cycle_detected":          return "Cycle detected — workflow must be a DAG (no loops).";
+    case "invalid_edge_reference":  return `Edge references unknown node ${err.missing_node_id ?? "?"}.`;
+    case "unreachable_node":        return `Node ${err.node_id ?? "?"} is unreachable from the Start node.`;
+    default:                        return "Unknown validation error.";
+  }
 }
 
 export function BuilderView() {
@@ -50,6 +90,10 @@ export function BuilderView() {
   const [status, setStatus] = useState<string>("");
   const [showPicker, setShowPicker] = useState(false);
   const [pickerList, setPickerList] = useState<WorkflowDefinition[]>([]);
+  const [validationResult, setValidationResult] = useState<ValidationResult | null>(null);
+
+  const invalidNodeIds = validationResult ? invalidNodeIdsFromResult(validationResult) : [];
+  const invalidEdgeIds = validationResult ? invalidEdgeIdsFromResult(validationResult) : [];
 
   async function handleSave() {
     const flowData = canvasRef.current?.getFlowData();
@@ -71,6 +115,22 @@ export function BuilderView() {
     }
   }
 
+  async function handleValidate() {
+    const flowData = canvasRef.current?.getFlowData();
+    if (!flowData) return;
+
+    const id = workflowId ?? crypto.randomUUID();
+    const wf = flowToWorkflow(flowData, id, workflowName);
+
+    try {
+      const result = await invoke<ValidationResult>("validate_workflow", { workflow: wf });
+      setValidationResult(result);
+      setStatus(result.is_valid ? "Valid" : `${result.errors.length} error(s)`);
+    } catch (e) {
+      setStatus(`Validation failed: ${e}`);
+    }
+  }
+
   async function handleLoadClick() {
     try {
       const list = await invoke<WorkflowDefinition[]>("list_workflows");
@@ -86,6 +146,7 @@ export function BuilderView() {
     setWorkflowId(wf.workflow_id);
     setCanvasKey(wf.workflow_id);
     setShowPicker(false);
+    setValidationResult(null);
     setStatus("Loaded");
   }
 
@@ -101,7 +162,12 @@ export function BuilderView() {
         <div className="builder-toolbar">
           <button className="toolbar-btn" onClick={handleSave}>Save</button>
           <button className="toolbar-btn" onClick={handleLoadClick}>Load</button>
-          {status && <span className="builder-status">{status}</span>}
+          <button className="toolbar-btn toolbar-btn--validate" onClick={handleValidate}>Validate</button>
+          {status && (
+            <span className={`builder-status${validationResult && !validationResult.is_valid ? " builder-status--error" : ""}`}>
+              {status}
+            </span>
+          )}
         </div>
       </div>
       {showPicker && (
@@ -124,9 +190,30 @@ export function BuilderView() {
           </ul>
         </div>
       )}
+      {validationResult && !validationResult.is_valid && (
+        <div className="validation-panel" role="alert" aria-label="Validation errors">
+          <div className="validation-panel-header">
+            <span className="validation-panel-title">VALIDATION ERRORS</span>
+            <button className="validation-panel-close" onClick={() => setValidationResult(null)}>×</button>
+          </div>
+          <ul className="validation-error-list">
+            {validationResult.errors.map((err, i) => (
+              <li key={i} className="validation-error-item">
+                {errorMessage(err)}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
       <div className="view-body builder-body">
         <NodePalette onAddNode={handleAddNode} />
-        <WorkflowCanvas key={canvasKey} ref={canvasRef} workflow={loadedWorkflow} />
+        <WorkflowCanvas
+          key={canvasKey}
+          ref={canvasRef}
+          workflow={loadedWorkflow}
+          invalidNodeIds={invalidNodeIds}
+          invalidEdgeIds={invalidEdgeIds}
+        />
       </div>
     </div>
   );

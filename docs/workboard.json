@@ -1651,7 +1651,7 @@
       "id": "UI-BLD-005",
       "group_id": "UI-BLD",
       "title": "Edge creation and validation feedback",
-      "status": "todo",
+      "status": "done",
       "priority": "medium",
       "type": "implementation",
       "summary": "Enable edge creation between nodes and surface validation errors visually.",

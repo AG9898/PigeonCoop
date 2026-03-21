@@ -10,6 +10,8 @@ export interface WorkflowNodeData {
   kind: NodeKind;
   label: string;
   state?: NodeState;
+  /** True when the engine validator has flagged this node with an error. */
+  invalid?: boolean;
 }
 
 interface KindMeta {
@@ -48,6 +50,7 @@ function WorkflowNode({ data, selected }: NodeProps<WorkflowNodeData>) {
     `wf-node--${data.kind}`,
     selected ? "wf-node--selected" : "",
     state !== "idle" ? `wf-node--${state}` : "",
+    data.invalid ? "wf-node--invalid" : "",
   ]
     .filter(Boolean)
     .join(" ");

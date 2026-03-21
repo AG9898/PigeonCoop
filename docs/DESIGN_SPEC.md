@@ -57,8 +57,10 @@ Required elements:
 
 Behavior:
 - supports drag/drop node placement
-- supports edge creation
-- surfaces invalid graph structures before run
+- supports edge creation; condition_kind (always/on_success/on_failure/expression) selected via dialog on connect
+- surfaces invalid graph structures before run via `validate_workflow` command
+- invalid nodes highlighted with dashed orange border; invalid edges with dashed orange stroke
+- validation panel shows human-readable error list; dismissable
 - preserves layout and workflow metadata
 
 ### 4.2 Live Run View

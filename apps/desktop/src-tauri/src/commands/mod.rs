@@ -16,6 +16,7 @@ use core_engine::coordinator::RunCoordinator;
 use core_engine::review::{handle_review_decision, ReviewDecision};
 use core_engine::scheduler::RunScheduler;
 use core_engine::state_machine::{node::NodeTransitionInput, RunTransitionInput};
+use core_engine::validation::{ValidationResult, WorkflowValidator};
 use event_model::event::RunEvent;
 use persistence::{
     repositories::{
@@ -171,6 +172,15 @@ pub fn export_workflow(state: State<AppState>, id: String) -> CmdResult<String> 
         Some(wf) => serde_json::to_string(&wf).map_err(cmd_err),
         None => Err(CmdError { message: format!("workflow {id} not found") }),
     }
+}
+
+/// Validate a workflow definition and return a list of validation errors.
+///
+/// Returns a `ValidationResult` with `is_valid` and `errors` fields.
+/// No persistence side-effects — pure structural check.
+#[tauri::command]
+pub fn validate_workflow(workflow: WorkflowDefinition) -> ValidationResult {
+    WorkflowValidator::new().validate_to_result(&workflow)
 }
 
 // ---------------------------------------------------------------------------

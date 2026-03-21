@@ -130,3 +130,85 @@ describe("BuilderView save/load", () => {
     expect(screen.getByText("Load failed: connection error")).toBeTruthy();
   });
 });
+
+describe("BuilderView validation", () => {
+  it("renders Validate button", () => {
+    render(<BuilderView />);
+    expect(screen.getByText("Validate")).toBeTruthy();
+  });
+
+  it("calls validate_workflow on Validate click", async () => {
+    const result = { is_valid: true, errors: [] };
+    mockInvoke.mockResolvedValue(result);
+    render(<BuilderView />);
+    await act(async () => {
+      fireEvent.click(screen.getByText("Validate"));
+    });
+    expect(mockInvoke).toHaveBeenCalledWith(
+      "validate_workflow",
+      expect.objectContaining({ workflow: expect.objectContaining({ name: "Untitled Workflow" }) })
+    );
+  });
+
+  it("shows Valid status when workflow passes validation", async () => {
+    const result = { is_valid: true, errors: [] };
+    mockInvoke.mockResolvedValue(result);
+    render(<BuilderView />);
+    await act(async () => {
+      fireEvent.click(screen.getByText("Validate"));
+    });
+    expect(screen.getByText("Valid")).toBeTruthy();
+  });
+
+  it("shows validation error panel when errors are present", async () => {
+    const result = {
+      is_valid: false,
+      errors: [{ kind: "no_start_node" }],
+    };
+    mockInvoke.mockResolvedValue(result);
+    render(<BuilderView />);
+    await act(async () => {
+      fireEvent.click(screen.getByText("Validate"));
+    });
+    expect(screen.getByRole("alert")).toBeTruthy();
+    expect(screen.getByText("VALIDATION ERRORS")).toBeTruthy();
+    expect(screen.getByText("No Start node — add exactly one Start node.")).toBeTruthy();
+  });
+
+  it("shows error count in status badge when validation fails", async () => {
+    const result = {
+      is_valid: false,
+      errors: [{ kind: "no_start_node" }, { kind: "no_end_node" }],
+    };
+    mockInvoke.mockResolvedValue(result);
+    render(<BuilderView />);
+    await act(async () => {
+      fireEvent.click(screen.getByText("Validate"));
+    });
+    expect(screen.getByText("2 error(s)")).toBeTruthy();
+  });
+
+  it("dismisses validation panel when × is clicked", async () => {
+    const result = {
+      is_valid: false,
+      errors: [{ kind: "no_end_node" }],
+    };
+    mockInvoke.mockResolvedValue(result);
+    render(<BuilderView />);
+    await act(async () => {
+      fireEvent.click(screen.getByText("Validate"));
+    });
+    expect(screen.getByRole("alert")).toBeTruthy();
+    fireEvent.click(screen.getAllByText("×")[0]);
+    expect(screen.queryByRole("alert")).toBeNull();
+  });
+
+  it("shows Validation failed status on invoke error", async () => {
+    mockInvoke.mockRejectedValue("backend error");
+    render(<BuilderView />);
+    await act(async () => {
+      fireEvent.click(screen.getByText("Validate"));
+    });
+    expect(screen.getByText("Validation failed: backend error")).toBeTruthy();
+  });
+});
