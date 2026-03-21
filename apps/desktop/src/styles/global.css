@@ -21,6 +21,18 @@
   --node-router: #f59e0b;
   --node-memory: #06b6d4;
   --node-review: #f97316;
+
+  /* Event family colors */
+  --ev-run:      #3b82f6;
+  --ev-node:     #22c55e;
+  --ev-command:  #a855f7;
+  --ev-agent:    #60a5fa;
+  --ev-routing:  #f59e0b;
+  --ev-review:   #f97316;
+  --ev-memory:   #06b6d4;
+  --ev-budget:   #ef4444;
+  --ev-guardrail:#ef4444;
+  --ev-unknown:  var(--color-text-muted);
 }
 
 body {
@@ -924,7 +936,29 @@ body {
   font-size: 0.65rem;
   cursor: pointer;
   transition: background 0.08s;
+  border-left: 2px solid transparent;
 }
+
+/* Event family color-coding — left border + type text color */
+.lr-event-item--run       { border-left-color: var(--ev-run); }
+.lr-event-item--node      { border-left-color: var(--ev-node); }
+.lr-event-item--command   { border-left-color: var(--ev-command); }
+.lr-event-item--agent     { border-left-color: var(--ev-agent); }
+.lr-event-item--routing   { border-left-color: var(--ev-routing); }
+.lr-event-item--review    { border-left-color: var(--ev-review); }
+.lr-event-item--memory    { border-left-color: var(--ev-memory); }
+.lr-event-item--budget    { border-left-color: var(--ev-budget); }
+.lr-event-item--guardrail { border-left-color: var(--ev-guardrail); }
+
+.lr-event-item--run       .lr-event-type { color: var(--ev-run); }
+.lr-event-item--node      .lr-event-type { color: var(--ev-node); }
+.lr-event-item--command   .lr-event-type { color: var(--ev-command); }
+.lr-event-item--agent     .lr-event-type { color: var(--ev-agent); }
+.lr-event-item--routing   .lr-event-type { color: var(--ev-routing); }
+.lr-event-item--review    .lr-event-type { color: var(--ev-review); }
+.lr-event-item--memory    .lr-event-type { color: var(--ev-memory); }
+.lr-event-item--budget    .lr-event-type { color: var(--ev-budget); }
+.lr-event-item--guardrail .lr-event-type { color: var(--ev-guardrail); }
 
 .lr-event-item:hover {
   background: color-mix(in srgb, var(--color-accent) 8%, transparent);
@@ -943,6 +977,13 @@ body {
 
 .lr-event-type {
   color: var(--color-text);
+}
+
+.lr-event-time {
+  color: var(--color-text-muted);
+  font-variant-numeric: tabular-nums;
+  font-size: 0.6rem;
+  flex-shrink: 0;
 }
 
 .lr-event-node {

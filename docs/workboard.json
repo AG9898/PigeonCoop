@@ -1807,7 +1807,7 @@
       "id": "UI-RUN-003",
       "group_id": "UI-RUN",
       "title": "Event feed panel",
-      "status": "todo",
+      "status": "done",
       "priority": "medium",
       "type": "implementation",
       "summary": "Live Run already renders an auto-scrolling event feed with selectable event detail; richer summaries and family-specific styling are still missing.",

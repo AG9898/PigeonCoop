@@ -402,10 +402,13 @@ export function LiveRunView({ runId }: LiveRunViewProps) {
               {events.map((ev) => (
                 <li
                   key={ev.event_id}
-                  className={`lr-event-item${selectedEvent?.event_id === ev.event_id ? " lr-event-item--selected" : ""}`}
+                  className={`lr-event-item ${eventFamilyClass(ev.event_type)}${selectedEvent?.event_id === ev.event_id ? " lr-event-item--selected" : ""}`}
                   onClick={() => setSelectedEvent(ev)}
                 >
                   <span className="lr-event-seq">#{ev.sequence}</span>
+                  <span className="lr-event-time">
+                    {formatEventTime(ev.timestamp)}
+                  </span>
                   <span className="lr-event-type">{ev.event_type}</span>
                   {ev.node_id && (
                     <span className="lr-event-node">
@@ -617,4 +620,31 @@ function nodeStatusClass(status: NodeStatus): string {
     default:
       return "";
   }
+}
+
+/** Extract the event family from a dotted event_type (e.g. "run.started" → "run"). */
+function eventFamily(eventType: string): string {
+  const dot = eventType.indexOf(".");
+  return dot > 0 ? eventType.slice(0, dot) : eventType;
+}
+
+const KNOWN_FAMILIES = new Set([
+  "run", "node", "command", "agent", "routing", "review", "memory", "budget", "guardrail",
+]);
+
+/** CSS modifier class for event family color-coding. */
+function eventFamilyClass(eventType: string): string {
+  const family = eventFamily(eventType);
+  return KNOWN_FAMILIES.has(family) ? `lr-event-item--${family}` : "";
+}
+
+/** Format an ISO timestamp to a short HH:MM:SS.mmm display. */
+function formatEventTime(timestamp: string): string {
+  const d = new Date(timestamp);
+  if (isNaN(d.getTime())) return "";
+  const hh = String(d.getHours()).padStart(2, "0");
+  const mm = String(d.getMinutes()).padStart(2, "0");
+  const ss = String(d.getSeconds()).padStart(2, "0");
+  const ms = String(d.getMilliseconds()).padStart(3, "0");
+  return `${hh}:${mm}:${ss}.${ms}`;
 }

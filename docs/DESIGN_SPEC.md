@@ -82,6 +82,25 @@ Behavior:
 - errors should be impossible to miss
 - terminal-like output should be visible without taking over the entire screen
 
+#### Event feed panel
+The event feed renders a chronological list of `RunEvent` records as they arrive via the `run_event_appended` Tauri event. Each feed item shows:
+- sequence number
+- timestamp (HH:MM:SS.mmm, local time)
+- event type
+- truncated node_id (when present)
+
+Events are color-coded by family — the prefix before the dot in `event_type`. Each family has a distinct left-border color and event-type text color:
+- **run** (blue) — run lifecycle events
+- **node** (green) — node lifecycle events
+- **command** (purple) — CLI command execution events
+- **agent** (light blue) — agent request/response events
+- **routing** (amber) — routing decision events
+- **review** (orange) — human review events
+- **memory** (cyan) — memory read/write events
+- **budget / guardrail** (red) — budget and guardrail events
+
+The feed auto-scrolls to the latest event. Clicking an event selects it and populates the detail panel with the full event payload.
+
 ### 4.3 Replay View
 Purpose: inspect completed runs.
 

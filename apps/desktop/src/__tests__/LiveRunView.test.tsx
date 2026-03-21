@@ -543,6 +543,88 @@ describe("LiveRunView", () => {
     });
   });
 
+  it("color-codes event feed items by event family", async () => {
+    let eventCallback: ((ev: unknown) => void) | undefined;
+    mockListen.mockImplementation(
+      (event: string, cb: (ev: unknown) => void) => {
+        if (event === "run_event_appended") eventCallback = cb;
+        return Promise.resolve(() => {});
+      }
+    );
+
+    await act(async () => {
+      render(<LiveRunView runId="aaaa-1111" />);
+    });
+
+    const families = [
+      { type: "run.started", seq: 1, family: "run" },
+      { type: "node.started", seq: 2, family: "node" },
+      { type: "command.started", seq: 3, family: "command" },
+      { type: "review.required", seq: 4, family: "review" },
+    ];
+
+    for (const f of families) {
+      await act(async () => {
+        eventCallback?.({
+          payload: {
+            event: {
+              event_id: `ev-${f.seq}`,
+              run_id: "aaaa-1111",
+              workflow_id: "wf-0001",
+              event_type: f.type,
+              timestamp: "2026-03-09T10:00:01Z",
+              payload: {},
+              sequence: f.seq,
+            },
+          },
+        });
+      });
+    }
+
+    // Each event item should have the family-specific CSS class
+    for (const f of families) {
+      const typeEl = screen.getByText(f.type);
+      const li = typeEl.closest("li");
+      expect(li?.classList.contains(`lr-event-item--${f.family}`)).toBe(true);
+    }
+  });
+
+  it("shows timestamp in event feed items", async () => {
+    let eventCallback: ((ev: unknown) => void) | undefined;
+    mockListen.mockImplementation(
+      (event: string, cb: (ev: unknown) => void) => {
+        if (event === "run_event_appended") eventCallback = cb;
+        return Promise.resolve(() => {});
+      }
+    );
+
+    await act(async () => {
+      render(<LiveRunView runId="aaaa-1111" />);
+    });
+
+    await act(async () => {
+      eventCallback?.({
+        payload: {
+          event: {
+            event_id: "ev-t1",
+            run_id: "aaaa-1111",
+            workflow_id: "wf-0001",
+            event_type: "run.started",
+            timestamp: "2026-03-09T10:05:30.123Z",
+            payload: {},
+            sequence: 1,
+          },
+        },
+      });
+    });
+
+    // Should render the timestamp (local time) with ms precision
+    const timeEls = document.querySelectorAll(".lr-event-time");
+    expect(timeEls.length).toBe(1);
+    // The content should match HH:MM:SS.mmm pattern
+    expect(timeEls[0].textContent).toMatch(/\d{2}:\d{2}:\d{2}\.\d{3}/);
+  });
+
   it("cleans up listeners on unmount", async () => {
     const unlisten = vi.fn();
     mockListen.mockImplementation(() => Promise.resolve(unlisten));
