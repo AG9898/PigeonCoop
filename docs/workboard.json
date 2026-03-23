@@ -2807,6 +2807,161 @@
         "cd apps/desktop && npm test -- --run"
       ],
       "estimate": "M"
+    },
+    {
+      "id": "DEC-006",
+      "group_id": "DEC",
+      "title": "Decide: provider/model selection strategy for agent nodes",
+      "status": "done",
+      "priority": "medium",
+      "type": "decision",
+      "summary": "Decide how users select an LLM provider and model for agent nodes, and how that selection maps to a CLI command.",
+      "description": "Agent nodes use a free-form provider_hint string as both a CLI command fallback and event metadata. Users need a structured way to pick a provider (Claude Code, OpenAI Codex, Gemini CLI, etc.) and a model (claude-sonnet-4-6, o4-mini, etc.) from the node inspector. Options considered: (1) ProviderKind enum in Rust schema, (2) combined provider:model string, (3) separate model field + static registry constants outside the schema. See DECISIONS.md DEC-006.",
+      "acceptance_criteria": [
+        "Decision is recorded in docs/DECISIONS.md as DEC-006",
+        "Chosen approach is reflected in MODEL-008 and ADAPT-005"
+      ],
+      "depends_on": [],
+      "blocked_by": [],
+      "files": [
+        "docs/DECISIONS.md"
+      ],
+      "docs": [
+        "docs/ARCHITECTURE.md",
+        "AGENTS.md"
+      ],
+      "notes": [
+        "This decision unblocks MODEL-008, ADAPT-005, and UI-BLD-008."
+      ],
+      "commands": [],
+      "estimate": "XS"
+    },
+    {
+      "id": "MODEL-008",
+      "group_id": "MODEL",
+      "title": "Add model field to AgentNodeConfig",
+      "status": "todo",
+      "priority": "medium",
+      "type": "implementation",
+      "summary": "Add an optional model field to AgentNodeConfig so the runtime adapter can construct provider-specific CLI commands.",
+      "description": "Add `pub model: Option<String>` to AgentNodeConfig in crates/workflow-model/src/node_config.rs. Annotate with `#[serde(skip_serializing_if = \"Option::is_none\")]` so existing workflow JSON without the field remains valid (no schema_version bump per DEC-001). Update AgentNodeConfig documentation comments to clarify the relationship between command, provider_hint, and model. Add roundtrip tests: one with both provider_hint and model set, one without model (backward compat).",
+      "acceptance_criteria": [
+        "AgentNodeConfig has model: Option<String> with skip_serializing_if",
+        "cargo test -p workflow-model passes with no changes to existing tests",
+        "New test: roundtrip with provider_hint + model both set",
+        "New test: roundtrip without model field deserializes correctly"
+      ],
+      "depends_on": [
+        "DEC-006"
+      ],
+      "blocked_by": [
+        "DEC-006"
+      ],
+      "files": [
+        "crates/workflow-model/src/node_config.rs"
+      ],
+      "docs": [
+        "docs/ARCHITECTURE.md",
+        "docs/DECISIONS.md"
+      ],
+      "notes": [
+        "No schema_version bump needed — additive optional field, backward-compatible per DEC-001.",
+        "This unblocks ADAPT-005 and UI-BLD-008."
+      ],
+      "commands": [
+        "cargo test -p workflow-model"
+      ],
+      "estimate": "XS"
+    },
+    {
+      "id": "ADAPT-005",
+      "group_id": "ADAPT",
+      "title": "Provider-aware CLI command construction in AgentCliAdapter",
+      "status": "todo",
+      "priority": "medium",
+      "type": "implementation",
+      "summary": "Update AgentCliAdapter to construct provider-specific CLI commands using the new model field and a built-in provider registry.",
+      "description": "Add a private ProviderSpec constant table in crates/runtime-adapters/src/agent.rs mapping known provider_hint keys to (base_command, model_flag) pairs. Known providers: claude -> (\"claude\", \"--model\"), openai -> (\"codex\", \"--model\"), gemini -> (\"gemini\", \"--model\"). Update resolve_command(): priority is config.command (verbatim, highest) > known provider spec with model flag appended if model is set > provider_hint as raw command (current fallback). Update provider() to return \"<provider_hint>/<model>\" when both are set, enriching AgentRequestPreparedPayload and AgentStartedPayload event metadata. Add unit tests covering all resolution paths.",
+      "acceptance_criteria": [
+        "resolve_command() appends --model <model> when provider_hint matches a known provider and model is set",
+        "resolve_command() uses provider_hint as raw command when not in known registry (existing fallback preserved)",
+        "config.command overrides everything when explicitly set",
+        "provider() returns \"<provider_hint>/<model>\" when both fields are set",
+        "cargo test -p runtime-adapters passes",
+        "Unit tests cover: known provider + model, known provider without model, unknown provider_hint fallback, explicit command override"
+      ],
+      "depends_on": [
+        "MODEL-008",
+        "ADAPT-004"
+      ],
+      "blocked_by": [
+        "MODEL-008"
+      ],
+      "files": [
+        "crates/runtime-adapters/src/agent.rs"
+      ],
+      "docs": [
+        "docs/ARCHITECTURE.md",
+        "docs/DECISIONS.md"
+      ],
+      "notes": [
+        "Provider registry is a private Rust constant — not a Tauri IPC command. No round-trip needed.",
+        "The TypeScript mirror of this registry lives in apps/desktop/src/types/providers.ts (UI-BLD-008).",
+        "Do not add a ProviderKind enum to the workflow-model crate — registry belongs in the adapter layer per DEC-006."
+      ],
+      "commands": [
+        "cargo test -p runtime-adapters"
+      ],
+      "estimate": "S"
+    },
+    {
+      "id": "UI-BLD-008",
+      "group_id": "UI-BLD",
+      "title": "Provider and model selector in agent node inspector",
+      "status": "todo",
+      "priority": "medium",
+      "type": "implementation",
+      "summary": "Add provider and model dropdowns to the agent node section of the NodeInspector panel.",
+      "description": "Create apps/desktop/src/types/providers.ts with a KNOWN_PROVIDERS constant array mirroring the Rust adapter registry. Each entry includes: id (provider_hint key), label (display name), baseCommand (informational), and models[] (curated ModelSpec list). Add typed AgentNodeConfig TypeScript interface to apps/desktop/src/types/workflow.ts including the new model field. Extend the agent node section of NodeInspector.tsx (created by UI-BLD-004) with: a Provider dropdown (sets provider_hint), a Model dropdown showing curated models + Other... option (sets model), a free-form model text input shown when Other... is selected, and a raw CLI Command text input shown only when provider is Custom. Switching provider resets model to undefined. Wire changes through onConfigChange(nodeId, newConfig) callback in BuilderView.tsx. Use ni-* CSS class namespace consistent with the mission-control aesthetic (uppercase labels, monospace values). Known providers: claude (Claude Code), openai (OpenAI Codex), gemini (Gemini CLI), custom (Custom Command).",
+      "acceptance_criteria": [
+        "apps/desktop/src/types/providers.ts exists with KNOWN_PROVIDERS constant",
+        "AgentNodeConfig TypeScript interface includes model?: string",
+        "Selecting an agent node in the builder shows provider and model selectors in the inspector",
+        "Provider dropdown lists all KNOWN_PROVIDERS entries",
+        "Selecting a known provider populates the model dropdown with curated models",
+        "Selecting Other... in the model dropdown shows a free-form text input",
+        "Selecting Custom provider shows a raw CLI command input and hides the model dropdown",
+        "Changes update provider_hint and model in the node config and persist on save",
+        "Existing nodes without model field load without error; model selector shows blank"
+      ],
+      "depends_on": [
+        "UI-BLD-004",
+        "MODEL-008"
+      ],
+      "blocked_by": [
+        "UI-BLD-004",
+        "MODEL-008"
+      ],
+      "files": [
+        "apps/desktop/src/types/providers.ts",
+        "apps/desktop/src/types/workflow.ts",
+        "apps/desktop/src/components/panels/NodeInspector.tsx",
+        "apps/desktop/src/views/BuilderView.tsx"
+      ],
+      "docs": [
+        "docs/DESIGN_SPEC.md",
+        "docs/DECISIONS.md"
+      ],
+      "notes": [
+        "providers.ts must mirror the Rust adapter ProviderSpec table in ADAPT-005 — update both together when adding a new provider.",
+        "Do not add a Tauri IPC command for listing providers; use the static TypeScript constants (per DEC-006).",
+        "Follow EventInspector.tsx and HumanReviewPanel.tsx as pattern references for panel layout and CSS class conventions.",
+        "UI-BLD-007 (builder tests) should be extended to cover the provider/model selector after this task lands."
+      ],
+      "commands": [
+        "cd apps/desktop && npm test -- --run"
+      ],
+      "estimate": "M"
     }
   ]
 }

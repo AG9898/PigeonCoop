@@ -277,6 +277,32 @@ This is production code, not a test workaround. The polling fallback also handle
 
 ---
 
+### 2026-03-23 — Provider/model selection strategy for agent nodes (DEC-006)
+
+**Context:** `AgentNodeConfig` has a free-form `provider_hint: Option<String>` used as a CLI command fallback and event metadata label. Users need a structured way to choose an LLM provider (Claude Code, OpenAI Codex, Gemini CLI, etc.) and model (claude-sonnet-4-6, o4-mini, etc.) from the node inspector UI. Three approaches were considered:
+
+1. Add a `ProviderKind` Rust enum to the serialized schema.
+2. Combine provider and model into a single encoded string (e.g. `"claude:claude-sonnet-4-6"`).
+3. Add a separate `model: Option<String>` field; keep provider registry as static constants outside the schema.
+
+**Decision:** Option 3.
+
+- Add `model: Option<String>` to `AgentNodeConfig` with `#[serde(skip_serializing_if = "Option::is_none")]`. No `schema_version` bump needed — additive optional field, backward-compatible by existing DEC-001 policy.
+- Provider registry (known providers, curated model lists, CLI base commands and model flags) lives as a private constant in `crates/runtime-adapters/src/agent.rs` and mirrored as a TypeScript constant in `apps/desktop/src/types/providers.ts`. It is not part of the serialized schema.
+- No Tauri IPC command for listing providers — static data requires no round-trip.
+- `provider_hint` retains its current role as the provider key (e.g. `"claude"`, `"openai"`). The runtime adapter resolves the final CLI command from `provider_hint` + `model`.
+
+**Alternatives considered:**
+- `ProviderKind` enum in schema — rejected: provider lists change without engine involvement; registries should not be serialized schema.
+- Combined string encoding — rejected: requires parsing at every use site, complicates UI state.
+- Tauri IPC for provider list — rejected: unnecessary IPC overhead for purely static data.
+
+**Tradeoffs:** Both the Rust adapter constant and the TypeScript constants file must be updated together when a new provider is added. Accepted: the coupling is explicit and co-located.
+
+**Blocks:** MODEL-008, ADAPT-005, UI-BLD-008.
+
+---
+
 ## Open decisions
 
 These are not blockers, but should be resolved early during implementation:
