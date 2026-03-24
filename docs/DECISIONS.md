@@ -303,9 +303,45 @@ This is production code, not a test workaround. The polling fallback also handle
 
 ---
 
+### 2026-03-23 — Defer bounded loop edges to v1.1 (DEC-002)
+
+**Context:** `ConditionKind` currently has four variants: `Always`, `OnSuccess`, `OnFailure`, `Expression`. Bounded loop edges would require a new variant (e.g. `Loop { max_iterations: u32, condition: String }`) plus significant changes to the validator, scheduler, runtime state, and replay system. Per AGENTS.md Rule E, bounded loop support is explicitly optional in v1 — allowed "only if explicitly modeled."
+
+**Decision:** Defer bounded loop edges to v1.1. The `ConditionKind` enum is stable at four variants for v1.
+
+**Rationale:**
+
+1. **Scheduler complexity.** The current executor assumes DAG traversal (topological ordering). Loop back-edges break this assumption. The validator would need to distinguish intentional loop edges from error cycles — currently any cycle is a hard validation error (per the unreachable-node/cycle-detection decision in QA-002). Retrofitting this distinction is non-trivial.
+
+2. **Runtime state overhead.** Loops require per-edge iteration counters tracked in the `RunInstance` or a new `LoopState` structure. These counters must be persisted, emitted as events, and correctly restored during replay. This is new state machinery with no existing foundation.
+
+3. **Replay complexity.** A node that executes multiple times in a loop needs distinct `NodeSnapshot` entries per iteration. The replay timeline must display iterations as a group, not as separate unrelated executions. This affects the replay UI, event model, and persistence layer.
+
+4. **Bounded retries already cover the most common case.** `RetryPolicy` (already implemented per node) handles "try again on failure" — the single most requested loop-like pattern in agent workflows. True graph loops (re-run a subgraph based on an output condition) are a distinct, more complex feature.
+
+5. **v1 scope is already large.** Builder, live run, replay, persistence, human review, CLI adapters, and the demo workflow are all in scope. Adding loops would delay the core v1 deliverables for a feature that Rule E marks as optional.
+
+**v1.1 implementation sketch (non-binding):**
+- Add `ConditionKind::Loop { max_iterations: u32, condition: Option<String> }` — condition is an expression evaluated against the source node's output; if omitted, loops unconditionally up to `max_iterations`.
+- Validator: allow back-edges only when they carry a `Loop` condition kind. Other back-edges remain hard errors.
+- Scheduler: track `loop_iteration: HashMap<EdgeId, u32>` in `RunInstance`. Increment on each traversal; terminate when `max_iterations` is reached or condition evaluates to false.
+- Events: emit `loop.iteration` and `loop.terminated` events.
+- Replay: group loop iterations in the timeline view.
+- Guardrails: emit `guardrail.warning` when a loop reaches 80% of `max_iterations`.
+
+**Alternatives considered:**
+- Include in v1 — rejected: adds 3–4 tasks of scheduler/validator/replay work for an optional feature. Delays core v1 delivery.
+- Support loops as a node type instead of an edge kind — rejected: loops are a routing concern (edge semantics), not a computation concern (node semantics). A "loop node" would duplicate the router's responsibility.
+- Simulate loops by chaining duplicate node sequences — viable workaround for v1 users who need loop-like behavior with a known small iteration count. Not elegant, but sufficient until v1.1.
+
+**Tradeoffs:** v1 workflows cannot express "re-run this subgraph until a condition is met." Users must use bounded retries (per-node) or manually duplicate node sequences. This is an acceptable limitation given v1's scope.
+
+**Unblocks:** Confirms `ConditionKind` is stable for v1 — no further schema changes needed for edge conditions.
+
+---
+
 ## Open decisions
 
 These are not blockers, but should be resolved early during implementation:
-- whether to add bounded loop edges in v1 or v1.1
 - how to detect changed files reliably across platforms
 - whether to embed a terminal emulator component or use a custom output panel only

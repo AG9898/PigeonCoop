@@ -2536,7 +2536,7 @@
       "id": "DEC-002",
       "group_id": "DEC",
       "title": "Decide: bounded loop edges in v1 or defer to v1.1",
-      "status": "todo",
+      "status": "done",
       "priority": "medium",
       "type": "decision",
       "summary": "Decide whether to support bounded loop edges in the v1 graph or defer entirely.",
