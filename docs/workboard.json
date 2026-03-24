@@ -2280,7 +2280,7 @@
       "id": "DOCS-003",
       "group_id": "DOCS",
       "title": "Update DECISIONS.md as open decisions are resolved",
-      "status": "todo",
+      "status": "done",
       "priority": "medium",
       "type": "docs",
       "summary": "Move resolved decisions from Open to Accepted in DECISIONS.md and add rationale.",
