@@ -2338,7 +2338,7 @@
       "id": "TEST-002",
       "group_id": "TEST",
       "title": "E2E test: builder flow",
-      "status": "todo",
+      "status": "done",
       "priority": "medium",
       "type": "testing",
       "summary": "E2E test covering the full builder flow: open app, create nodes, connect edges, save workflow.",

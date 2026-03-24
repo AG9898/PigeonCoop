@@ -244,7 +244,7 @@ export const config = {
 ```
 
 ### Priority E2E flows for v1
-1. **Builder flow** — open app, create a workflow with all node types, save it
+1. **Builder flow** — open app, create a workflow with all node types, save it (**implemented: `tests/e2e/specs/builder.spec.js`**)
 2. **Run flow** — load the demo workflow, start a run, observe node state transitions (**implemented: `tests/e2e/specs/run.spec.js`**)
 3. **Human review gate** — run reaches a Human Review node, user approves, run continues (**implemented: `tests/e2e/specs/review.spec.js`**)
 4. **Replay flow** — open a completed run, scrub the timeline, inspect events
@@ -255,12 +255,23 @@ export const config = {
 | Spec | Covers |
 |---|---|
 | `tests/e2e/specs/app.spec.js` | Smoke test — app launches, window title, root DOM element |
+| `tests/e2e/specs/builder.spec.js` | Builder flow — palette node creation, workflow save/load, edge persistence, Library view verification |
 | `tests/e2e/specs/run.spec.js` | Run flow — Library view, create/start run via IPC, node state transitions via `list_events_for_run`, LiveRunView UI assertions |
 | `tests/e2e/specs/review.spec.js` | Human review gate — run pauses at HumanReview, panel visible, Approve clicked, run resumes to Succeeded, post-approval event log assertions |
 
 ### IPC access pattern in E2E tests
 
 E2E specs drive runs via `window.__TAURI_INTERNALS__.invoke()` inside `browser.executeAsync()` rather than purely through the UI. This keeps setup deterministic and avoids races between UI state and run progression. The `review.spec.js` spec navigates through the Library UI (clicking the workflow card and the "Live Run" button on a run card) to mount `LiveRunView` before starting the run — this is the critical ordering that ensures event subscriptions are registered before the run fires events.
+
+### Builder flow spec (TEST-002)
+
+`tests/e2e/specs/builder.spec.js` covers the full builder workflow:
+
+1. **Node creation** — clicks all 7 palette items (Start, End, Agent, Tool, Router, Memory, Review), verifies each node type appears in the React Flow canvas via `.react-flow__node-{kind}` class selectors.
+2. **Workflow save** — clicks the Save toolbar button, verifies "Saved" status text, then confirms via `list_workflows` IPC that the workflow was persisted with 7 nodes of all required types.
+3. **Edge persistence** — adds 6 edges (start → agent → tool → router → memory → human_review → end chain) via `update_workflow` IPC, verifies via `get_workflow`. Edges are added via IPC rather than mouse drag-and-drop on React Flow handles because WebKitWebDriver mouse action reliability on small handle elements (~10px) is insufficient for CI stability.
+4. **Workflow reload** — clicks Load toolbar button, selects "Untitled Workflow" from the picker, verifies the canvas renders 7 `.react-flow__node` elements and 6 `.react-flow__edge` elements.
+5. **Library verification** — navigates to Library view (keyboard shortcut '4'), verifies the workflow card exists via `data-testid` and displays the correct name.
 
 ### WebKitWebDriver quirks
 
