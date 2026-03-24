@@ -2440,7 +2440,7 @@
       "id": "TEST-005",
       "group_id": "TEST",
       "title": "E2E test: replay flow",
-      "status": "todo",
+      "status": "done",
       "priority": "medium",
       "type": "testing",
       "summary": "E2E test opening a completed run in Replay view and scrubbing the timeline.",

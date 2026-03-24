@@ -247,7 +247,7 @@ export const config = {
 1. **Builder flow** — open app, create a workflow with all node types, save it (**implemented: `tests/e2e/specs/builder.spec.js`**)
 2. **Run flow** — load the demo workflow, start a run, observe node state transitions (**implemented: `tests/e2e/specs/run.spec.js`**)
 3. **Human review gate** — run reaches a Human Review node, user approves, run continues (**implemented: `tests/e2e/specs/review.spec.js`**)
-4. **Replay flow** — open a completed run, scrub the timeline, inspect events
+4. **Replay flow** — open a completed run, scrub the timeline, inspect events (**implemented: `tests/e2e/specs/replay.spec.js`**)
 5. **Failure handling** — run a workflow where a Tool node fails, verify Failed state is shown
 
 ### Implemented specs
@@ -258,6 +258,7 @@ export const config = {
 | `tests/e2e/specs/builder.spec.js` | Builder flow — palette node creation, workflow save/load, edge persistence, Library view verification |
 | `tests/e2e/specs/run.spec.js` | Run flow — Library view, create/start run via IPC, node state transitions via `list_events_for_run`, LiveRunView UI assertions |
 | `tests/e2e/specs/review.spec.js` | Human review gate — run pauses at HumanReview, panel visible, Approve clicked, run resumes to Succeeded, post-approval event log assertions |
+| `tests/e2e/specs/replay.spec.js` | Replay flow — complete a run via IPC, Library → Replay navigation, timeline scrubbing (first/last/next/prev), graph state panel updates, event inspector envelope/payload/node-context panes |
 
 ### IPC access pattern in E2E tests
 
@@ -272,6 +273,17 @@ E2E specs drive runs via `window.__TAURI_INTERNALS__.invoke()` inside `browser.e
 3. **Edge persistence** — adds 6 edges (start → agent → tool → router → memory → human_review → end chain) via `update_workflow` IPC, verifies via `get_workflow`. Edges are added via IPC rather than mouse drag-and-drop on React Flow handles because WebKitWebDriver mouse action reliability on small handle elements (~10px) is insufficient for CI stability.
 4. **Workflow reload** — clicks Load toolbar button, selects "Untitled Workflow" from the picker, verifies the canvas renders 7 `.react-flow__node` elements and 6 `.react-flow__edge` elements.
 5. **Library verification** — navigates to Library view (keyboard shortcut '4'), verifies the workflow card exists via `data-testid` and displays the correct name.
+
+### Replay flow spec (TEST-005)
+
+`tests/e2e/specs/replay.spec.js` covers the replay timeline and event inspection flow:
+
+1. **Setup: completed run** — creates a run via `create_run` IPC, starts it, waits for it to pause at the HumanReview node, then approves via `submit_human_review_decision` IPC so the run reaches `succeeded`. All setup is done via IPC, not UI, keeping it deterministic.
+2. **Library → Replay navigation** — navigates to Library view (keyboard shortcut '4'), clicks the demo workflow card to load run history, finds the completed run card, clicks its "Replay" button (`data-testid="open-replay-{runId}"`), and verifies ReplayView mounts.
+3. **ReplayView loads events** — verifies REPLAY title, subtitle shows run ID, event list is populated with `[role="option"]` items, and both graph state and event detail panels are visible.
+4. **Timeline scrubbing** — tests all scrubber controls (go-to-first, go-to-last, next, previous buttons via `aria-label`), verifies that node state count in `[data-testid="graph-state-panel"]` increases when scrubbing forward and decreases when scrubbing backward.
+5. **Event inspector** — verifies envelope pane (`ei-envelope`) shows event fields, payload pane (`ei-payload`) shows JSON content, clicking a `node.succeeded` event renders the node context pane (`ei-node-pane`), and scrubbing to a different event changes the envelope content.
+6. **Event data integrity** — verifies UI event count matches IPC `list_events_for_run` count, run lifecycle events (started/paused/succeeded) are present, and all demo workflow nodes have lifecycle events.
 
 ### WebKitWebDriver quirks
 
