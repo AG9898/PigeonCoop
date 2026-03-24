@@ -340,8 +340,49 @@ This is production code, not a test workaround. The polling fallback also handle
 
 ---
 
+### 2026-03-23 — Custom output panel over terminal emulator (DEC-004)
+
+**Context:** The Live Run View needs a command output panel (DESIGN_SPEC §9). Two approaches: (1) embed xterm.js for full VT100/ANSI terminal support, or (2) build a custom styled `<div>`/`<pre>` panel with ANSI color rendering via a lightweight library.
+
+**Decision:** Option 2 — custom styled output panel with ANSI color rendering via `anser`.
+
+**Rationale:**
+
+1. **Design spec alignment.** DESIGN_SPEC §9 states: "Terminal output should be a panel within the app, not the whole experience." xterm.js renders a standalone terminal canvas that fights the mission-control theme and competes visually with the graph, event feed, and inspector.
+
+2. **Event association.** The event-first architecture (Rule B) requires output chunks to be linked to their originating node and event. A custom panel renders output per-event as React components with click-through to the event inspector. xterm.js has no concept of event-associated output regions.
+
+3. **Captured strings, not live streams.** Per DEC-005, agent/tool output is captured as complete strings by the CLI adapter. The output arrives at the UI as `stdout`/`stderr` fields on `CommandExecutionCompleted` events — not as a live PTY stream. xterm.js's core value (interactive terminal emulation) is wasted on post-hoc string rendering.
+
+4. **Styling consistency.** xterm.js uses a `<canvas>` renderer with its own font metrics and color palette. Matching the mission-control CSS variables (`--color-bg`, `--color-surface`, `--glow-accent`) requires fighting the library. A custom panel inherits the design system natively.
+
+5. **Required panel features.** stdout/stderr separation, timestamps, collapse/expand, copy/select, and node-event backlinks are all trivial in React components. Retrofitting these onto xterm.js requires custom addons or wrapping the terminal in React scaffolding that duplicates most of what a custom panel already is.
+
+**ANSI color rendering approach:**
+- Add `anser` (npm package, ~10KB, MIT license) to render ANSI SGR escape codes (colors, bold, underline, dim, inverse) as HTML `<span>` elements with inline styles or CSS classes.
+- Strip non-SGR escape sequences (cursor movement, screen clear, etc.) — these are irrelevant for captured output and would render as garbage in a `<div>`.
+- Render output in `<pre>` blocks to preserve whitespace and alignment.
+- This covers real-world CLI output: cargo (colored errors/warnings), jest/vitest (colored test results), eslint, grep, git diff, and most agent CLIs.
+
+**What will NOT work without xterm.js:**
+- Interactive terminal applications (vim, htop, less) — not relevant; no node type opens an interactive session.
+- Progress bars that use cursor repositioning (e.g., `\r`-based spinners) — these will render as multiple lines instead of in-place updates. Acceptable: output is captured post-completion, not streamed live.
+- Sixel or image-in-terminal protocols — not relevant for v1 use cases.
+
+**Alternatives considered:**
+- xterm.js — rejected: heavy (~300KB), canvas-based renderer fights the design system, no event association, overkill for captured string output.
+- Raw text only (no ANSI rendering) — rejected: stripping all color from cargo/jest output degrades developer experience significantly. Color is information (red = error, green = pass).
+- `ansi-to-html` package — viable alternative to `anser`; slightly larger API surface. `anser` was preferred for its smaller size and simpler interface.
+
+**Tradeoffs:**
+- No xterm.js means no future path to interactive embedded terminals without adding it later. Accepted: interactive terminals are out of v1 scope and likely out of v1.1 scope.
+- `anser` dependency must be maintained. Risk is low — small, stable, MIT-licensed package with no transitive dependencies.
+
+**Unblocks:** UI-RUN-004 (command output panel implementation).
+
+---
+
 ## Open decisions
 
 These are not blockers, but should be resolved early during implementation:
 - how to detect changed files reliably across platforms
-- whether to embed a terminal emulator component or use a custom output panel only

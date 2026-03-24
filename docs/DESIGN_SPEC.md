@@ -273,6 +273,10 @@ Terminal output should be a panel within the app, not the whole experience.
 - collapse/expand for noisy outputs
 - link back to originating node/event
 
+### Decided implementation (DEC-004)
+
+Custom styled `<div>`/`<pre>` output panel — no embedded terminal emulator. ANSI SGR escape codes (colors, bold, underline) are rendered to HTML `<span>` elements via the `anser` npm package. Non-SGR escape sequences (cursor movement, screen clear) are stripped. Output is rendered per-event as React components with click-through to the originating node/event in the inspector.
+
 ### Design stance
 The app should feel more visually rich than a terminal without hiding that terminal-backed execution is occurring.
 

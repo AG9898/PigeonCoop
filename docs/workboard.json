@@ -2590,7 +2590,7 @@
       "id": "DEC-004",
       "group_id": "DEC",
       "title": "Decide: terminal emulator component vs custom output panel",
-      "status": "todo",
+      "status": "done",
       "priority": "medium",
       "type": "decision",
       "summary": "Decide whether to embed a full terminal emulator component or build a custom styled output panel.",
