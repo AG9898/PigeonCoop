@@ -1711,7 +1711,7 @@
       "id": "UI-BLD-007",
       "group_id": "UI-BLD",
       "title": "Builder view component tests",
-      "status": "todo",
+      "status": "done",
       "priority": "medium",
       "type": "testing",
       "summary": "Builder tests exist for save/load flows, but palette, inspector, and validation cases are still missing.",

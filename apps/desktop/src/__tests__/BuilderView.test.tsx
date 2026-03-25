@@ -131,6 +131,28 @@ describe("BuilderView save/load", () => {
   });
 });
 
+describe("BuilderView node palette integration", () => {
+  it("renders the node palette with all 7 node types", () => {
+    render(<BuilderView />);
+    expect(screen.getByText("NODES")).toBeTruthy();
+    for (const label of ["Start", "End", "Agent", "Tool", "Router", "Memory", "Review"]) {
+      expect(screen.getByText(label)).toBeTruthy();
+    }
+  });
+
+  it("clicking a palette item does not throw", () => {
+    render(<BuilderView />);
+    expect(() => fireEvent.click(screen.getByText("Agent"))).not.toThrow();
+  });
+
+  it("clicking each palette item does not throw", () => {
+    render(<BuilderView />);
+    for (const label of ["Start", "End", "Agent", "Tool", "Router", "Memory", "Review"]) {
+      expect(() => fireEvent.click(screen.getByText(label))).not.toThrow();
+    }
+  });
+});
+
 describe("BuilderView validation", () => {
   it("renders Validate button", () => {
     render(<BuilderView />);

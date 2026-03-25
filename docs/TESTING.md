@@ -175,6 +175,48 @@ For typed IPC interactions, use the interfaces from `apps/desktop/src/types/ipc.
 - Do not test Tauri bridge behavior in component tests
 - All new components using `listen()` must have at least one test asserting correct unlisten cleanup
 
+### Builder component test suite (UI-BLD-007)
+
+**`apps/desktop/src/__tests__/BuilderView.test.tsx`** covers:
+
+**Save/load flows** — `create_workflow` on first save, `update_workflow` after load, workflow picker list, empty-picker state, picker close, save/load error states.
+
+**Node palette integration** — palette renders all 7 node type labels in the BuilderView context; clicking any palette item does not throw.
+
+**Validation** — `validate_workflow` IPC call, valid/error status badges, error panel with human-readable messages per `ValidationResult` kind, error count in status, dismiss panel via ×, backend error fallback.
+
+**`apps/desktop/src/__tests__/NodePalette.test.tsx`** covers:
+
+All 7 palette items render; clicking each item calls `onAddNode` with the correct kind; keyboard Enter triggers `onAddNode`; drag start sets `dataTransfer` with `application/reactflow`.
+
+**`apps/desktop/src/__tests__/NodeInspector.test.tsx`** covers:
+
+**Kind header** — `START`, `END`, `AGENT`, `TOOL`, `ROUTER`, `MEMORY`, `HUMAN REVIEW` labels for each node kind.
+
+**Start / End** — shows "no configuration" message; no CONFIG section rendered.
+
+**Per-kind config forms** — agent (prompt textarea, command/model/provider inputs, output mode select); tool (command, shell, timeout); memory (key, scope, operation); router (ROUTING RULES section, Add Rule button, new rule row on click, `onUpdateConfig` called with new rule); human_review (prompt, reason, actions).
+
+**Label editing** — `onUpdateLabel` called when label input changes.
+
+**Config editing callbacks** — `onUpdateConfig` called when agent prompt, tool command, memory key, or human_review reason changes.
+
+**Retry policy** — `onUpdateRetryPolicy` called when `max_retries` or `max_runtime_ms` inputs change.
+
+**`apps/desktop/src/__tests__/WorkflowCanvas.test.tsx`** covers:
+
+**getFlowData** — loads nodes and edges from a `WorkflowDefinition` prop; returns empty arrays when no workflow given.
+
+**addNode (imperative handle)** — `setNodes` called with an updater that appends a correctly-typed node; uses provided position; appends to existing nodes.
+
+**updateNodeLabel (imperative handle)** — `setNodes` called with an updater that replaces the label for the target node id.
+
+**onNodeSelect callback** — called with the node when exactly one node is selected; called with `null` on cleared selection and on multi-selection.
+
+**Edge creation (EdgeConditionDialog)** — triggered by `onConnect`; shows EDGE CONDITION dialog with all four condition buttons and descriptions; dismiss via × button; dismiss via overlay click; selecting a condition closes the dialog and calls `setEdges` with an updater that appends the edge; edge data carries the correct `condition_kind`.
+
+**Reactflow callback capture pattern:** `WorkflowCanvas.test.tsx` uses `vi.hoisted()` to create a `hooks` object that the local `vi.mock("reactflow", ...)` factory writes into. This lets tests invoke `onConnect` and `onSelectionChange` directly without a real browser drag gesture.
+
 ### Replay view test suite (UI-RPL-004)
 
 `apps/desktop/src/__tests__/ReplayView.test.tsx` covers:
