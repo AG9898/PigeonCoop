@@ -552,6 +552,8 @@ Mitigation:
 - track working directory and exit status
 - detect changed files where practical
 
+**v1 decision (DEC-003):** Changed file detection is deferred to v1.1. The `CommandExecutionCompleted` event carries stdout, stderr, exit code, cwd, and duration — sufficient for v1 replay and debugging. The v1.1 approach is `git status --porcelain` before/after execution, with `None` as fallback for non-git workspaces. File system watcher approaches (inotify/FSEvents/ReadDirectoryChangesW) are ruled out due to cross-platform complexity and false-positive noise.
+
 ### Risk 4 — UI over-focus on aesthetics
 Mitigation:
 - keep debugging and inspection usability as the primary design standard

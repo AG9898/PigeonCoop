@@ -2564,7 +2564,7 @@
       "id": "DEC-003",
       "group_id": "DEC",
       "title": "Decide: cross-platform changed file detection",
-      "status": "todo",
+      "status": "done",
       "priority": "low",
       "type": "decision",
       "summary": "Decide how to detect files changed by a CLI command reliably across macOS, Windows, and Linux.",

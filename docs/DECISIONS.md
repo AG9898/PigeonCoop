@@ -382,7 +382,36 @@ This is production code, not a test workaround. The polling fallback also handle
 
 ---
 
+### 2026-03-24 — Cross-platform changed file detection (DEC-003)
+
+**Context:** When a Tool or Agent node runs a command, the engine could optionally detect which files were changed and log them as metadata on the `CommandExecutionCompleted` event. Three options were considered:
+1. `git diff --name-only` / `git status --porcelain` before and after execution — accurate and cross-platform, but requires a git-backed workspace and adds latency to every command.
+2. File system watcher (`inotify` on Linux, `FSEvents` on macOS, `ReadDirectoryChangesW` on Windows) via the `notify` crate — works for any workspace but adds a native cross-platform dependency, significant engineering complexity, and is prone to false positives (IDE temp files, build artifacts, lock files).
+3. No detection in v1 — log command metadata only (command, cwd, exit code, stdout, stderr, duration_ms). Treat changed file detection as a deferred enhancement.
+
+**Decision:** Option 3 — no changed file detection in v1. Changed file metadata is deferred to v1.1.
+
+**Rationale:**
+- The `CliAdapter` already captures the full observability artifact: command string, working directory, exit code, stdout, stderr, and duration. This is sufficient for the replay and debugging goals of v1.
+- For developer workflows, the primary commands (cargo fmt, rustfmt, eslint --fix, git diff, test runners) already embed file change information in their stdout. The raw output is the most accurate change report for these tools.
+- Option 2 (FS watcher) is ruled out: cross-platform watchers produce false positives (IDE temp files, build cache), add the `notify` crate dependency, require careful lifecycle management (start before command, stop after, drain the event queue), and are complex to get right across WSL2, macOS, and Windows. The added complexity is not proportionate to v1's scope.
+- Option 1 (git diff) is the right approach for v1.1 but is deferred because: (a) it silently provides nothing for non-git workspaces with no error or fallback; (b) it requires two `git status` invocations per command (one before, one after), adding process-spawn latency; (c) new/untracked files are not tracked until `git add`, creating a gap between "changed on disk" and "changed per git".
+
+**v1.1 implementation plan (non-binding):**
+- Add `changed_files: Option<Vec<String>>` to `CommandExecutionCompleted` payload (additive, backward-compatible).
+- In `CliAdapter::execute`: run `git -C <workspace_root> status --porcelain` before and after the command. Diff the two outputs to compute added/modified/deleted files. If `git` is not present or workspace is not a git repo, set `changed_files: None` (no error, no warning).
+- Platform note: `git` is cross-platform and available on all three targets (macOS, Windows, Linux). No additional native dependency is needed.
+
+**Alternatives considered:**
+- Include git diff in v1 — rejected: non-git workspaces silently get nothing, and adding latency per command is not warranted when the core observability story (stdout/stderr) already covers the primary use cases.
+- FS watcher (Option 2) — rejected: high complexity, false positives, and cross-platform dependency not proportionate to v1's scope.
+
+**Tradeoffs:** Replay traces in v1 will not include a `changed_files` list. Users who need to know which files a command changed must read the command's stdout. This is acceptable for v1.
+
+**Note:** This decision closes the open item listed under "Open decisions" in this file.
+
+---
+
 ## Open decisions
 
-These are not blockers, but should be resolved early during implementation:
-- how to detect changed files reliably across platforms
+*(No open decisions at this time.)*
