@@ -8,3 +8,6 @@ pub use workflows::RepoError as WorkflowRepoError;
 
 pub mod runs;
 pub use runs::{RunRepository, RunRepoError};
+
+pub mod settings;
+pub use settings::{SettingsRepository, SettingsRepoError};

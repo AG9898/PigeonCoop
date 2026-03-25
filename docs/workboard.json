@@ -1129,7 +1129,7 @@
       "id": "PERSIST-005",
       "group_id": "PERSIST",
       "title": "Settings repository",
-      "status": "todo",
+      "status": "done",
       "priority": "low",
       "type": "implementation",
       "summary": "Implement a key-value settings repository for user preferences and workspace configuration.",
