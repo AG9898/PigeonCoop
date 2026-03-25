@@ -62,6 +62,31 @@ cargo test -p runtime-adapters tests::cli_adapter    # strict ordering + timeout
 cargo test -p runtime-adapters tests::mock_adapter   # mock/dyn-trait tests
 ```
 
+### persistence test suite (PERSIST-006)
+
+The `persistence` crate has tests at two levels:
+
+**Inline tests** (in each module):
+- `sqlite/mod.rs` — `Db::open_in_memory`, migration idempotency, all expected tables created, file-based DB
+- `repositories/workflows.rs` — save/get, missing returns None, list all, versioning, specific version, delete
+- `repositories/runs.rs` — create/get, missing returns None, update status, list for workflow, empty list, get_active_runs
+- `repositories/events.rs` — append/get, duplicate event_id rejected, list in sequence order, pagination, get_event_by_id missing, list_for_node filters, demo workflow replay, sequence numbers per run
+- `repositories/settings.rs` — missing key returns None, set/get roundtrip, overwrite, list ordered, empty list, complex JSON values
+
+**Dedicated test suite** (`src/tests/`):
+- `workflows.rs` — full node+metadata serialization roundtrip, upsert semantics, latest-version-per-workflow list, specific version retrieval, delete nonexistent is no-op, multi-workflow independence, Agent/Tool config round-trip
+- `runs.rs` — full lifecycle progression (Created → Validating → Running → Paused → Succeeded), Cancelled and Failed terminal states, cross-workflow isolation, get_active_runs excludes all terminal statuses, all non-terminal statuses included in active, workspace_root preserved verbatim
+- `events.rs` — causation/correlation ID round-trip, node_id Some/None both preserved, cross-run isolation, empty run returns empty list, complex payload JSON, list_for_node empty when no node events, per-run sequence independence
+- `settings.rs` — null/integer/float/bool/array JSON primitives, similar key names isolated, overwrite preserves sibling keys, list ordering is lexicographic, idempotent set_setting, deeply nested object
+
+**Running specific test groups:**
+```bash
+cargo test -p persistence tests::workflows   # workflow CRUD
+cargo test -p persistence tests::runs        # run CRUD + status
+cargo test -p persistence tests::events      # event log append/query
+cargo test -p persistence tests::settings    # key-value settings
+```
+
 ### core-engine test suite (ENGINE-008)
 
 The `core-engine` crate has comprehensive unit tests organized in two layers:

@@ -1154,7 +1154,7 @@
       "id": "PERSIST-006",
       "group_id": "PERSIST",
       "title": "Persistence unit tests",
-      "status": "todo",
+      "status": "done",
       "priority": "medium",
       "type": "testing",
       "summary": "Unit tests for all persistence repositories using in-memory SQLite.",

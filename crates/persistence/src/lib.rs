@@ -3,3 +3,6 @@
 
 pub mod sqlite;
 pub mod repositories;
+
+#[cfg(test)]
+mod tests;
