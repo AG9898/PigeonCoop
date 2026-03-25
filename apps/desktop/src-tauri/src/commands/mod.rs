@@ -22,6 +22,7 @@ use persistence::{
     repositories::{
         events::EventRepository,
         runs::RunRepository,
+        settings::SettingsRepository,
         workflows::{
             delete_workflow as repo_delete_workflow, get_workflow_by_id,
             list_workflows as repo_list_workflows, save_workflow,
@@ -757,6 +758,78 @@ fn agent_kind_to_run_event(
         causation_id: None,
         correlation_id: None,
     })
+}
+
+// ---------------------------------------------------------------------------
+// Settings commands (TAURI-005)
+// ---------------------------------------------------------------------------
+
+/// Single key-value setting entry returned to the frontend.
+#[derive(Debug, Serialize)]
+pub struct SettingEntry {
+    pub key: String,
+    pub value: serde_json::Value,
+}
+
+/// Return all stored settings as an ordered list of key-value pairs.
+#[tauri::command]
+pub fn get_settings(state: State<AppState>) -> CmdResult<Vec<SettingEntry>> {
+    let db = state.db.lock().unwrap();
+    let entries = SettingsRepository::new(&db).list_settings().map_err(cmd_err)?;
+    Ok(entries
+        .into_iter()
+        .map(|(key, value)| SettingEntry { key, value })
+        .collect())
+}
+
+/// Insert or replace the JSON value stored under `key`.
+#[tauri::command]
+pub fn set_setting(
+    state: State<AppState>,
+    key: String,
+    value: serde_json::Value,
+) -> CmdResult<()> {
+    let db = state.db.lock().unwrap();
+    SettingsRepository::new(&db)
+        .set_setting(&key, &value)
+        .map_err(cmd_err)
+}
+
+/// Open the native OS directory picker, store the selected path as `workspace_root`
+/// in settings, and return the path to the frontend.
+///
+/// Returns `None` if the user cancels without selecting a directory.
+#[tauri::command]
+pub async fn open_workspace_picker(
+    app: AppHandle,
+    state: State<'_, AppState>,
+) -> CmdResult<Option<String>> {
+    use tauri_plugin_dialog::DialogExt;
+    use tokio::sync::oneshot;
+
+    let (tx, rx) = oneshot::channel::<Option<tauri_plugin_dialog::FilePath>>();
+    app.dialog()
+        .file()
+        .set_title("Select Workspace Directory")
+        .pick_folder(move |folder_path| {
+            let _ = tx.send(folder_path);
+        });
+
+    let folder = rx
+        .await
+        .map_err(|_| cmd_err("dialog channel closed unexpectedly"))?;
+
+    match folder {
+        Some(path) => {
+            let path_str = path.to_string();
+            let db = state.db.lock().unwrap();
+            SettingsRepository::new(&db)
+                .set_setting("workspace_root", &serde_json::Value::String(path_str.clone()))
+                .map_err(cmd_err)?;
+            Ok(Some(path_str))
+        }
+        None => Ok(None),
+    }
 }
 
 // ---------------------------------------------------------------------------

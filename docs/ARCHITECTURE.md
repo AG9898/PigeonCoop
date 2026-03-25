@@ -612,6 +612,14 @@ Mitigation:
 - use trait injection for the event log in coordinator tests — no SQLite dependency in unit tests
 - see workboard task **QA-002** (must complete before ENGINE-003, ENGINE-004)
 
+### Implementation notes (TAURI-005)
+- Settings commands: `get_settings`, `set_setting`, `open_workspace_picker` in `apps/desktop/src-tauri/src/commands/mod.rs`
+- `get_settings` returns all stored settings as `Vec<SettingEntry>` (ordered by key) via `SettingsRepository::list_settings()`
+- `set_setting(key, value)` upserts any JSON value via `SettingsRepository::set_setting()`
+- `open_workspace_picker` uses `tauri-plugin-dialog` (`tauri_plugin_dialog::DialogExt`) to show the native OS folder picker; the selected path is persisted under the `workspace_root` key and returned to the frontend; returns `null` if the user cancels
+- Dialog result is bridged to the async command via a `tokio::sync::oneshot` channel — the dialog callback sends into the channel; the command awaits it
+- `tauri-plugin-dialog = "2"` added to `apps/desktop/src-tauri/Cargo.toml`; plugin initialized via `.plugin(tauri_plugin_dialog::init())` in `lib.rs`
+
 ### Implementation notes (TAURI-004)
 - Event bridge in `apps/desktop/src-tauri/src/bridge/mod.rs` — thin forwarding layer between engine events and the frontend
 - `TauriEventLog` implements `EventLog` and is injected into `RunCoordinator`

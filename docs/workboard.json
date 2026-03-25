@@ -1448,7 +1448,7 @@
       "id": "TAURI-005",
       "group_id": "TAURI",
       "title": "Settings and workspace commands",
-      "status": "todo",
+      "status": "done",
       "priority": "medium",
       "type": "implementation",
       "summary": "Tauri commands for reading/writing settings and selecting the workspace root directory.",
