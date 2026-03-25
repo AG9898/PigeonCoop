@@ -1,7 +1,9 @@
 import { useRef, useState, useCallback } from "react";
 import { invoke } from "@tauri-apps/api/core";
+import type { Node } from "reactflow";
 import { WorkflowCanvas, WorkflowCanvasHandle } from "../components/canvas/WorkflowCanvas";
 import { NodePalette } from "../components/panels/NodePalette";
+import { NodeInspector } from "../components/panels/NodeInspector";
 import type { ConditionKind, NodeKind, ValidationResult, WorkflowDefinition } from "../types/workflow";
 import type { WorkflowNodeData } from "../components/nodes/WorkflowNode";
 
@@ -21,11 +23,11 @@ function flowToWorkflow(
       node_id: n.id,
       node_type: (n.type ?? "agent") as NodeKind,
       label: (n.data as WorkflowNodeData).label,
-      config: null,
+      config: (n.data as WorkflowNodeData).config ?? null,
       input_contract: null,
       output_contract: null,
       memory_access: null,
-      retry_policy: { max_retries: 0 },
+      retry_policy: (n.data as WorkflowNodeData).retry_policy ?? { max_retries: 0 },
       display: { x: n.position.x, y: n.position.y },
     })),
     edges: flowData.edges.map((e) => ({
@@ -91,6 +93,7 @@ export function BuilderView() {
   const [showPicker, setShowPicker] = useState(false);
   const [pickerList, setPickerList] = useState<WorkflowDefinition[]>([]);
   const [validationResult, setValidationResult] = useState<ValidationResult | null>(null);
+  const [selectedNode, setSelectedNode] = useState<Node<WorkflowNodeData> | null>(null);
 
   const invalidNodeIds = validationResult ? invalidNodeIdsFromResult(validationResult) : [];
   const invalidEdgeIds = validationResult ? invalidEdgeIdsFromResult(validationResult) : [];
@@ -154,6 +157,10 @@ export function BuilderView() {
     canvasRef.current?.addNode(kind);
   }, []);
 
+  const handleNodeSelect = useCallback((node: Node<WorkflowNodeData> | null) => {
+    setSelectedNode(node);
+  }, []);
+
   return (
     <div className="view builder-view">
       <div className="view-header">
@@ -213,7 +220,17 @@ export function BuilderView() {
           workflow={loadedWorkflow}
           invalidNodeIds={invalidNodeIds}
           invalidEdgeIds={invalidEdgeIds}
+          onNodeSelect={handleNodeSelect}
         />
+        {selectedNode && (
+          <NodeInspector
+            key={selectedNode.id}
+            node={selectedNode}
+            onUpdateLabel={(label) => canvasRef.current?.updateNodeLabel(selectedNode.id, label)}
+            onUpdateConfig={(config) => canvasRef.current?.updateNodeConfig(selectedNode.id, config)}
+            onUpdateRetryPolicy={(rp) => canvasRef.current?.updateNodeRetryPolicy(selectedNode.id, rp)}
+          />
+        )}
       </div>
     </div>
   );

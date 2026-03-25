@@ -100,7 +100,12 @@ function workflowToFlow(wf: WorkflowDefinition): {
     id: n.node_id,
     type: n.node_type,
     position: { x: n.display.x, y: n.display.y },
-    data: { kind: n.node_type, label: n.label },
+    data: {
+      kind: n.node_type,
+      label: n.label,
+      config: n.config as Record<string, unknown> | undefined ?? undefined,
+      retry_policy: n.retry_policy,
+    },
   }));
 
   const edges: Edge[] = wf.edges.map((e) => ({
@@ -124,6 +129,9 @@ const EMPTY_EDGES: Edge[] = [];
 export interface WorkflowCanvasHandle {
   getFlowData(): { nodes: Node<WorkflowNodeData>[]; edges: Edge[] };
   addNode(kind: NodeKind, position?: { x: number; y: number }): void;
+  updateNodeLabel(nodeId: string, label: string): void;
+  updateNodeConfig(nodeId: string, config: Record<string, unknown>): void;
+  updateNodeRetryPolicy(nodeId: string, retryPolicy: { max_retries: number; max_runtime_ms?: number }): void;
 }
 
 interface WorkflowCanvasProps {
@@ -132,6 +140,8 @@ interface WorkflowCanvasProps {
   invalidNodeIds?: string[];
   /** Edge IDs flagged as invalid by the validator. */
   invalidEdgeIds?: string[];
+  /** Called when the node selection changes; null means nothing selected. */
+  onNodeSelect?: (node: Node<WorkflowNodeData> | null) => void;
 }
 
 // ---------------------------------------------------------------------------
@@ -139,7 +149,7 @@ interface WorkflowCanvasProps {
 // ---------------------------------------------------------------------------
 
 const CanvasInner = forwardRef<WorkflowCanvasHandle, WorkflowCanvasProps>(
-  function CanvasInner({ workflow, invalidNodeIds, invalidEdgeIds }, ref) {
+  function CanvasInner({ workflow, invalidNodeIds, invalidEdgeIds, onNodeSelect }, ref) {
     const { project } = useReactFlow();
     const containerRef = useRef<HTMLDivElement>(null);
 
@@ -203,13 +213,54 @@ const CanvasInner = forwardRef<WorkflowCanvasHandle, WorkflowCanvasProps>(
       [setNodes]
     );
 
+    const updateNodeLabel = useCallback(
+      (nodeId: string, label: string) => {
+        setNodes((nds) =>
+          nds.map((n) => n.id === nodeId ? { ...n, data: { ...n.data, label } } : n)
+        );
+      },
+      [setNodes]
+    );
+
+    const updateNodeConfig = useCallback(
+      (nodeId: string, config: Record<string, unknown>) => {
+        setNodes((nds) =>
+          nds.map((n) => n.id === nodeId ? { ...n, data: { ...n.data, config } } : n)
+        );
+      },
+      [setNodes]
+    );
+
+    const updateNodeRetryPolicy = useCallback(
+      (nodeId: string, retryPolicy: { max_retries: number; max_runtime_ms?: number }) => {
+        setNodes((nds) =>
+          nds.map((n) => n.id === nodeId ? { ...n, data: { ...n.data, retry_policy: retryPolicy } } : n)
+        );
+      },
+      [setNodes]
+    );
+
+    const handleSelectionChange = useCallback(
+      ({ nodes: selectedNodes }: { nodes: Node[] }) => {
+        onNodeSelect?.(
+          selectedNodes.length === 1
+            ? (selectedNodes[0] as Node<WorkflowNodeData>)
+            : null
+        );
+      },
+      [onNodeSelect]
+    );
+
     useImperativeHandle(
       ref,
       () => ({
         getFlowData: () => ({ nodes, edges }),
         addNode: addNodeImpl,
+        updateNodeLabel,
+        updateNodeConfig,
+        updateNodeRetryPolicy,
       }),
-      [nodes, edges, addNodeImpl]
+      [nodes, edges, addNodeImpl, updateNodeLabel, updateNodeConfig, updateNodeRetryPolicy]
     );
 
     // Intercept connection before adding — store as pending to show condition dialog.
@@ -263,6 +314,7 @@ const CanvasInner = forwardRef<WorkflowCanvasHandle, WorkflowCanvasProps>(
           onNodesChange={onNodesChange}
           onEdgesChange={onEdgesChange}
           onConnect={onConnect}
+          onSelectionChange={handleSelectionChange}
           nodeTypes={NODE_TYPES}
           fitView
           deleteKeyCode="Delete"

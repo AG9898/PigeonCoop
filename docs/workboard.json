@@ -1619,7 +1619,7 @@
       "id": "UI-BLD-004",
       "group_id": "UI-BLD",
       "title": "Node property inspector panel",
-      "status": "todo",
+      "status": "done",
       "priority": "medium",
       "type": "implementation",
       "summary": "Implement an inspector panel that shows and edits the selected node's configuration.",

@@ -12,6 +12,10 @@ export interface WorkflowNodeData {
   state?: NodeState;
   /** True when the engine validator has flagged this node with an error. */
   invalid?: boolean;
+  /** Node-kind-specific configuration, mirrors Rust NodeConfig variants. */
+  config?: Record<string, unknown>;
+  /** Retry policy for this node. */
+  retry_policy?: { max_retries: number; max_runtime_ms?: number };
 }
 
 interface KindMeta {

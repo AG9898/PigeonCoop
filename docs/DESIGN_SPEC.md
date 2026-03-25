@@ -58,6 +58,23 @@ Required elements:
 Behavior:
 - node palette items drag onto the canvas via `dataTransfer` (MIME type `application/reactflow`); drop position becomes the node's canvas coordinates; new node gets a UUID
 - node palette items can also be clicked to add the node at a default position
+- selecting a node on the canvas opens the `NodeInspector` panel on the right; deselecting or multi-selecting closes it
+
+#### Node inspector panel
+
+`NodeInspector` (`components/panels/NodeInspector.tsx`) renders when exactly one node is selected on the canvas. It shows:
+
+- **Label** — editable text field; edits propagate to the canvas node immediately
+- **Config section** — per-kind form fields matching the Rust `NodeConfig` variants:
+  - *Agent*: `prompt` (textarea), `command`, `provider_hint`, `model`, `output_mode` (select: raw / json_stdout / json_last_line)
+  - *Tool*: `command`, `shell`, `timeout_ms`
+  - *Router*: ordered `rules` list with `condition` and `target_key` per row; add/remove rows
+  - *Memory*: `key`, `scope` (run_shared / node_local), `operation` (read / write)
+  - *Human Review*: `prompt` (textarea), `reason`, `available_actions` (comma-separated)
+  - *Start / End*: no-configuration placeholder text
+- **Retry Policy** — `max_retries` and optional `max_runtime_ms`
+
+All edits are reflected in the React Flow node data and serialized to `WorkflowDefinition.nodes[*].config` and `.retry_policy` when the workflow is saved. The inspector remounts (resets form state) when a different node is selected.
 - supports drag/drop node placement
 - supports edge creation; condition_kind (always/on_success/on_failure/expression) selected via dialog on connect
 - surfaces invalid graph structures before run via `validate_workflow` command
