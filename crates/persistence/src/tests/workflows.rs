@@ -211,6 +211,7 @@ fn agent_and_tool_nodes_round_trip_config() {
             prompt: "Analyze the repo.".into(),
             command: Some("claude".into()),
             provider_hint: Some("claude-sonnet-4-6".into()),
+            model: None,
             output_mode: AgentOutputMode::Raw,
         }),
         "Plan",

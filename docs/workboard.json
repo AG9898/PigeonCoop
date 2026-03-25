@@ -2840,7 +2840,7 @@
       "id": "MODEL-008",
       "group_id": "MODEL",
       "title": "Add model field to AgentNodeConfig",
-      "status": "todo",
+      "status": "done",
       "priority": "medium",
       "type": "implementation",
       "summary": "Add an optional model field to AgentNodeConfig so the runtime adapter can construct provider-specific CLI commands.",

@@ -132,7 +132,7 @@ Fields:
 |--------------|--------------------------|--------------------------|-------------------------------------|
 | `start`      | `StartNodeConfig`        | —                        | —                                   |
 | `end`        | `EndNodeConfig`          | —                        | —                                   |
-| `agent`      | `AgentNodeConfig`        | `prompt`                 | `command`, `provider_hint`, `output_mode` |
+| `agent`      | `AgentNodeConfig`        | `prompt`                 | `command`, `provider_hint`, `model`, `output_mode` |
 | `tool`       | `ToolNodeConfig`         | `command`                | `shell`, `timeout_ms`               |
 | `router`     | `RouterNodeConfig`       | `rules[]`                | —                                   |
 | `memory`     | `MemoryNodeConfig`       | `key`, `scope`, `operation` | —                                |
@@ -330,6 +330,7 @@ Each adapter should expose a consistent interface such as:
 - Wraps external agent CLIs (e.g. `claude-code`, `aider`) as Agent node executors
 - Does not implement the `Adapter` trait (which uses `CommandEventKind`); instead exposes its own `prepare`/`execute`/`abort` methods with `mpsc::Sender<AgentEventKind>`
 - Command resolution: `AgentNodeConfig.command` > `AgentNodeConfig.provider_hint` > error
+- Model selection: `AgentNodeConfig.model` carries the specific model identifier (e.g. `"claude-sonnet-4-6"`) to pass to the provider adapter; absent means use adapter default. Distinct from `provider_hint`: `provider_hint` selects which adapter handles the node; `model` selects which model that adapter requests.
 - Prompt is piped to stdin of the spawned process; stdout is streamed as `AgentEventKind::OutputReceived` events
 - `AgentOutputMode` (DEC-005): `Raw` (default, `{"raw": "<stdout>"}`), `JsonStdout` (parse all stdout as JSON), `JsonLastLine` (parse last non-empty line as JSON)
 - Event sequence: `RequestPrepared` → `Started` → `OutputReceived`* → `Completed` or `Failed`

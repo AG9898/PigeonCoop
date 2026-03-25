@@ -44,6 +44,7 @@ fn agent_node_definition() -> NodeDefinition {
             prompt: "Analyze the task.".to_string(),
             command: None,
             provider_hint: None,
+            model: None,
             output_mode: Default::default(),
         }),
         input_contract: json!({"task": "string"}),

@@ -117,6 +117,7 @@ pub fn make_node(node_id: Uuid, kind: NodeKind) -> NodeDefinition {
             prompt: "test prompt".into(),
             command: None,
             provider_hint: None,
+            model: None,
             output_mode: Default::default(),
         }),
         NodeKind::Tool => NodeConfig::Tool(ToolNodeConfig {

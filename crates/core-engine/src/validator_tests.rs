@@ -26,6 +26,7 @@ mod tests {
                 prompt: "test".into(),
                 command: None,
                 provider_hint: None,
+                model: None,
                 output_mode: Default::default(),
             }),
             NodeKind::Tool => NodeConfig::Tool(ToolNodeConfig {

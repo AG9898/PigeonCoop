@@ -406,6 +406,7 @@ mod tests {
                 prompt: prompt.to_owned(),
                 command: Some(cmd.to_owned()),
                 provider_hint: Some("test-provider".into()),
+                model: None,
                 output_mode: AgentOutputMode::Raw,
             }),
             input_contract: serde_json::Value::Null,

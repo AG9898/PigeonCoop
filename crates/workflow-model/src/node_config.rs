@@ -38,7 +38,14 @@ pub enum AgentOutputMode {
 /// Optional:
 /// - `command`: the CLI command to run (e.g. `"claude-code"`, `"aider"`).
 ///   If absent, `provider_hint` is used as the command name.
-/// - `provider_hint`: preferred provider/model key (e.g. `"claude-sonnet-4-6"`).
+/// - `provider_hint`: selects the provider adapter (e.g. `"claude"`, `"openai"`).
+///   Used by the runtime adapter to build the CLI invocation. If `command` is
+///   also set, `provider_hint` is advisory only.
+/// - `model`: the specific model identifier to pass to the provider adapter
+///   (e.g. `"claude-sonnet-4-6"`, `"gpt-4o"`). When absent, the adapter uses
+///   its default model for the selected provider. Distinct from `provider_hint`:
+///   `provider_hint` selects *which* adapter handles the node; `model` selects
+///   *which model* that adapter requests.
 /// - `output_mode`: how to parse stdout (default: `raw`). See DEC-005.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct AgentNodeConfig {
@@ -48,9 +55,15 @@ pub struct AgentNodeConfig {
     /// command name. At least one of `command` or `provider_hint` must be set.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub command: Option<String>,
-    /// Optional hint for the execution adapter about which provider/model to use.
+    /// Selects the provider adapter (e.g. `"claude"`, `"openai"`). If `command`
+    /// is set, this is advisory; if `command` is absent, the adapter derives the
+    /// command from this hint.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub provider_hint: Option<String>,
+    /// Specific model identifier requested from the provider adapter
+    /// (e.g. `"claude-sonnet-4-6"`). Absent means use the adapter's default.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub model: Option<String>,
     /// How to interpret stdout from the agent CLI. Defaults to `raw`.
     #[serde(default)]
     pub output_mode: AgentOutputMode,
@@ -205,11 +218,45 @@ mod tests {
             prompt: "Analyze the task".to_string(),
             command: None,
             provider_hint: Some("claude-sonnet-4-6".to_string()),
+            model: None,
             output_mode: AgentOutputMode::Raw,
         });
         let json = serde_json::to_string(&cfg).unwrap();
         let back = NodeConfig::from_value(&NodeKind::Agent, serde_json::from_str(&json).unwrap()).unwrap();
         assert_eq!(back, cfg);
+    }
+
+    #[test]
+    fn agent_roundtrip_with_provider_hint_and_model() {
+        let cfg = NodeConfig::Agent(AgentNodeConfig {
+            prompt: "Plan the changes".to_string(),
+            command: None,
+            provider_hint: Some("claude".to_string()),
+            model: Some("claude-sonnet-4-6".to_string()),
+            output_mode: AgentOutputMode::JsonLastLine,
+        });
+        let json = serde_json::to_string(&cfg).unwrap();
+        // Verify both fields are present in the serialised form.
+        let v: serde_json::Value = serde_json::from_str(&json).unwrap();
+        assert_eq!(v["provider_hint"], "claude");
+        assert_eq!(v["model"], "claude-sonnet-4-6");
+        let back = NodeConfig::from_value(&NodeKind::Agent, v).unwrap();
+        assert_eq!(back, cfg);
+    }
+
+    #[test]
+    fn agent_roundtrip_without_model_backward_compat() {
+        // JSON with no "model" key must deserialise to model: None — backward compat.
+        let json = r#"{"prompt": "Run the build", "provider_hint": "openai"}"#;
+        let cfg = NodeConfig::from_value(&NodeKind::Agent, serde_json::from_str(json).unwrap()).unwrap();
+        match cfg {
+            NodeConfig::Agent(a) => {
+                assert_eq!(a.prompt, "Run the build");
+                assert_eq!(a.provider_hint.as_deref(), Some("openai"));
+                assert!(a.model.is_none());
+            }
+            _ => panic!("expected Agent variant"),
+        }
     }
 
     #[test]
