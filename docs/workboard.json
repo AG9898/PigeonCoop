@@ -2250,7 +2250,7 @@
       "id": "DOCS-002",
       "group_id": "DOCS",
       "title": "Update EVENT_SCHEMA.md as typed event implementations settle",
-      "status": "todo",
+      "status": "done",
       "priority": "low",
       "type": "docs",
       "summary": "Update EVENT_SCHEMA.md with final typed payload shapes once the event-model crate is implemented.",
