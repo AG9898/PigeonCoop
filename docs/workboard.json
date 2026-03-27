@@ -1,12 +1,13 @@
 {
   "project": {
     "name": "PigeonCoop",
-    "updated_at": "2026-03-18T00:00:00Z",
+    "updated_at": "2026-03-27T00:00:00Z",
     "source_docs": [
       "docs/README.md",
       "docs/PRD.md",
       "docs/ARCHITECTURE.md",
       "docs/DESIGN_SPEC.md",
+      "docs/VISUAL_IDENTITY.md",
       "AGENTS.md",
       "docs/DECISIONS.md",
       "docs/EVENT_SCHEMA.md",
@@ -79,6 +80,11 @@
       "group_id": "UX",
       "title": "UX, library view, and distribution",
       "description": "Library view, onboarding, keyboard UX, theming, and distribution tasks."
+    },
+    {
+      "group_id": "SPRITE",
+      "title": "Game visual identity — sprites, backdrop, and resource indicators",
+      "description": "Character sprite node system, animated backdrop, health/resource bars, and all game-aesthetic visual features. See docs/VISUAL_IDENTITY.md for the full specification."
     },
     {
       "group_id": "DOCS",
@@ -2964,6 +2970,248 @@
         "cd apps/desktop && npm test -- --run"
       ],
       "estimate": "M"
+    },
+    {
+      "id": "DEC-007",
+      "group_id": "DEC",
+      "title": "Decide: character sprite node identity system",
+      "status": "done",
+      "priority": "high",
+      "type": "decision",
+      "summary": "Adopt animated pixel-art character sprites as the primary visual identity for workflow nodes, starting with the Agent node.",
+      "description": "Evaluate and document the approach for replacing text-based node icons with animated sprite characters. Covers: animation technique (CSS sprite-sheet vs GIF vs JS canvas), state-to-animation mapping for all 8 node states, health bar design for context/token usage, backdrop strategy, and incremental rollout plan per node type. Decision recorded in DECISIONS.md. Full specification in docs/VISUAL_IDENTITY.md.",
+      "acceptance_criteria": [
+        "Decision recorded in DECISIONS.md as DEC-007",
+        "docs/VISUAL_IDENTITY.md created as the authoritative implementation reference",
+        "Animation technique chosen and justified",
+        "State-to-animation mapping specified for all 8 node states",
+        "Health bar concept defined with data source and visual spec",
+        "Backdrop concept defined with constraints",
+        "Asset naming and storage conventions established"
+      ],
+      "depends_on": [],
+      "blocked_by": [],
+      "files": [
+        "docs/DECISIONS.md",
+        "docs/VISUAL_IDENTITY.md"
+      ],
+      "docs": [
+        "docs/VISUAL_IDENTITY.md",
+        "docs/DESIGN_SPEC.md"
+      ],
+      "notes": [
+        "Blocks SPRITE-001 through SPRITE-005.",
+        "VISUAL_IDENTITY.md is the implementation contract — keep it in sync with any changes to the sprite system."
+      ],
+      "commands": [],
+      "estimate": "S"
+    },
+    {
+      "id": "SPRITE-001",
+      "group_id": "SPRITE",
+      "title": "Sprite asset pipeline: public directory and naming convention",
+      "status": "todo",
+      "priority": "high",
+      "type": "implementation",
+      "summary": "Establish the static asset pipeline for sprite sheets — create apps/desktop/public/sprites/, copy current WebP assets, and document the naming convention.",
+      "description": "Create apps/desktop/public/sprites/ (Vite serves public/ as static root). Copy all .webp sprite sheets from assets/character-sprites/assets_2026-03-27/ into it. Verify each file is accessible at /sprites/<filename> in the dev server. Document the asset naming convention in docs/VISUAL_IDENTITY.md §2 (already drafted). PNG fallbacks are not required in the initial pipeline — WebP is supported in all Tauri-targeted browsers.",
+      "acceptance_criteria": [
+        "apps/desktop/public/sprites/ exists and contains all 6 pigeon WebP sprite sheets",
+        "Running npm run dev, each sprite is accessible at http://localhost:1420/sprites/<filename>",
+        "Naming convention matches docs/VISUAL_IDENTITY.md §2",
+        "No PNG copies required in public/ — WebP only for initial pipeline"
+      ],
+      "depends_on": [
+        "DEC-007"
+      ],
+      "blocked_by": [],
+      "files": [
+        "apps/desktop/public/sprites/"
+      ],
+      "docs": [
+        "docs/VISUAL_IDENTITY.md"
+      ],
+      "notes": [
+        "This is a prerequisite for SPRITE-002. The AgentNode component cannot load sprites until they are served.",
+        "Future node type sprites follow the same pipeline: drop WebP into public/sprites/, no other config needed."
+      ],
+      "commands": [
+        "cd apps/desktop && npm run dev"
+      ],
+      "estimate": "XS"
+    },
+    {
+      "id": "SPRITE-002",
+      "group_id": "SPRITE",
+      "title": "AgentNode animated character component",
+      "status": "todo",
+      "priority": "high",
+      "type": "implementation",
+      "summary": "Create the AgentNode React component that renders the pigeon sprite with state-driven CSS animation, and register it in WorkflowCanvas for the 'agent' node type.",
+      "description": "Create apps/desktop/src/components/nodes/AgentNode.tsx. The component renders the pigeon sprite sheet using CSS background-position-x stepping (ag-sprite-8 / ag-sprite-12 keyframes). The sprite div uses a data-state attribute so all animation switching is CSS-only. The component reuses .wf-node base classes so existing state glow rings (node-pulse, node-fail-flash, etc.) apply at the border level. Add ag-node-* CSS rules to global.css. Register AgentNode in WorkflowCanvas.tsx NODE_TYPES for the 'agent' key. All other node types remain WorkflowNode.\n\nState-to-animation mapping (per VISUAL_IDENTITY.md §3):\n- idle: character_idle, 1.0s, 8 steps, infinite\n- queued: character_idle, 1.6s, 8 steps, infinite\n- running: character_front_run_run, 0.55s, 8 steps, infinite\n- waiting: character_walk, 1.0s, 8 steps, infinite\n- paused: character_idle, 2.5s, 8 steps, infinite\n- succeeded: character_jump, 0.6s, 8 steps, 1x forwards\n- failed: character_death, 1.0s, 12 steps, 1x forwards\n- skipped: character_idle, 1.0s, 8 steps, infinite + opacity 0.45",
+      "acceptance_criteria": [
+        "apps/desktop/src/components/nodes/AgentNode.tsx exists and renders without errors",
+        "Dragging an Agent node onto the canvas in BuilderView shows the animated pigeon sprite",
+        "All other node types (Start, End, Tool, Router, Memory, HumanReview) still render as WorkflowNode",
+        "Sprite animates: idle state shows slow idle loop; running state shows fast run loop",
+        "image-rendering: pixelated is applied — sprite is crisp at all React Flow zoom levels",
+        "prefers-reduced-motion: reduce disables the sprite animation",
+        "State glow/ring animations on the node border continue to work alongside the sprite",
+        "npm test passes with no regressions"
+      ],
+      "depends_on": [
+        "SPRITE-001",
+        "DEC-007"
+      ],
+      "blocked_by": [
+        "SPRITE-001"
+      ],
+      "files": [
+        "apps/desktop/src/components/nodes/AgentNode.tsx",
+        "apps/desktop/src/components/canvas/WorkflowCanvas.tsx",
+        "apps/desktop/src/styles/global.css"
+      ],
+      "docs": [
+        "docs/VISUAL_IDENTITY.md"
+      ],
+      "notes": [
+        "The health bar (SPRITE-004) is a separate follow-up — do not include it in this task.",
+        "AgentNode shares WorkflowNodeData interface with WorkflowNode — no new prop types required.",
+        "CSS class namespace: ag-node, ag-node-sprite, ag-node-footer, ag-node-label, ag-node-state-badge."
+      ],
+      "commands": [
+        "cd apps/desktop && npm run dev",
+        "cd apps/desktop && npm test"
+      ],
+      "estimate": "M"
+    },
+    {
+      "id": "SPRITE-003",
+      "group_id": "SPRITE",
+      "title": "Game backdrop canvas layer",
+      "status": "todo",
+      "priority": "medium",
+      "type": "implementation",
+      "summary": "Add an animated pixel-art terrain backdrop behind the React Flow canvas to give the workflow environment a living game-world feel.",
+      "description": "Add a backdrop layer positioned behind the React Flow canvas. The backdrop renders a tiled pixel-art terrain image (seamlessly repeating). It sits below the existing 48px grid overlay, which remains on top for tactical-map readability. The backdrop scale is tied to React Flow's zoom transform so terrain tiles don't drift during zoom. Per VISUAL_IDENTITY.md §6.\n\nThis task is gated on backdrop asset availability. If no backdrop asset exists yet, create the component shell and document the expected asset spec, but do not ship a placeholder that looks unfinished. The existing CSS grid overlay is acceptable as the interim state.",
+      "acceptance_criteria": [
+        "A backdrop layer div is positioned behind .react-flow (z-index below canvas, above app background)",
+        "Backdrop tile is a seamless repeating pixel-art image (when asset is available)",
+        "Backdrop scale follows React Flow zoom — tiles do not drift as the user zooms in/out",
+        "The existing 48px CSS grid overlay remains visible on top of the backdrop",
+        "Node and edge readability is not degraded at any zoom level",
+        "prefers-reduced-motion: reduce disables any backdrop animation",
+        "Backdrop is visible in BuilderView, LiveRunView, and ReplayView (all canvas contexts)"
+      ],
+      "depends_on": [
+        "DEC-007",
+        "UI-BLD-002"
+      ],
+      "blocked_by": [],
+      "files": [
+        "apps/desktop/src/components/canvas/WorkflowCanvas.tsx",
+        "apps/desktop/src/styles/global.css",
+        "apps/desktop/public/backdrops/"
+      ],
+      "docs": [
+        "docs/VISUAL_IDENTITY.md"
+      ],
+      "notes": [
+        "Asset requirement: seamless tile, 64–128px square, WebP, pixel-art style matching the character sprites.",
+        "If backdrop asset is not ready: ship the component scaffold only; do not block on asset creation.",
+        "React Flow zoom transform is accessible via useReactFlow().getViewport() or the onMove callback."
+      ],
+      "commands": [
+        "cd apps/desktop && npm run dev"
+      ],
+      "estimate": "M"
+    },
+    {
+      "id": "SPRITE-004",
+      "group_id": "SPRITE",
+      "title": "Context/token usage health bar on agent nodes",
+      "status": "todo",
+      "priority": "medium",
+      "type": "implementation",
+      "summary": "Add a health-bar style overlay to AgentNode that visualizes LLM context window fill percentage derived from token usage events.",
+      "description": "Add a narrow horizontal bar (4px tall, 86px wide) below the sprite and above the footer in AgentNode. The bar is driven by a tokenPct prop (0–100) derived from token usage events (tokens_used / context_limit). Color: green 0–60%, amber 60–85%, red 85–100%. Smooth CSS transitions on fill and color change. Hidden (display: none) when tokenPct is null/undefined — graceful degradation for providers that do not expose token counts.\n\nData path: LiveRunView receives agent.completed / agent.response events with token fields in the payload. It computes tokenPct and passes it through node data to AgentNode. In BuilderView the bar is always hidden (no runtime data). In ReplayView derive from the event log at the scrubbed position.\n\nPer VISUAL_IDENTITY.md §5.",
+      "acceptance_criteria": [
+        "Health bar renders below the sprite in AgentNode when tokenPct is a number",
+        "Bar is hidden when tokenPct is null or undefined",
+        "Fill color is green at <60%, amber at 60–85%, red at >85%",
+        "Fill transitions smoothly (0.3s ease) when tokenPct changes",
+        "Bar is absent in BuilderView (design-time has no runtime data)",
+        "In LiveRunView, bar updates as agent.completed / agent.response events arrive",
+        "In ReplayView, bar fill reflects token usage at the scrubbed event position",
+        "npm test passes — add at least one unit test for each color threshold"
+      ],
+      "depends_on": [
+        "SPRITE-002",
+        "UI-RUN-001"
+      ],
+      "blocked_by": [
+        "SPRITE-002"
+      ],
+      "files": [
+        "apps/desktop/src/components/nodes/AgentNode.tsx",
+        "apps/desktop/src/views/LiveRunView.tsx",
+        "apps/desktop/src/views/ReplayView.tsx",
+        "apps/desktop/src/styles/global.css"
+      ],
+      "docs": [
+        "docs/VISUAL_IDENTITY.md",
+        "docs/EVENT_SCHEMA.md"
+      ],
+      "notes": [
+        "Token fields in agent events must be confirmed against EVENT_SCHEMA.md before implementation.",
+        "If token data is not yet in the event payload, this task blocks on the event schema change — coordinate with EVENT group.",
+        "The bar must not widen the node. 86px matches the sprite width at native scale."
+      ],
+      "commands": [
+        "cd apps/desktop && npm test"
+      ],
+      "estimate": "M"
+    },
+    {
+      "id": "SPRITE-005",
+      "group_id": "SPRITE",
+      "title": "Full node type sprite coverage — asset design and integration",
+      "status": "todo",
+      "priority": "low",
+      "type": "implementation",
+      "summary": "Create and integrate animated character sprites for all remaining node types (Tool, Router, Memory, HumanReview, Start, End).",
+      "description": "Once pixel-art assets are created for each remaining node type, integrate them using the same component pattern as AgentNode (SPRITE-002). Each node type gets its own dedicated React component (e.g. ToolNode.tsx, RouterNode.tsx) registered in WorkflowCanvas NODE_TYPES. Each component follows the same ag-node-* class pattern and state-to-animation mapping from VISUAL_IDENTITY.md §3.\n\nAsset priority order (per VISUAL_IDENTITY.md §8): Tool → Router → HumanReview → Memory → Start → End.\n\nThis task covers the integration work per node type. The pixel-art asset creation itself is a separate creative/design effort tracked elsewhere. This task should only be started once assets are available for a given node type — do not block all 6 on a complete asset set.",
+      "acceptance_criteria": [
+        "Each node type with available assets has a dedicated SpriteNode component",
+        "All sprite components follow the pattern established by AgentNode.tsx (SPRITE-002)",
+        "WorkflowCanvas NODE_TYPES is updated for each integrated node type",
+        "State-to-animation mapping is consistent with VISUAL_IDENTITY.md §3 (adapted for each character)",
+        "All existing node state glow/ring CSS animations still apply",
+        "npm test passes — sprite components have at minimum smoke tests",
+        "docs/VISUAL_IDENTITY.md §8 roadmap table is updated as each type is completed"
+      ],
+      "depends_on": [
+        "SPRITE-002"
+      ],
+      "blocked_by": [],
+      "files": [
+        "apps/desktop/src/components/nodes/",
+        "apps/desktop/src/components/canvas/WorkflowCanvas.tsx",
+        "apps/desktop/public/sprites/",
+        "docs/VISUAL_IDENTITY.md"
+      ],
+      "docs": [
+        "docs/VISUAL_IDENTITY.md"
+      ],
+      "notes": [
+        "Pick up this task one node type at a time as assets become available — do not wait for all 6.",
+        "Character concepts per node type are in VISUAL_IDENTITY.md §8. Coordinate with asset creator on design.",
+        "Asset spec: 86×86px frames, horizontal sprite sheet, WebP, transparent background, same animation states as the pigeon set."
+      ],
+      "commands": [
+        "cd apps/desktop && npm test"
+      ],
+      "estimate": "L"
     },
     {
       "id": "UI-RUN-009",

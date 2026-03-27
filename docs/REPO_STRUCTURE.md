@@ -44,7 +44,7 @@ apps/
       app/
       components/
         canvas/
-        nodes/
+        nodes/             # WorkflowNode (text-based), AgentNode (sprite-based)
         panels/
       data/               # Embedded static data (e.g. demo workflow for first-run seeding)
       hooks/              # React hooks (useFirstRun for demo seeding, useCanvasKeyboard for keyboard-driven canvas navigation)
@@ -100,6 +100,11 @@ crates/
 schemas/
   workflow.schema.json
   run-event.schema.json
+
+assets/
+  character-sprites/
+    assets_2026-03-27/    # Pigeon character sprite sheets (WebP + PNG); see docs/VISUAL_IDENTITY.md
+  backdrops/              # (planned) Game backdrop tile assets
 
 examples/
   plan-execute-critique-approve/

@@ -412,6 +412,39 @@ This is production code, not a test workaround. The polling fallback also handle
 
 ---
 
+### 2026-03-27 — Character sprite node identity system (DEC-007)
+
+**Context:** PigeonCoop's visual premise — "a game-styled developer tool" — requires more than a dark color scheme and grid overlay. The node representations (currently: icon + type abbreviation + label) are functional but generic. To deliver the game-inspired aesthetic described in the PRD and DESIGN_SPEC, nodes need a visual identity that feels like game units, not diagram boxes.
+
+**Decision:** Adopt an animated pixel-art character sprite system for node visual identity, starting with Agent nodes.
+
+Key choices within this decision:
+- **CSS sprite-sheet animation** (not animated GIFs, not JavaScript timers): horizontal PNG/WebP sprite sheets animated via `steps()` keyframes on `background-position-x`. Controllable speed, state-driven, no GIF color limitations, performant.
+- **Per-state animation mapping:** each of the 8 node states maps to a distinct sprite animation or speed variant, so state changes are visible without reading the text badge.
+- **Health bar for context/token usage:** an overlay bar on agent nodes visualizes LLM context window fill percentage using RPG health-bar conventions (green → amber → red).
+- **Game backdrop:** a tiled pixel-art terrain background behind the React Flow canvas adds environmental depth without competing with node readability.
+- **Incremental rollout:** Agent nodes receive sprites first. Other node types retain text-based identity until dedicated assets exist. The component architecture (`AgentNode` registered separately from `WorkflowNode`) supports this without changing all 7 node types at once.
+- **Asset convention:** source assets in `assets/character-sprites/<dated-folder>/`; deployed assets in `apps/desktop/public/sprites/` (Vite static serving).
+
+**Rationale:** The game visual identity is a primary differentiator for the product, not a cosmetic add-on. The sprite approach is technically straightforward (CSS-only animation), respects `prefers-reduced-motion`, scales correctly with React Flow zoom via `image-rendering: pixelated`, and can be adopted incrementally as new assets are created.
+
+**Full specification:** [`docs/VISUAL_IDENTITY.md`](VISUAL_IDENTITY.md) is the authoritative reference for all implementation details.
+
+**Alternatives considered:**
+- Animated GIFs — rejected: 256-color limit, no speed control, larger file size than WebP.
+- JavaScript-driven canvas animation — rejected: adds complexity, breaks React rendering model, harder to sync with node state.
+- Richer SVG icons per node type — rejected: doesn't achieve the game-unit feel; SVG animation is harder to synchronize with state.
+- Keep text-based nodes permanently — rejected: misses the core product differentiator.
+
+**Tradeoffs:**
+- Requires dedicated pixel-art assets per node type. Until assets exist, node types fall back to text-based rendering. This is acceptable and expected.
+- Health bar requires token usage data from the provider adapter. It is hidden when data is unavailable, so it degrades gracefully.
+- Backdrop adds a visual layer that must be tested at all React Flow zoom levels.
+
+**Blocks:** SPRITE-001, SPRITE-002, SPRITE-003, SPRITE-004, SPRITE-005.
+
+---
+
 ## Open decisions
 
 *(No open decisions at this time.)*

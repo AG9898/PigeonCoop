@@ -98,7 +98,7 @@ Technical developers building and debugging agent workflows that operate on loca
 - strong documentation for multi-agent implementation
 
 ### Differentiation goals
-- visually engaging, game-inspired 2D experience
+- visually engaging, game-inspired 2D experience — animated character sprites, health bars, and a living world backdrop (see [`docs/VISUAL_IDENTITY.md`](VISUAL_IDENTITY.md))
 - better observability than terminal/log-only tools
 - smoother bridge between workflow design and real execution
 

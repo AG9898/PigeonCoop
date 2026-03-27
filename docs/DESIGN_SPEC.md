@@ -179,6 +179,7 @@ Required elements:
 - state glows/rings
 - layered panel depth
 - restrained motion
+- pixel-art character sprites (see [`docs/VISUAL_IDENTITY.md`](VISUAL_IDENTITY.md))
 
 ### Implemented design system (`styles/global.css`)
 
@@ -236,7 +237,9 @@ The canvas is the product centerpiece.
 
 Each node should balance identity and readability.
 
-### Shared node structure
+The full visual identity system — including the character sprite system, animation state mapping, health/resource bars, and game backdrop — is specified in [`docs/VISUAL_IDENTITY.md`](VISUAL_IDENTITY.md). Agents working on visual implementation must read that document first.
+
+### Shared node structure (text-based nodes)
 - icon/type marker
 - label
 - state ring/badge
@@ -252,7 +255,7 @@ Each node should balance identity and readability.
 - skipped
 - paused/manual review
 
-### Recommended style behavior
+### Recommended style behavior (text-based nodes)
 - running: subtle pulse or animated border
 - waiting: amber hold state
 - failed: high contrast alert state
