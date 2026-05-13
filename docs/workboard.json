@@ -3010,7 +3010,7 @@
       "id": "SPRITE-001",
       "group_id": "SPRITE",
       "title": "Sprite asset pipeline: public directory and naming convention",
-      "status": "todo",
+      "status": "done",
       "priority": "high",
       "type": "implementation",
       "summary": "Establish the static asset pipeline for sprite sheets — create apps/desktop/public/sprites/, copy current WebP assets, and document the naming convention.",
@@ -3032,7 +3032,8 @@
         "docs/VISUAL_IDENTITY.md"
       ],
       "notes": [
-        "This is a prerequisite for SPRITE-002. The AgentNode component cannot load sprites until they are served.",
+        "Done. apps/desktop/public/sprites/ contains the 6 pigeon WebP sprite sheets copied from assets/character-sprites/assets_2026-03-27/.",
+        "This is a prerequisite for SPRITE-002. The AgentNode component can now load sprites from /sprites/<filename>.",
         "Future node type sprites follow the same pipeline: drop WebP into public/sprites/, no other config needed."
       ],
       "commands": [

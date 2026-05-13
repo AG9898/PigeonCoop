@@ -36,6 +36,8 @@ The inaugural character is the **pigeon** — the PigeonCoop mascot — used for
 Location: `assets/character-sprites/assets_2026-03-27/`
 Runtime location: `apps/desktop/public/sprites/` (served as Vite static assets)
 
+The runtime sprite scaffold is in place. `apps/desktop/public/sprites/` contains the WebP pigeon sprite sheets served by Vite at `/sprites/<filename>`. PNG files remain source/fallback assets only and are not copied into `public/` for the initial pipeline.
+
 | File | Dimensions | Frames | Frame size | Intended state(s) |
 |---|---|---|---|---|
 | `character_idle.webp` | 688×86px | 8 | 86×86px | idle, queued, paused, skipped |
@@ -45,7 +47,7 @@ Runtime location: `apps/desktop/public/sprites/` (served as Vite static assets)
 | `character_hurt.webp` | 688×86px | 8 | 86×86px | (reserved — transition to death) |
 | `character_death.webp` | 1032×86px | 12 | 86×86px | failed |
 
-PNG versions exist alongside each WebP as fallback. Prefer WebP (40–55% smaller).
+PNG versions exist alongside each WebP as source/fallback assets. Prefer WebP for runtime use.
 
 ### Asset format requirements
 - **Format:** WebP sprite sheets; PNG as explicit fallback
@@ -53,7 +55,7 @@ PNG versions exist alongside each WebP as fallback. Prefer WebP (40–55% smalle
 - **Frame size:** must be square; document the px value per character set
 - **Background:** transparent (RGBA)
 - **Naming:** `character_<animation_name>.webp` for the Agent/pigeon set; `<node_type>_<animation_name>.webp` for other node types once those assets exist
-- **Storage:** source assets in `assets/character-sprites/<dated-folder>/`; built/deployed copies in `apps/desktop/public/sprites/`
+- **Storage:** source assets in `assets/character-sprites/<dated-folder>/`; runtime copies in `apps/desktop/public/sprites/`
 
 ---
 

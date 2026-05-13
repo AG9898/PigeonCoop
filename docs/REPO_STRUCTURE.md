@@ -23,7 +23,9 @@ docs/
   REPO_STRUCTURE.md
   TAURI_IPC_CONTRACT.md
   TESTING.md
+  workboard.md
   workboard.json
+  workboard.schema.json
 
 distribution/
   homebrew/
@@ -38,13 +40,16 @@ apps/
   desktop/
     package-lock.json
     package.json
+    public/
+      sprites/             # Runtime WebP sprite sheets served by Vite at /sprites/<filename>
+      backdrops/           # Runtime backdrop tiles served by Vite at /backdrops/<filename>
     src/
       __mocks__/
       __tests__/
       app/
       components/
         canvas/
-        nodes/             # WorkflowNode (text-based), AgentNode (sprite-based)
+        nodes/             # WorkflowNode (text-based); AgentNode sprite component planned in SPRITE-002
         panels/
       data/               # Embedded static data (e.g. demo workflow for first-run seeding)
       hooks/              # React hooks (useFirstRun for demo seeding, useCanvasKeyboard for keyboard-driven canvas navigation)
@@ -104,7 +109,7 @@ schemas/
 assets/
   character-sprites/
     assets_2026-03-27/    # Pigeon character sprite sheets (WebP + PNG); see docs/VISUAL_IDENTITY.md
-  backdrops/              # (planned) Game backdrop tile assets
+  backdrops/              # Source backdrop tile assets; runtime copies go to apps/desktop/public/backdrops/
 
 examples/
   plan-execute-critique-approve/

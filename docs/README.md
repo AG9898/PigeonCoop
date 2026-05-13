@@ -55,6 +55,8 @@ On WSL2, the native window requires WSLg (Windows 11 with `wsl --update`). The M
 - [REPO_STRUCTURE.md](./REPO_STRUCTURE.md)
 - [DECISIONS.md](./DECISIONS.md)
 - [TESTING.md](./TESTING.md)
+- [workboard.md](./workboard.md)
+- [workboard.schema.json](./workboard.schema.json)
 
 ## v1 focus
 

@@ -1,0 +1,237 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "./workboard.schema.json",
+  "title": "Agent Arcade workboard schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "project",
+    "statuses",
+    "task_groups",
+    "tasks"
+  ],
+  "properties": {
+    "$schema": {
+      "type": "string"
+    },
+    "project": {
+      "$ref": "#/definitions/project"
+    },
+    "statuses": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/status"
+      },
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "task_groups": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/task_group"
+      },
+      "minItems": 1
+    },
+    "tasks": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/task"
+      }
+    }
+  },
+  "definitions": {
+    "project": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "updated_at",
+        "source_docs"
+      ],
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "updated_at": {
+          "type": "string",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$"
+        },
+        "source_docs": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        }
+      }
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "todo",
+        "ready",
+        "in_progress",
+        "blocked",
+        "in_review",
+        "done",
+        "deferred"
+      ]
+    },
+    "task_group": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "group_id",
+        "title",
+        "description"
+      ],
+      "properties": {
+        "group_id": {
+          "type": "string",
+          "pattern": "^[A-Z][A-Z0-9_-]*$"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1
+        },
+        "description": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "task": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "group_id",
+        "title",
+        "status",
+        "priority",
+        "type",
+        "summary",
+        "description",
+        "acceptance_criteria",
+        "depends_on",
+        "blocked_by",
+        "files",
+        "docs",
+        "notes",
+        "commands",
+        "estimate"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[A-Z][A-Z0-9_-]*-[0-9][A-Z0-9_-]*$"
+        },
+        "group_id": {
+          "type": "string",
+          "pattern": "^[A-Z][A-Z0-9_-]*$"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 3
+        },
+        "status": {
+          "$ref": "#/definitions/status"
+        },
+        "priority": {
+          "type": "string",
+          "enum": [
+            "critical",
+            "high",
+            "medium",
+            "low"
+          ]
+        },
+        "type": {
+          "type": "string",
+          "enum": [
+            "decision",
+            "design",
+            "docs",
+            "feature",
+            "implementation",
+            "testing"
+          ]
+        },
+        "summary": {
+          "type": "string",
+          "minLength": 1
+        },
+        "description": {
+          "type": "string",
+          "minLength": 1
+        },
+        "acceptance_criteria": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 1
+        },
+        "depends_on": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[A-Z][A-Z0-9_-]*-[0-9][A-Z0-9_-]*$"
+          },
+          "uniqueItems": true
+        },
+        "blocked_by": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        },
+        "files": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        },
+        "docs": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        },
+        "notes": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "commands": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "estimate": {
+          "type": "string",
+          "enum": [
+            "XS",
+            "S",
+            "M",
+            "L",
+            "XL"
+          ]
+        }
+      }
+    }
+  }
+}
