@@ -1,7 +1,7 @@
 {
   "project": {
     "name": "PigeonCoop",
-    "updated_at": "2026-03-27T00:00:00Z",
+    "updated_at": "2026-07-08T00:00:00Z",
     "source_docs": [
       "docs/README.md",
       "docs/PRD.md",
@@ -294,7 +294,7 @@
         "docs/ARCHITECTURE.md"
       ],
       "notes": [
-        "Done. Input/output contracts stored as serde_json::Value \u2014 may need typed structs later per DEC-005."
+        "Done. Input/output contracts stored as serde_json::Value — may need typed structs later per DEC-005."
       ],
       "commands": [],
       "estimate": "S"
@@ -334,7 +334,7 @@
       "priority": "high",
       "type": "implementation",
       "summary": "Implement the RunInstance struct representing one execution of a workflow.",
-      "description": "Add RunInstance to crates/workflow-model or crates/core-engine with fields: run_id, workflow_id, workflow_version, status (RunStatus enum), workspace_root, created_at, started_at, ended_at, active_nodes, constraints, summary. Implement RunStatus enum with all lifecycle variants from ARCHITECTURE.md \u00a77.2.",
+      "description": "Add RunInstance to crates/workflow-model or crates/core-engine with fields: run_id, workflow_id, workflow_version, status (RunStatus enum), workspace_root, created_at, started_at, ended_at, active_nodes, constraints, summary. Implement RunStatus enum with all lifecycle variants from ARCHITECTURE.md §7.2.",
       "acceptance_criteria": [
         "RunInstance serializes/deserializes to JSON",
         "RunStatus enum includes: Created, Validating, Ready, Running, Paused, Succeeded, Failed, Cancelled",
@@ -367,7 +367,7 @@
       "summary": "Implement NodeStatus lifecycle enum and NodeSnapshot for tracking per-node run state.",
       "description": "Add NodeStatus enum (Draft, Validated, Ready, Queued, Running, Waiting, Succeeded, Failed, Cancelled, Skipped) and NodeSnapshot struct (node_id, status, attempt, started_at, ended_at, output) to the model crate. These are needed by the state machine and persistence layers.",
       "acceptance_criteria": [
-        "NodeStatus has all 10 lifecycle variants from ARCHITECTURE.md \u00a77.3",
+        "NodeStatus has all 10 lifecycle variants from ARCHITECTURE.md §7.3",
         "NodeSnapshot serializes correctly",
         "NodeSnapshot can be stored and retrieved from persistence"
       ],
@@ -495,7 +495,7 @@
       "summary": "Base RunEvent envelope struct with all required envelope fields is implemented.",
       "description": "crates/event-model/src/event.rs has RunEvent with event_id, run_id, workflow_id, node_id (Option), event_type (String), timestamp, payload (serde_json::Value), causation_id (Option), correlation_id (Option).",
       "acceptance_criteria": [
-        "RunEvent serializes to JSON matching the shape in EVENT_SCHEMA.md \u00a72",
+        "RunEvent serializes to JSON matching the shape in EVENT_SCHEMA.md §2",
         "All optional fields are correctly typed as Option"
       ],
       "depends_on": [],
@@ -550,7 +550,7 @@
       "priority": "high",
       "type": "implementation",
       "summary": "Implement typed payload structs for all node lifecycle events.",
-      "description": "Populate crates/event-model/src/node_events.rs with payload structs for: node.queued, node.started, node.waiting, node.succeeded, node.failed, node.cancelled, node.skipped, node.retry_scheduled. Include fields shown in EVENT_SCHEMA.md \u00a74.1 (node_type, attempt, input_refs, workspace_root).",
+      "description": "Populate crates/event-model/src/node_events.rs with payload structs for: node.queued, node.started, node.waiting, node.succeeded, node.failed, node.cancelled, node.skipped, node.retry_scheduled. Include fields shown in EVENT_SCHEMA.md §4.1 (node_type, attempt, input_refs, workspace_root).",
       "acceptance_criteria": [
         "All 8 node lifecycle event types are implemented",
         "node.started payload includes node_type, attempt, input_refs, workspace_root",
@@ -579,7 +579,7 @@
       "priority": "high",
       "type": "implementation",
       "summary": "Implement typed payload structs for command execution events.",
-      "description": "Populate crates/event-model/src/command_events.rs with payload structs for: command.prepared, command.started, command.stdout, command.stderr, command.completed, command.failed. Payloads must include command string, shell, cwd, timeout_ms, exit_code, duration_ms, stdout/stderr bytes per EVENT_SCHEMA.md \u00a74.2 and \u00a74.3.",
+      "description": "Populate crates/event-model/src/command_events.rs with payload structs for: command.prepared, command.started, command.stdout, command.stderr, command.completed, command.failed. Payloads must include command string, shell, cwd, timeout_ms, exit_code, duration_ms, stdout/stderr bytes per EVENT_SCHEMA.md §4.2 and §4.3.",
       "acceptance_criteria": [
         "All 6 command event types are implemented",
         "command.started payload includes command, shell, cwd, timeout_ms",
@@ -608,10 +608,10 @@
       "priority": "high",
       "type": "implementation",
       "summary": "Implement typed payload structs for routing events.",
-      "description": "Populate crates/event-model/src/routing_events.rs with payload structs for: edge.routed, router.evaluated, router.branch_selected, router.no_match. branch_selected payload must include router_node_id, selected_edge_ids, reason per EVENT_SCHEMA.md \u00a74.4.",
+      "description": "Populate crates/event-model/src/routing_events.rs with payload structs for: edge.routed, router.evaluated, router.branch_selected, router.no_match. branch_selected payload must include router_node_id, selected_edge_ids, reason per EVENT_SCHEMA.md §4.4.",
       "acceptance_criteria": [
         "All 4 routing event types are implemented",
-        "router.branch_selected payload matches EVENT_SCHEMA.md \u00a74.4",
+        "router.branch_selected payload matches EVENT_SCHEMA.md §4.4",
         "Events serialize/deserialize correctly"
       ],
       "depends_on": [
@@ -665,10 +665,10 @@
       "priority": "medium",
       "type": "implementation",
       "summary": "Implement typed payload structs for human review events and guardrail/budget events.",
-      "description": "Populate crates/event-model/src/human_review_events.rs with: review.required, review.approved, review.rejected, review.edited, review.retry_requested. review.required payload must include reason, blocking, available_actions per EVENT_SCHEMA.md \u00a74.5. Add guardrail events: guardrail.warning, guardrail.exceeded, budget.updated.",
+      "description": "Populate crates/event-model/src/human_review_events.rs with: review.required, review.approved, review.rejected, review.edited, review.retry_requested. review.required payload must include reason, blocking, available_actions per EVENT_SCHEMA.md §4.5. Add guardrail events: guardrail.warning, guardrail.exceeded, budget.updated.",
       "acceptance_criteria": [
         "All 5 review event types are implemented",
-        "review.required payload matches EVENT_SCHEMA.md \u00a74.5",
+        "review.required payload matches EVENT_SCHEMA.md §4.5",
         "All 3 guardrail event types are implemented",
         "Events serialize/deserialize correctly"
       ],
@@ -869,7 +869,7 @@
       "priority": "high",
       "type": "implementation",
       "summary": "Implement routing logic that evaluates ConditionKind rules and selects outgoing edges.",
-      "description": "The engine must evaluate edges with condition_kind always, on_success, on_failure, and expression. For expression conditions, define a safe evaluation strategy (e.g. simple key-value matching against node output or memory \u2014 not an arbitrary script interpreter). Emit router.evaluated and router.branch_selected events. Handle router.no_match as a run failure.",
+      "description": "The engine must evaluate edges with condition_kind always, on_success, on_failure, and expression. For expression conditions, define a safe evaluation strategy (e.g. simple key-value matching against node output or memory — not an arbitrary script interpreter). Emit router.evaluated and router.branch_selected events. Handle router.no_match as a run failure.",
       "acceptance_criteria": [
         "always edges are always followed",
         "on_success and on_failure edges follow the node's terminal status",
@@ -968,7 +968,7 @@
       "priority": "high",
       "type": "testing",
       "summary": "Comprehensive unit tests for state machines, validation, scheduler, and guardrails.",
-      "description": "Write tests in crates/core-engine/src/tests/ covering: (1) every valid and invalid RunStatus transition, (2) every valid and invalid NodeStatus transition, (3) all validation failure scenarios, (4) scheduler sequencing with mock adapters, (5) routing rules for all ConditionKind variants, (6) human review pause/resume/reject, (7) guardrail enforcement. Use mock adapters \u2014 do not spawn real processes.",
+      "description": "Write tests in crates/core-engine/src/tests/ covering: (1) every valid and invalid RunStatus transition, (2) every valid and invalid NodeStatus transition, (3) all validation failure scenarios, (4) scheduler sequencing with mock adapters, (5) routing rules for all ConditionKind variants, (6) human review pause/resume/reject, (7) guardrail enforcement. Use mock adapters — do not spawn real processes.",
       "acceptance_criteria": [
         "cargo test -p core-engine passes",
         "State machine transitions tested exhaustively (valid and invalid)",
@@ -1023,7 +1023,7 @@
         "docs/ARCHITECTURE.md"
       ],
       "notes": [
-        "Use in-memory SQLite (:memory:) for all unit tests \u2014 never hit a real file in tests."
+        "Use in-memory SQLite (:memory:) for all unit tests — never hit a real file in tests."
       ],
       "commands": [
         "cargo test -p persistence"
@@ -1227,7 +1227,7 @@
       "priority": "high",
       "type": "implementation",
       "summary": "Implement the CLI shell adapter that executes arbitrary shell commands in a workspace.",
-      "description": "Implement in crates/runtime-adapters/src/cli/. Use tokio::process::Command to spawn processes inside workspace_root. Stream stdout and stderr, capturing them into command.stdout and command.stderr events. Record: command string, shell, cwd, exit code, duration_ms, stdout_bytes, stderr_bytes. Emit command.prepared, command.started, stdout/stderr events, and command.completed/command.failed. Support a configurable timeout (max_runtime_ms). Do not sanitize commands in v1 \u2014 all shell commands are allowed per DECISIONS.md.",
+      "description": "Implement in crates/runtime-adapters/src/cli/. Use tokio::process::Command to spawn processes inside workspace_root. Stream stdout and stderr, capturing them into command.stdout and command.stderr events. Record: command string, shell, cwd, exit code, duration_ms, stdout_bytes, stderr_bytes. Emit command.prepared, command.started, stdout/stderr events, and command.completed/command.failed. Support a configurable timeout (max_runtime_ms). Do not sanitize commands in v1 — all shell commands are allowed per DECISIONS.md.",
       "acceptance_criteria": [
         "Adapter executes a shell command in the given workspace_root",
         "stdout and stderr are captured and emitted as events",
@@ -1294,7 +1294,7 @@
       "status": "done",
       "priority": "medium",
       "type": "testing",
-      "summary": "Unit tests for runtime adapters using mock command execution \u2014 no real processes in tests.",
+      "summary": "Unit tests for runtime adapters using mock command execution — no real processes in tests.",
       "description": "Write tests in crates/runtime-adapters/src/tests/. Test: CLI adapter with a mocked process (e.g. echo command or in-process mock), event emission order and correctness, timeout behavior, stderr capture, non-zero exit code handling.",
       "acceptance_criteria": [
         "cargo test -p runtime-adapters passes",
@@ -1326,11 +1326,11 @@
       "priority": "high",
       "type": "implementation",
       "summary": "Implement Tauri command handlers for creating, reading, updating, listing, and deleting workflows.",
-      "description": "Implement in apps/desktop/src-tauri/src/commands/. Add Tauri #[command] functions: create_workflow, get_workflow, list_workflows, update_workflow, delete_workflow, import_workflow, export_workflow. Delegate to the persistence layer \u2014 no execution logic here. Return serialized WorkflowDefinition or error to the frontend via invoke().",
+      "description": "Implement in apps/desktop/src-tauri/src/commands/. Add Tauri #[command] functions: create_workflow, get_workflow, list_workflows, update_workflow, delete_workflow, import_workflow, export_workflow. Delegate to the persistence layer — no execution logic here. Return serialized WorkflowDefinition or error to the frontend via invoke().",
       "acceptance_criteria": [
         "All CRUD commands are registered with Tauri",
         "Frontend can invoke each command via invoke()",
-        "Commands delegate to persistence \u2014 no engine logic in command handlers",
+        "Commands delegate to persistence — no engine logic in command handlers",
         "Errors are returned as serializable error types"
       ],
       "depends_on": [
@@ -1355,7 +1355,7 @@
       "priority": "high",
       "type": "implementation",
       "summary": "Implement Tauri command handlers for creating, starting, cancelling, and querying runs.",
-      "description": "Add commands: create_run, start_run, cancel_run, get_run, list_runs_for_workflow. start_run initiates engine execution asynchronously \u2014 the engine emits events to the frontend via the event bridge. Pause/resume remain internal engine transitions, not public Tauri commands in the current app. Commands must not block the frontend.",
+      "description": "Add commands: create_run, start_run, cancel_run, get_run, list_runs_for_workflow. start_run initiates engine execution asynchronously — the engine emits events to the frontend via the event bridge. Pause/resume remain internal engine transitions, not public Tauri commands in the current app. Commands must not block the frontend.",
       "acceptance_criteria": [
         "create_run, start_run, cancel_run, get_run, and list_runs_for_workflow are registered with Tauri",
         "start_run launches engine execution without blocking the invoke() call",
@@ -1419,12 +1419,12 @@
       "priority": "critical",
       "type": "implementation",
       "summary": "Implement the event bridge that emits engine RunEvents to the frontend via Tauri's app.emit().",
-      "description": "Implement in apps/desktop/src-tauri/src/bridge/. The engine emits typed RunEvents to an internal event bus. The bridge subscribes to this bus and re-emits events to the frontend using app.emit() or window.emit(). The frontend subscribes using @tauri-apps/api listen(). The UI must not poll \u2014 it must receive pushed events.",
+      "description": "Implement in apps/desktop/src-tauri/src/bridge/. The engine emits typed RunEvents to an internal event bus. The bridge subscribes to this bus and re-emits events to the frontend using app.emit() or window.emit(). The frontend subscribes using @tauri-apps/api listen(). The UI must not poll — it must receive pushed events.",
       "acceptance_criteria": [
         "Engine events are forwarded to the frontend as Tauri events",
         "Frontend receives events via listen(), not polling",
         "All event families are forwarded (run, node, command, routing, memory, review, guardrail)",
-        "The bridge is thin \u2014 no state derivation or mutation"
+        "The bridge is thin — no state derivation or mutation"
       ],
       "depends_on": [
         "ENGINE-004",
@@ -1486,7 +1486,7 @@
       "summary": "Replace the desktop app's stub node completion path with real runtime adapter dispatch so Tool and Agent nodes can execute actual workspace tasks.",
       "description": "The adapter layer exists in crates/runtime-adapters and the engine execution module already defines a NodeExecutor abstraction, but apps/desktop/src-tauri/src/commands/mod.rs still auto-completes nodes with a 1 ms success stub. Wire the desktop execution path to dispatch Tool nodes through the CLI/tool adapter and Agent nodes through the agent CLI adapter, using real adapter results to drive node/run success, failure, retries, and emitted command/agent events. Keep HumanReview behavior intact. This is the gate between the current demo-only run loop and real task execution from the desktop app.",
       "acceptance_criteria": [
-        "The hardcoded complete_node_success(\u2026, 1) stub is removed from the desktop run loop",
+        "The hardcoded complete_node_success(…, 1) stub is removed from the desktop run loop",
         "Tool nodes execute through the runtime adapter layer against the selected workspace_root",
         "Agent nodes execute through the agent CLI adapter and surface agent events",
         "Adapter exit codes and errors drive node/run failure states instead of unconditional success",
@@ -1533,7 +1533,7 @@
       "priority": "high",
       "type": "implementation",
       "summary": "Implement the top-level React app shell with routing between Builder, LiveRun, Replay, and Library views.",
-      "description": "Replace the App.tsx skeleton with a working view router. Implement a top-level nav bar or sidebar for switching views. Use React state or a router library (react-router or a simple custom router). Each view renders a placeholder initially. Keyboard shortcuts for view switching should be wired (per DESIGN_SPEC.md \u00a713).",
+      "description": "Replace the App.tsx skeleton with a working view router. Implement a top-level nav bar or sidebar for switching views. Use React state or a router library (react-router or a simple custom router). Each view renders a placeholder initially. Keyboard shortcuts for view switching should be wired (per DESIGN_SPEC.md §13).",
       "acceptance_criteria": [
         "Four views are reachable: Builder, LiveRun, Replay, Library",
         "View switches without a full page reload",
@@ -1755,7 +1755,7 @@
       "priority": "high",
       "type": "implementation",
       "summary": "Implement the Live Run view shell with layout panels and Tauri event subscriptions.",
-      "description": "Create the Live Run view with panels: animated graph, event feed, command output, and run HUD. Subscribe to Tauri events (via listen()) for all RunEvent types. Maintain a React state model of the current run derived from received events. The UI must not poll \u2014 events drive state.",
+      "description": "Create the Live Run view with panels: animated graph, event feed, command output, and run HUD. Subscribe to Tauri events (via listen()) for all RunEvent types. Maintain a React state model of the current run derived from received events. The UI must not poll — events drive state.",
       "acceptance_criteria": [
         "Live Run view is reachable from the app shell",
         "Tauri event subscription is set up for all event families",
@@ -1786,7 +1786,7 @@
       "priority": "high",
       "type": "implementation",
       "summary": "Render the workflow graph in live view with per-node state badges and animations.",
-      "description": "Render a read-only React Flow graph in the live view. Update each node's visual state (idle, queued, running, waiting, succeeded, failed, skipped, paused) as events arrive. Running nodes should show a subtle pulse animation. Waiting nodes show an amber hold state. Failed nodes show a high-contrast alert. Active edges show directional motion. Per DESIGN_SPEC.md \u00a77.",
+      "description": "Render a read-only React Flow graph in the live view. Update each node's visual state (idle, queued, running, waiting, succeeded, failed, skipped, paused) as events arrive. Running nodes should show a subtle pulse animation. Waiting nodes show an amber hold state. Failed nodes show a high-contrast alert. Active edges show directional motion. Per DESIGN_SPEC.md §7.",
       "acceptance_criteria": [
         "All 8 node states have distinct visual styles",
         "Running nodes animate with a pulse",
@@ -1846,7 +1846,7 @@
       "priority": "medium",
       "type": "implementation",
       "summary": "Build a standalone CommandOutputPanel React component that accumulates and renders stdout/stderr chunks from command events.",
-      "description": "Create apps/desktop/src/components/panels/CommandOutputPanel.tsx. The component accepts an array of RunEvent objects and derives its display by filtering for event_type == \"command.stdout\" and \"command.stderr\" entries, concatenating their payload.chunk strings in byte_offset order. Render stdout and stderr in visually distinct sections (different label or subtle colour). Wrap the output in a scrollable container. Provide a collapse/expand toggle for long outputs (>20 lines collapsed by default). All text must be user-selectable. The component is self-contained \u2014 it only needs the filtered event list as a prop, with no dependency on LiveRunView internals. Write unit tests using the existing Vitest/jsdom setup: verify chunk rendering, collapse behaviour, and empty-state. No changes to LiveRunView.tsx in this task.",
+      "description": "Create apps/desktop/src/components/panels/CommandOutputPanel.tsx. The component accepts an array of RunEvent objects and derives its display by filtering for event_type == \"command.stdout\" and \"command.stderr\" entries, concatenating their payload.chunk strings in byte_offset order. Render stdout and stderr in visually distinct sections (different label or subtle colour). Wrap the output in a scrollable container. Provide a collapse/expand toggle for long outputs (>20 lines collapsed by default). All text must be user-selectable. The component is self-contained — it only needs the filtered event list as a prop, with no dependency on LiveRunView internals. Write unit tests using the existing Vitest/jsdom setup: verify chunk rendering, collapse behaviour, and empty-state. No changes to LiveRunView.tsx in this task.",
       "acceptance_criteria": [
         "Renders concatenated stdout chunks from command.stdout events in byte_offset order",
         "Renders concatenated stderr chunks from command.stderr events, visually distinct from stdout",
@@ -1881,7 +1881,7 @@
       "priority": "high",
       "type": "implementation",
       "summary": "Implement the human review UI that surfaces when the run is paused at a HumanReview node.",
-      "description": "When a review.required event arrives, surface a modal or prominent panel showing: reason for review, relevant outputs and memory from the current run, and action buttons (Approve, Reject, Retry). Keyboard shortcuts for each action. Actions call submit_human_review_decision via Tauri. Per DESIGN_SPEC.md \u00a710.",
+      "description": "When a review.required event arrives, surface a modal or prominent panel showing: reason for review, relevant outputs and memory from the current run, and action buttons (Approve, Reject, Retry). Keyboard shortcuts for each action. Actions call submit_human_review_decision via Tauri. Per DESIGN_SPEC.md §10.",
       "acceptance_criteria": [
         "review.required event triggers the review panel",
         "Panel shows reason, outputs, and available actions",
@@ -2102,7 +2102,7 @@
       "priority": "medium",
       "type": "implementation",
       "summary": "View switching, human-review actions, and replay scrubbing are keyboard-accessible; broader keyboard-first coverage is still pending.",
-      "description": "Implement keyboard-driven navigation per DESIGN_SPEC.md \u00a713: (1) view switching shortcuts, (2) canvas navigation (arrow keys, zoom), (3) node selection and connection, (4) run start/stop/pause, (5) human review approve/reject, (6) timeline scrubbing in Replay. The current app supports view switching, human review shortcuts, and replay scrubbing, but canvas navigation and run-control shortcuts are not implemented yet.",
+      "description": "Implement keyboard-driven navigation per DESIGN_SPEC.md §13: (1) view switching shortcuts, (2) canvas navigation (arrow keys, zoom), (3) node selection and connection, (4) run start/stop/pause, (5) human review approve/reject, (6) timeline scrubbing in Replay. The current app supports view switching, human review shortcuts, and replay scrubbing, but canvas navigation and run-control shortcuts are not implemented yet.",
       "acceptance_criteria": [
         "View switching is keyboard-accessible",
         "Canvas can be navigated without a mouse",
@@ -2137,12 +2137,12 @@
       "priority": "medium",
       "type": "implementation",
       "summary": "Implement the mission control / strategy HUD visual design system.",
-      "description": "Define a CSS design system in styles/ implementing the mission control aesthetic: dark background, grid overlays, restrained motion, state glows/rings, layered panel depth. Avoid cartoonish or over-saturated arcade aesthetic. Reference: lazygit, k9s, Insomnia. Implement motion guidelines from DESIGN_SPEC.md \u00a711 (edge flow animation, node pulse, timeline playhead).",
+      "description": "Define a CSS design system in styles/ implementing the mission control aesthetic: dark background, grid overlays, restrained motion, state glows/rings, layered panel depth. Avoid cartoonish or over-saturated arcade aesthetic. Reference: lazygit, k9s, Insomnia. Implement motion guidelines from DESIGN_SPEC.md §11 (edge flow animation, node pulse, timeline playhead).",
       "acceptance_criteria": [
         "App uses a consistent dark, mission-control visual theme",
         "Running nodes have a subtle pulse animation",
         "Active edges show directional flow",
-        "Motion is restrained \u2014 no constant animation everywhere",
+        "Motion is restrained — no constant animation everywhere",
         "Text remains readable at all states"
       ],
       "depends_on": [
@@ -2167,7 +2167,7 @@
       "priority": "high",
       "type": "implementation",
       "summary": "On first launch, offer the demo workflow immediately without requiring the user to build anything.",
-      "description": "On first launch (detect via settings), display an onboarding screen or auto-load the plan-execute-critique-approve workflow into the Library. Prompt the user to select a workspace and run the demo. The path from app launch to first run replay must be achievable in under 2 minutes. Per PRD.md \u00a716.",
+      "description": "On first launch (detect via settings), display an onboarding screen or auto-load the plan-execute-critique-approve workflow into the Library. Prompt the user to select a workspace and run the demo. The path from app launch to first run replay must be achievable in under 2 minutes. Per PRD.md §16.",
       "acceptance_criteria": [
         "On first launch, the demo workflow is immediately available in the Library",
         "User can select a workspace and start the demo run without building anything from scratch",
@@ -2202,7 +2202,7 @@
       "priority": "medium",
       "type": "implementation",
       "summary": "Set up native OS installer builds for GitHub Releases and formulae for Homebrew, winget, and AUR.",
-      "description": "Configure Tauri bundler to produce: .dmg (macOS), .msi (Windows), .AppImage (Linux). Set up a GitHub Actions release workflow that builds all three on tag push and attaches them to the GitHub Release. Create a Homebrew formula, a winget manifest, and an AUR PKGBUILD. Per PRD.md \u00a716 and DECISIONS.md.",
+      "description": "Configure Tauri bundler to produce: .dmg (macOS), .msi (Windows), .AppImage (Linux). Set up a GitHub Actions release workflow that builds all three on tag push and attaches them to the GitHub Release. Create a Homebrew formula, a winget manifest, and an AUR PKGBUILD. Per PRD.md §16 and DECISIONS.md.",
       "acceptance_criteria": [
         "Tagged release builds produce .dmg, .msi, and .AppImage artifacts",
         "Artifacts are attached to the GitHub Release automatically",
@@ -2292,7 +2292,7 @@
       "priority": "medium",
       "type": "docs",
       "summary": "Move resolved decisions from Open to Accepted in DECISIONS.md and add rationale.",
-      "description": "As each DEC-00x task is resolved, add the decision to the Accepted section of DECISIONS.md with context, rationale, tradeoffs, and follow-up implications. Per AGENTS.md \u00a714 ADR policy.",
+      "description": "As each DEC-00x task is resolved, add the decision to the Accepted section of DECISIONS.md with context, rationale, tradeoffs, and follow-up implications. Per AGENTS.md §14 ADR policy.",
       "acceptance_criteria": [
         "All resolved DEC tasks have a corresponding accepted decision entry",
         "Each entry includes context, decision, alternatives considered, and tradeoffs"
@@ -2493,9 +2493,7 @@
         "TEST-003",
         "UI-RUN-002"
       ],
-      "blocked_by": [
-        "TAURI-006"
-      ],
+      "blocked_by": [],
       "files": [
         "tests/e2e/specs/failure.spec.js"
       ],
@@ -2602,7 +2600,7 @@
       "priority": "medium",
       "type": "decision",
       "summary": "Decide whether to embed a full terminal emulator component or build a custom styled output panel.",
-      "description": "Options: (1) embed an existing terminal emulator (e.g. xterm.js) for full ANSI/VT100 support, (2) build a custom styled div-based output panel with stdout/stderr separation and event association. Custom panel is simpler; xterm.js is better for ANSI-heavy tools. DESIGN_SPEC.md \u00a79 specifies the panel should be within the app, not full-screen.",
+      "description": "Options: (1) embed an existing terminal emulator (e.g. xterm.js) for full ANSI/VT100 support, (2) build a custom styled div-based output panel with stdout/stderr separation and event association. Custom panel is simpler; xterm.js is better for ANSI-heavy tools. DESIGN_SPEC.md §9 specifies the panel should be within the app, not full-screen.",
       "acceptance_criteria": [
         "Decision is recorded in DECISIONS.md",
         "If xterm.js: package is added to package.json and integration path documented",
@@ -2660,13 +2658,13 @@
       "priority": "critical",
       "estimate": "S",
       "summary": "Define and document every Tauri invoke() command and listen() event payload before any run-lifecycle or event-bridge implementation begins.",
-      "description": "Create docs/TAURI_IPC_CONTRACT.md that specifies:\n1. Every invoke() command name, its exact Rust argument struct (as TypeScript interface), and return type.\n2. Every listen() event name emitted by the backend, its exact payload shape, and which frontend component subscribes.\n3. Error variant shapes returned from each command (Tauri serialises Rust Result::Err as a string or typed object \u2014 document which).\n\nThe contract must cover at minimum:\n- create_run / start_run / cancel_run / get_run / list_runs_for_workflow\n- list_events_for_run (for replay; currently planned rather than registered)\n- submit_human_review_decision\n- Events: run_status_changed, node_status_changed, run_event_appended, human_review_requested\n\nThe TypeScript interfaces defined here become the canonical source for UI-RUN, UI-RPL, and TAURI-002/003/004 implementation. Any deviation between Rust impl and this contract is a bug, not a design choice.\n\nAlso create apps/desktop/src/types/ipc.ts mirroring every interface from the contract so TypeScript consumers have a typed invoke wrapper rather than casting unknown at every call site.",
+      "description": "Create docs/TAURI_IPC_CONTRACT.md that specifies:\n1. Every invoke() command name, its exact Rust argument struct (as TypeScript interface), and return type.\n2. Every listen() event name emitted by the backend, its exact payload shape, and which frontend component subscribes.\n3. Error variant shapes returned from each command (Tauri serialises Rust Result::Err as a string or typed object — document which).\n\nThe contract must cover at minimum:\n- create_run / start_run / cancel_run / get_run / list_runs_for_workflow\n- list_events_for_run (for replay; currently planned rather than registered)\n- submit_human_review_decision\n- Events: run_status_changed, node_status_changed, run_event_appended, human_review_requested\n\nThe TypeScript interfaces defined here become the canonical source for UI-RUN, UI-RPL, and TAURI-002/003/004 implementation. Any deviation between Rust impl and this contract is a bug, not a design choice.\n\nAlso create apps/desktop/src/types/ipc.ts mirroring every interface from the contract so TypeScript consumers have a typed invoke wrapper rather than casting unknown at every call site.",
       "acceptance_criteria": [
         "docs/TAURI_IPC_CONTRACT.md exists and covers all run-lifecycle and event-bridge commands/events",
         "apps/desktop/src/types/ipc.ts exports TypeScript interfaces for every invoke arg, return, and event payload",
         "Each command entry includes: command name, Rust struct equivalent, return type, error type, and example JSON",
         "Each event entry includes: event name, payload interface, emitter (Rust function), and subscriber (React component/hook)",
-        "TAURI-002, TAURI-003, TAURI-004 implement against this contract \u2014 no undocumented commands or events",
+        "TAURI-002, TAURI-003, TAURI-004 implement against this contract — no undocumented commands or events",
         "A utility invokeTyped<T>() wrapper in ipc.ts that calls invoke() with the typed arg and casts the result"
       ],
       "depends_on": [
@@ -2689,7 +2687,7 @@
         "cd apps/desktop && npm test -- --run"
       ],
       "notes": [
-        "BLOCKS: TAURI-002, TAURI-003, TAURI-004 \u2014 do not implement those until this contract is approved",
+        "BLOCKS: TAURI-002, TAURI-003, TAURI-004 — do not implement those until this contract is approved",
         "Tauri 2.x serialises Result<T, E> where E: ToString as a plain string error. Document this clearly.",
         "The invokeTyped wrapper prevents silent any-casts accumulating across the UI codebase"
       ]
@@ -2703,12 +2701,12 @@
       "priority": "critical",
       "estimate": "M",
       "summary": "Write failing unit tests for ENGINE-003 (workflow validator) and ENGINE-004 (run coordinator) before implementing those tasks. Tests become the executable spec.",
-      "description": "Before ENGINE-003 and ENGINE-004 are coded, write a comprehensive unit test file for each:\n\ncrates/core-engine/src/validator_tests.rs \u2014 covering WorkflowValidator:\n- valid minimal workflow passes (single start, single end, connected)\n- workflow with no start node fails with ValidationError::NoStartNode\n- workflow with no end node fails with ValidationError::NoEndNode\n- workflow with multiple start nodes fails\n- workflow with a cycle fails with ValidationError::CycleDetected\n- workflow with an edge referencing a non-existent node fails\n- workflow with an unreachable node fails or warns (decide and document in DECISIONS.md)\n- all v1 NodeKind variants are accepted by the validator\n\ncrates/core-engine/src/coordinator_tests.rs \u2014 covering RunCoordinator:\n- new run starts in Created state\n- valid run transitions Created -> Validating -> Ready -> Running\n- invalid transition (e.g. Running -> Created) returns StateTransitionError\n- cancelling a running run transitions to Cancelled and emits RunCancelled event\n- a node completing with success transitions its state to Succeeded and queues next nodes\n- a node failing with no retries left transitions to Failed and the run to Failed\n- pausing on a HumanReview node transitions the run to Paused and emits HumanReviewRequested\n- approving a paused run resumes and transitions correctly\n\nTests must compile (but are expected to FAIL until ENGINE-003/004 implement the code). Use an in-memory event log stub (not SQLite) for coordinator tests to keep them fast and isolated.",
+      "description": "Before ENGINE-003 and ENGINE-004 are coded, write a comprehensive unit test file for each:\n\ncrates/core-engine/src/validator_tests.rs — covering WorkflowValidator:\n- valid minimal workflow passes (single start, single end, connected)\n- workflow with no start node fails with ValidationError::NoStartNode\n- workflow with no end node fails with ValidationError::NoEndNode\n- workflow with multiple start nodes fails\n- workflow with a cycle fails with ValidationError::CycleDetected\n- workflow with an edge referencing a non-existent node fails\n- workflow with an unreachable node fails or warns (decide and document in DECISIONS.md)\n- all v1 NodeKind variants are accepted by the validator\n\ncrates/core-engine/src/coordinator_tests.rs — covering RunCoordinator:\n- new run starts in Created state\n- valid run transitions Created -> Validating -> Ready -> Running\n- invalid transition (e.g. Running -> Created) returns StateTransitionError\n- cancelling a running run transitions to Cancelled and emits RunCancelled event\n- a node completing with success transitions its state to Succeeded and queues next nodes\n- a node failing with no retries left transitions to Failed and the run to Failed\n- pausing on a HumanReview node transitions the run to Paused and emits HumanReviewRequested\n- approving a paused run resumes and transitions correctly\n\nTests must compile (but are expected to FAIL until ENGINE-003/004 implement the code). Use an in-memory event log stub (not SQLite) for coordinator tests to keep them fast and isolated.",
       "acceptance_criteria": [
         "crates/core-engine/src/validator_tests.rs exists with >= 8 named test cases for WorkflowValidator",
         "crates/core-engine/src/coordinator_tests.rs exists with >= 8 named test cases for RunCoordinator",
         "All test cases are #[test] annotated and compile cleanly (cargo check -p core-engine passes)",
-        "Tests are expected to fail at this stage \u2014 that is correct; they define the contract ENGINE-003/004 must satisfy",
+        "Tests are expected to fail at this stage — that is correct; they define the contract ENGINE-003/004 must satisfy",
         "ValidationError enum variants are declared (even if not implemented) so tests can reference them",
         "RunCoordinator accepts an injected event log trait object so tests can use an in-memory stub",
         "All test names follow the pattern: fn <verb>_<condition>_<expected_outcome>()",
@@ -2736,10 +2734,10 @@
         ". \"$HOME/.cargo/env\" && cargo test -p core-engine 2>&1 | grep -E 'FAILED|ok|error'"
       ],
       "notes": [
-        "BLOCKS: ENGINE-003, ENGINE-004 \u2014 those tasks must make these tests pass",
+        "BLOCKS: ENGINE-003, ENGINE-004 — those tasks must make these tests pass",
         "Use trait injection (not direct SQLite) for the event log in coordinator tests",
         "The ValidationError and StateTransitionError types defined here become the canonical error vocabulary for the engine",
-        "Coordinate with QA-001 \u2014 event names emitted in coordinator tests must match the IPC contract"
+        "Coordinate with QA-001 — event names emitted in coordinator tests must match the IPC contract"
       ]
     },
     {
@@ -2785,7 +2783,7 @@
       "priority": "high",
       "type": "feature",
       "summary": "Add a Start Run button to each workflow card in LibraryView. Clicking it prompts for a workspace directory, calls create_run + start_run via IPC, then navigates to the Live Run view.",
-      "description": "Each workflow card in LibraryView needs a Start Run button. Clicking it: (1) shows an inline workspace path input (or uses the last-used workspace stored in component state), (2) calls ipc.createRun({ workflow_id, workspace_root }) then ipc.startRun({ run_id }), (3) calls onOpenLiveRun(run.run_id) to navigate to the Live Run view with the new run. Error handling: show an inline error if createRun or startRun fails. The workspace input must default to an empty string \u2014 never auto-fill a real project path. Use data-testid attributes so E2E tests can locate the button and input.",
+      "description": "Each workflow card in LibraryView needs a Start Run button. Clicking it: (1) shows an inline workspace path input (or uses the last-used workspace stored in component state), (2) calls ipc.createRun({ workflow_id, workspace_root }) then ipc.startRun({ run_id }), (3) calls onOpenLiveRun(run.run_id) to navigate to the Live Run view with the new run. Error handling: show an inline error if createRun or startRun fails. The workspace input must default to an empty string — never auto-fill a real project path. Use data-testid attributes so E2E tests can locate the button and input.",
       "acceptance_criteria": [
         "Each workflow card has a Start Run button ([data-testid=\"start-run-{workflowId}\"])",
         "Clicking Start Run shows a workspace path input ([data-testid=\"workspace-input-{workflowId}\"])",
@@ -2873,7 +2871,7 @@
         "docs/DECISIONS.md"
       ],
       "notes": [
-        "No schema_version bump needed \u2014 additive optional field, backward-compatible per DEC-001.",
+        "No schema_version bump needed — additive optional field, backward-compatible per DEC-001.",
         "This unblocks ADAPT-005 and UI-BLD-008."
       ],
       "commands": [
@@ -2902,9 +2900,7 @@
         "MODEL-008",
         "ADAPT-004"
       ],
-      "blocked_by": [
-        "MODEL-008"
-      ],
+      "blocked_by": [],
       "files": [
         "crates/runtime-adapters/src/agent.rs"
       ],
@@ -2913,9 +2909,9 @@
         "docs/DECISIONS.md"
       ],
       "notes": [
-        "Provider registry is a private Rust constant \u2014 not a Tauri IPC command. No round-trip needed.",
+        "Provider registry is a private Rust constant — not a Tauri IPC command. No round-trip needed.",
         "The TypeScript mirror of this registry lives in apps/desktop/src/types/providers.ts (UI-BLD-008).",
-        "Do not add a ProviderKind enum to the workflow-model crate \u2014 registry belongs in the adapter layer per DEC-006."
+        "Do not add a ProviderKind enum to the workflow-model crate — registry belongs in the adapter layer per DEC-006."
       ],
       "commands": [
         "cargo test -p runtime-adapters"
@@ -2946,10 +2942,7 @@
         "UI-BLD-004",
         "MODEL-008"
       ],
-      "blocked_by": [
-        "UI-BLD-004",
-        "MODEL-008"
-      ],
+      "blocked_by": [],
       "files": [
         "apps/desktop/src/types/providers.ts",
         "apps/desktop/src/types/workflow.ts",
@@ -2961,7 +2954,7 @@
         "docs/DECISIONS.md"
       ],
       "notes": [
-        "providers.ts must mirror the Rust adapter ProviderSpec table in ADAPT-005 \u2014 update both together when adding a new provider.",
+        "providers.ts must mirror the Rust adapter ProviderSpec table in ADAPT-005 — update both together when adding a new provider.",
         "Do not add a Tauri IPC command for listing providers; use the static TypeScript constants (per DEC-006).",
         "Follow EventInspector.tsx and HumanReviewPanel.tsx as pattern references for panel layout and CSS class conventions.",
         "UI-BLD-007 (builder tests) should be extended to cover the provider/model selector after this task lands."
@@ -3044,30 +3037,33 @@
     {
       "id": "SPRITE-002",
       "group_id": "SPRITE",
-      "title": "AgentNode animated character component",
+      "title": "AgentNode procedural pigeon sprite component",
       "status": "todo",
       "priority": "high",
       "type": "implementation",
-      "summary": "Create the AgentNode React component that renders the pigeon sprite with state-driven CSS animation, and register it in WorkflowCanvas for the 'agent' node type.",
-      "description": "Create apps/desktop/src/components/nodes/AgentNode.tsx. The component renders the pigeon sprite sheet using CSS background-position-x stepping (ag-sprite-8 / ag-sprite-12 keyframes). The sprite div uses a data-state attribute so all animation switching is CSS-only. The component reuses .wf-node base classes so existing state glow rings (node-pulse, node-fail-flash, etc.) apply at the border level. Add ag-node-* CSS rules to global.css. Register AgentNode in WorkflowCanvas.tsx NODE_TYPES for the 'agent' key. All other node types remain WorkflowNode.\n\nState-to-animation mapping (per VISUAL_IDENTITY.md §3):\n- idle: character_idle, 1.0s, 8 steps, infinite\n- queued: character_idle, 1.6s, 8 steps, infinite\n- running: character_front_run_run, 0.55s, 8 steps, infinite\n- waiting: character_walk, 1.0s, 8 steps, infinite\n- paused: character_idle, 2.5s, 8 steps, infinite\n- succeeded: character_jump, 0.6s, 8 steps, 1x forwards\n- failed: character_death, 1.0s, 12 steps, 1x forwards\n- skipped: character_idle, 1.0s, 8 steps, infinite + opacity 0.45",
+      "summary": "Create a canvas-based PigeonSprite component driven by the procedural drawing module from the design handoff, wrap it in an AgentNode component, and register it in WorkflowCanvas for the agent node type.",
+      "description": "Per DEC-008, the agent sprite is rendered procedurally on <canvas> instead of via WebP sprite sheets. Copy pigeonDrawing.ts from assets/design_handoff_city_backdrop_pigeon_sprites/src/ into apps/desktop/src/components/canvas/ (near-verbatim; high-fidelity handoff — do not re-derive pixel art). Create apps/desktop/src/components/nodes/PigeonSprite.tsx: a <canvas> element (26x24 native grid rendered at an integer scale, image-rendering: pixelated) that calls drawPigeon on each animation tick, choosing the pose via poseForState(state, frame). Animation is driven by a single shared ~100ms tick hook (one interval/rAF for all sprites, not one timer per node); succeeded/failed are one-shot poses that hold their final frame; prefers-reduced-motion: reduce freezes the tick. Run state is communicated by the neck-patch tint (NECK_BY_STATE) — no frame/box/ring around the character itself. Create AgentNode.tsx wrapping PigeonSprite with the .wf-node base classes so existing container-level glow animations (node-pulse, node-fail-flash, node-paused-blink) still apply, plus the ag-node-footer label/state-badge row. Register AgentNode in WorkflowCanvas.tsx NODE_TYPES for the agent key; all other node types remain WorkflowNode. See VISUAL_IDENTITY.md §2–§4 and the handoff README for pose cadences per state.",
       "acceptance_criteria": [
-        "apps/desktop/src/components/nodes/AgentNode.tsx exists and renders without errors",
-        "Dragging an Agent node onto the canvas in BuilderView shows the animated pigeon sprite",
+        "pigeonDrawing.ts is integrated at apps/desktop/src/components/canvas/pigeonDrawing.ts with exports drawPigeon, poseForState, PIGEON_PALETTE, NECK_BY_STATE, NATIVE_W, NATIVE_H",
+        "PigeonSprite.tsx renders the pigeon on a transparent <canvas> with no surrounding frame/box, crisp at all React Flow zoom levels (image-rendering: pixelated, integer scale)",
+        "Dragging an Agent node onto the canvas in BuilderView shows the animated pigeon",
+        "State-driven animation matches the handoff cadences: idle/skipped breathe every 4 ticks, queued every 6, paused every 12, waiting slow walk (3 ticks), running fast run (1 tick)",
+        "succeeded (hop) and failed (down) play as one-shot poses and hold the final frame",
+        "Neck-patch tint reflects run state per NECK_BY_STATE (blue running, amber waiting/paused, green succeeded, red failed)",
+        "All sprites share one animation tick source — no per-node timers",
+        "prefers-reduced-motion: reduce freezes the animation on the current pose",
         "All other node types (Start, End, Tool, Router, Memory, HumanReview) still render as WorkflowNode",
-        "Sprite animates: idle state shows slow idle loop; running state shows fast run loop",
-        "image-rendering: pixelated is applied — sprite is crisp at all React Flow zoom levels",
-        "prefers-reduced-motion: reduce disables the sprite animation",
-        "State glow/ring animations on the node border continue to work alongside the sprite",
-        "npm test passes with no regressions"
+        "Container-level state glow/ring animations on .wf-node continue to work alongside the sprite",
+        "npm test passes with no regressions; PigeonSprite has at minimum a smoke test and a poseForState mapping test"
       ],
       "depends_on": [
         "SPRITE-001",
         "DEC-007"
       ],
-      "blocked_by": [
-        "SPRITE-001"
-      ],
+      "blocked_by": [],
       "files": [
+        "apps/desktop/src/components/canvas/pigeonDrawing.ts",
+        "apps/desktop/src/components/nodes/PigeonSprite.tsx",
         "apps/desktop/src/components/nodes/AgentNode.tsx",
         "apps/desktop/src/components/canvas/WorkflowCanvas.tsx",
         "apps/desktop/src/styles/global.css"
@@ -3076,8 +3072,10 @@
         "docs/VISUAL_IDENTITY.md"
       ],
       "notes": [
+        "Source of truth: assets/design_handoff_city_backdrop_pigeon_sprites/ (README + src/pigeonDrawing.ts). Palette and pixel grids are final — integrate, do not redraw.",
+        "DEC-008 amends DEC-007: procedural canvas rendering replaces the WebP sprite-sheet pipeline as primary. WebP sheets in public/sprites/ (SPRITE-001) are retained as legacy/fallback assets only.",
         "The health bar (SPRITE-004) is a separate follow-up — do not include it in this task.",
-        "AgentNode shares WorkflowNodeData interface with WorkflowNode — no new prop types required.",
+        "AgentNode shares WorkflowNodeData with WorkflowNode — no new prop types required.",
         "CSS class namespace: ag-node, ag-node-sprite, ag-node-footer, ag-node-label, ag-node-state-badge."
       ],
       "commands": [
@@ -3089,20 +3087,22 @@
     {
       "id": "SPRITE-003",
       "group_id": "SPRITE",
-      "title": "Game backdrop canvas layer",
+      "title": "City backdrop canvas layer — integrate handoff modules",
       "status": "todo",
       "priority": "medium",
       "type": "implementation",
-      "summary": "Add an animated pixel-art terrain backdrop behind the React Flow canvas to give the workflow environment a living game-world feel.",
-      "description": "Add a backdrop layer positioned behind the React Flow canvas. The backdrop renders a tiled pixel-art terrain image (seamlessly repeating). It sits below the existing 48px grid overlay, which remains on top for tactical-map readability. The backdrop scale is tied to React Flow's zoom transform so terrain tiles don't drift during zoom. Per VISUAL_IDENTITY.md §6.\n\nThis task is gated on backdrop asset availability. If no backdrop asset exists yet, create the component shell and document the expected asset spec, but do not ship a placeholder that looks unfinished. The existing CSS grid overlay is acceptable as the interim state.",
+      "summary": "Integrate the procedural pixel-art city backdrop from the design handoff behind the React Flow canvas: cityDrawing.ts, CityBackdrop.tsx, and cityBackdrop.css, using the viewport-synced variant.",
+      "description": "Per DEC-008, the backdrop is a procedurally drawn, seeded 1024x1024 seamless pixel-art night-city tile — no image assets. Copy cityDrawing.ts and CityBackdrop.tsx from assets/design_handoff_city_backdrop_pigeon_sprites/src/ into apps/desktop/src/components/canvas/, and cityBackdrop.css into apps/desktop/src/styles/ (or fold into global.css). The modules are high-fidelity and repo-pathed — integrate near-verbatim. Mount <CityBackdropViewportSynced> inside the <ReactFlow> tree (it uses useViewport() to pan/scale with the graph so tiles do not drift during zoom/pan). The layer is non-interactive (pointer-events: none), sits below nodes/edges, and above the app background; hide or replace React Flow's default background. The existing 48px CSS grid overlay remains on top of the city tile — reduce its opacity if it fights the backdrop, but keep the tactical-map readability. Backdrop is static (no animation loop) per VISUAL_IDENTITY.md §6 constraints. Expose the seed as a prop (default from the module) so the city layout is deterministic.",
       "acceptance_criteria": [
-        "A backdrop layer div is positioned behind .react-flow (z-index below canvas, above app background)",
-        "Backdrop tile is a seamless repeating pixel-art image (when asset is available)",
-        "Backdrop scale follows React Flow zoom — tiles do not drift as the user zooms in/out",
-        "The existing 48px CSS grid overlay remains visible on top of the backdrop",
+        "cityDrawing.ts, CityBackdrop.tsx, and cityBackdrop.css are integrated at their target paths with exports drawCityTile, NIGHT_PALETTE, TILE_SIZE, mulberry32 and the three CityBackdrop component variants",
+        "CityBackdropViewportSynced is mounted inside ReactFlow and the city tile pans/scales in lockstep with the graph — no drift at any zoom level",
+        "Backdrop is non-interactive (pointer-events: none) and never intercepts canvas clicks, drags, or selections",
+        "Same seed always renders the same city (deterministic)",
+        "Tile repeats seamlessly — no visible seam between adjacent tiles when zoomed out",
+        "The 48px grid overlay remains rendered on top of the backdrop",
         "Node and edge readability is not degraded at any zoom level",
-        "prefers-reduced-motion: reduce disables any backdrop animation",
-        "Backdrop is visible in BuilderView, LiveRunView, and ReplayView (all canvas contexts)"
+        "Backdrop is visible in BuilderView, LiveRunView, and ReplayView (all canvas contexts)",
+        "npm test passes with no regressions"
       ],
       "depends_on": [
         "DEC-007",
@@ -3110,17 +3110,20 @@
       ],
       "blocked_by": [],
       "files": [
+        "apps/desktop/src/components/canvas/cityDrawing.ts",
+        "apps/desktop/src/components/canvas/CityBackdrop.tsx",
+        "apps/desktop/src/styles/cityBackdrop.css",
         "apps/desktop/src/components/canvas/WorkflowCanvas.tsx",
-        "apps/desktop/src/styles/global.css",
-        "apps/desktop/public/backdrops/"
+        "apps/desktop/src/styles/global.css"
       ],
       "docs": [
         "docs/VISUAL_IDENTITY.md"
       ],
       "notes": [
-        "Asset requirement: seamless tile, 64–128px square, WebP, pixel-art style matching the character sprites.",
-        "If backdrop asset is not ready: ship the component scaffold only; do not block on asset creation.",
-        "React Flow zoom transform is accessible via useReactFlow().getViewport() or the onMove callback."
+        "Source of truth: assets/design_handoff_city_backdrop_pigeon_sprites/ (README + src/). Do not port the preview/demo files (index.html, *-app.jsx, loaders, tweaks-panel) — they are design-tool scaffolding only.",
+        "This task is no longer gated on asset availability — the backdrop is code, not an image. The old public/backdrops/ WebP-tile plan is superseded by DEC-008.",
+        "prefers-reduced-motion is a non-issue for the static backdrop, but keep the CSS hook from cityBackdrop.css for the future animated overlay layer (CityBackdropCanvas variant).",
+        "City layout contract (block/street sizes, palette) lives in cityDrawing.ts exported consts — do not re-transcribe values into CSS."
       ],
       "commands": [
         "cd apps/desktop && npm run dev"
@@ -3135,7 +3138,7 @@
       "priority": "medium",
       "type": "implementation",
       "summary": "Add a health-bar style overlay to AgentNode that visualizes LLM context window fill percentage derived from token usage events.",
-      "description": "Add a narrow horizontal bar (4px tall, 86px wide) below the sprite and above the footer in AgentNode. The bar is driven by a tokenPct prop (0–100) derived from token usage events (tokens_used / context_limit). Color: green 0–60%, amber 60–85%, red 85–100%. Smooth CSS transitions on fill and color change. Hidden (display: none) when tokenPct is null/undefined — graceful degradation for providers that do not expose token counts.\n\nData path: LiveRunView receives agent.completed / agent.response events with token fields in the payload. It computes tokenPct and passes it through node data to AgentNode. In BuilderView the bar is always hidden (no runtime data). In ReplayView derive from the event log at the scrubbed position.\n\nPer VISUAL_IDENTITY.md §5.",
+      "description": "Add a narrow horizontal health bar below the sprite and above the footer in AgentNode. The bar is driven by a tokenPct prop (0–100) derived from token usage events (tokens_used / context_limit). Color: green 0–60%, amber 60–85%, red 85–100%. Smooth CSS transitions on fill and color change. Hidden (display: none) when tokenPct is null/undefined — graceful degradation for providers that do not expose token counts. Bar width matches the rendered width of the procedural PigeonSprite canvas (26px native grid at the integer scale chosen in SPRITE-002) — it must not widen the node.\n\nData path: LiveRunView receives agent.completed / agent.response events with token fields in the payload. It computes tokenPct and passes it through node data to AgentNode. In BuilderView the bar is always hidden (no runtime data). In ReplayView derive from the event log at the scrubbed position.\n\nPer VISUAL_IDENTITY.md §5.",
       "acceptance_criteria": [
         "Health bar renders below the sprite in AgentNode when tokenPct is a number",
         "Bar is hidden when tokenPct is null or undefined",
@@ -3144,6 +3147,7 @@
         "Bar is absent in BuilderView (design-time has no runtime data)",
         "In LiveRunView, bar updates as agent.completed / agent.response events arrive",
         "In ReplayView, bar fill reflects token usage at the scrubbed event position",
+        "Health bar width matches the rendered PigeonSprite width and does not widen the node",
         "npm test passes — add at least one unit test for each color threshold"
       ],
       "depends_on": [
@@ -3166,7 +3170,7 @@
       "notes": [
         "Token fields in agent events must be confirmed against EVENT_SCHEMA.md before implementation.",
         "If token data is not yet in the event payload, this task blocks on the event schema change — coordinate with EVENT group.",
-        "The bar must not widen the node. 86px matches the sprite width at native scale."
+        "Bar width follows the rendered sprite width from SPRITE-002 (procedural canvas, not the legacy 86px WebP frame). The bar must not widen the node."
       ],
       "commands": [
         "cd apps/desktop && npm test"
@@ -3176,19 +3180,19 @@
     {
       "id": "SPRITE-005",
       "group_id": "SPRITE",
-      "title": "Full node type sprite coverage — asset design and integration",
+      "title": "Full node type sprite coverage — procedural characters",
       "status": "todo",
       "priority": "low",
       "type": "implementation",
-      "summary": "Create and integrate animated character sprites for all remaining node types (Tool, Router, Memory, HumanReview, Start, End).",
-      "description": "Once pixel-art assets are created for each remaining node type, integrate them using the same component pattern as AgentNode (SPRITE-002). Each node type gets its own dedicated React component (e.g. ToolNode.tsx, RouterNode.tsx) registered in WorkflowCanvas NODE_TYPES. Each component follows the same ag-node-* class pattern and state-to-animation mapping from VISUAL_IDENTITY.md §3.\n\nAsset priority order (per VISUAL_IDENTITY.md §8): Tool → Router → HumanReview → Memory → Start → End.\n\nThis task covers the integration work per node type. The pixel-art asset creation itself is a separate creative/design effort tracked elsewhere. This task should only be started once assets are available for a given node type — do not block all 6 on a complete asset set.",
+      "summary": "Author and integrate procedural pixel-art characters for the remaining node types (Tool, Router, HumanReview, Memory, Start, End) following the pigeonDrawing.ts pattern.",
+      "description": "Per DEC-008, new node-type characters are authored as hand-drawn ASCII pixel grids with a character-to-color legend in code (the pigeonDrawing.ts pattern) — no external asset creation pipeline. For each remaining node type: author a drawing module (or extend a shared characters module) with poses covering at minimum idle, running, and a terminal state; reuse NECK_BY_STATE-style state tinting where the character has a natural tint area, matched to NIGHT_PALETTE; create a node component following the PigeonSprite/AgentNode pattern from SPRITE-002; register it in WorkflowCanvas NODE_TYPES. Characters must match the pigeon's style: hard pixel edges, ~26x24-scale native grids, transparent background, pixel-drawn drop shadow, palette drawn from the city backdrop family.\n\nPriority order (per VISUAL_IDENTITY.md §8): Tool → Router → HumanReview → Memory → Start → End. Pick up one node type at a time — do not block all 6 on a complete set. Static node types (Start, End) may be single-pose landmarks (e.g. launch flag, nest) rather than animated characters.",
       "acceptance_criteria": [
-        "Each node type with available assets has a dedicated SpriteNode component",
-        "All sprite components follow the pattern established by AgentNode.tsx (SPRITE-002)",
+        "Each covered node type has a procedural drawing module and a dedicated node component following the SPRITE-002 pattern",
         "WorkflowCanvas NODE_TYPES is updated for each integrated node type",
-        "State-to-animation mapping is consistent with VISUAL_IDENTITY.md §3 (adapted for each character)",
+        "State communication is consistent with the pigeon: tint-based state color plus container-level glow, states matching the 8-state lifecycle",
+        "All characters share the pixel-art style, scale family, and NIGHT_PALETTE-derived colors of the pigeon and city backdrop",
         "All existing node state glow/ring CSS animations still apply",
-        "npm test passes — sprite components have at minimum smoke tests",
+        "npm test passes — each new sprite component has at minimum a smoke test",
         "docs/VISUAL_IDENTITY.md §8 roadmap table is updated as each type is completed"
       ],
       "depends_on": [
@@ -3196,18 +3200,18 @@
       ],
       "blocked_by": [],
       "files": [
+        "apps/desktop/src/components/canvas/",
         "apps/desktop/src/components/nodes/",
         "apps/desktop/src/components/canvas/WorkflowCanvas.tsx",
-        "apps/desktop/public/sprites/",
         "docs/VISUAL_IDENTITY.md"
       ],
       "docs": [
         "docs/VISUAL_IDENTITY.md"
       ],
       "notes": [
-        "Pick up this task one node type at a time as assets become available — do not wait for all 6.",
-        "Character concepts per node type are in VISUAL_IDENTITY.md §8. Coordinate with asset creator on design.",
-        "Asset spec: 86×86px frames, horizontal sprite sheet, WebP, transparent background, same animation states as the pigeon set."
+        "No external asset dependency remains — characters are code, authored in-repo. The old 86x86 WebP sheet spec is superseded by DEC-008.",
+        "Character concepts per node type are in VISUAL_IDENTITY.md §8.",
+        "Keep each character grid hand-authored and reviewed against a pixel-grid screenshot (see handoff screenshots/ for the reference workflow)."
       ],
       "commands": [
         "cd apps/desktop && npm test"
@@ -3222,7 +3226,7 @@
       "priority": "medium",
       "type": "implementation",
       "summary": "Integrate CommandOutputPanel into the live run view layout, feeding it command events from the existing events state.",
-      "description": "Import CommandOutputPanel into LiveRunView.tsx. Replace or augment the existing event detail section (~line 485, comment \"Event detail / command output panel\") with CommandOutputPanel. Pass it the subset of events where event_type starts with \"command.\" \u2014 derive this with useMemo to avoid re-filtering on every render. The panel must sit within the existing layout grid (right-side detail column alongside the event feed); do not restructure the overall layout. Only render CommandOutputPanel when command events are present; for non-command selected events continue showing the existing generic detail view. Run the full frontend test suite and fix any failures caused by the integration.",
+      "description": "Import CommandOutputPanel into LiveRunView.tsx. Replace or augment the existing event detail section (~line 485, comment \"Event detail / command output panel\") with CommandOutputPanel. Pass it the subset of events where event_type starts with \"command.\" — derive this with useMemo to avoid re-filtering on every render. The panel must sit within the existing layout grid (right-side detail column alongside the event feed); do not restructure the overall layout. Only render CommandOutputPanel when command events are present; for non-command selected events continue showing the existing generic detail view. Run the full frontend test suite and fix any failures caused by the integration.",
       "acceptance_criteria": [
         "CommandOutputPanel appears in LiveRunView when command events are present",
         "Non-command selected events still show the existing generic detail view",
@@ -3242,7 +3246,7 @@
       ],
       "notes": [
         "Target insertion point: ~line 485 in LiveRunView.tsx (comment: \"Event detail / command output panel\").",
-        "Events state is already populated via run_event_appended listener \u2014 no new Tauri subscriptions needed."
+        "Events state is already populated via run_event_appended listener — no new Tauri subscriptions needed."
       ],
       "commands": [],
       "estimate": "S"

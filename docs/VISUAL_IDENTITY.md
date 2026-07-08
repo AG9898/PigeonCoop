@@ -27,35 +27,46 @@ The result is not an arcade game reskin of a node editor. It is a systems monito
 ## 2. Character sprite system
 
 ### Concept
-Each node type is represented by a pixel-art character sprite. The sprite is the node's primary visual identity. It replaces the generic icon-in-header approach for node types that have dedicated assets.
+Each node type is represented by a pixel-art character sprite. The sprite is the node's primary visual identity. It replaces the generic icon-in-header approach for node types that have dedicated characters.
 
-The inaugural character is the **pigeon** — the PigeonCoop mascot — used for Agent nodes. As more assets are created, each node type will receive its own character.
+The inaugural character is the **pigeon** — the PigeonCoop mascot — used for Agent nodes. As more characters are authored, each node type will receive its own.
 
-### Current sprite assets
+### Rendering approach — procedural canvas (DEC-008)
 
-Location: `assets/character-sprites/assets_2026-03-27/`
-Runtime location: `apps/desktop/public/sprites/` (served as Vite static assets)
+Characters are drawn **procedurally on `<canvas>`** at runtime — no image assets. Each character is a hand-authored ASCII pixel grid (one string array per pose) mapped through a character→color legend, rendered by a drawing module. The canonical implementation is `apps/desktop/src/components/canvas/pigeonDrawing.ts`, integrated from the design handoff at `assets/design_handoff_city_backdrop_pigeon_sprites/` (high-fidelity: palettes and pixel grids are final — do not re-derive).
 
-The runtime sprite scaffold is in place. `apps/desktop/public/sprites/` contains the WebP pigeon sprite sheets served by Vite at `/sprites/<filename>`. PNG files remain source/fallback assets only and are not copied into `public/` for the initial pipeline.
+**Pigeon character contract** (`pigeonDrawing.ts` exports):
+- Native grid: **26×24 px** (`NATIVE_W`, `NATIVE_H`), rendered at an integer scale with `image-rendering: pixelated`
+- Side-view profile, faces right; `flipped` flag mirrors horizontally
+- No background box, frame, or border — transparent canvas with a pixel-drawn drop-shadow ellipse under the feet
+- Poses (`PoseName`): `idle`, `idleUp` (breathing variant), `stepA`/`stepB` (2-frame walk/run cycle), `hop` (succeeded), `down` (failed)
+- `drawPigeon(ctx, opts)` renders one pose; `poseForState(state, frame)` maps the 8 node states to poses and cadences (see §3)
+- Body palette: `PIGEON_PALETTE` — slate-grey body family matched to the city backdrop's palette, warm orange feet
+- **State indication:** the neck-patch tint (`NECK_BY_STATE`) carries run state in the sprite itself — blue running, amber waiting/paused, green succeeded, red failed, grey idle/queued/skipped. Same semantic hues as the node glow system in `global.css`, so the sprite and border speak one state language.
 
-| File | Dimensions | Frames | Frame size | Intended state(s) |
-|---|---|---|---|---|
-| `character_idle.webp` | 688×86px | 8 | 86×86px | idle, queued, paused, skipped |
-| `character_walk.webp` | 688×86px | 8 | 86×86px | waiting |
-| `character_front_run_run.webp` | 688×86px | 8 | 86×86px | running |
-| `character_jump.webp` | 688×86px | 8 | 86×86px | succeeded |
-| `character_hurt.webp` | 688×86px | 8 | 86×86px | (reserved — transition to death) |
-| `character_death.webp` | 1032×86px | 12 | 86×86px | failed |
+**New character requirements** (Tool, Router, etc. — see §8):
+- Hand-authored ASCII pixel grid + color legend in code, following the `pigeonDrawing.ts` pattern
+- Native grid in the same scale family as the pigeon (~26×24)
+- Hard pixel edges, transparent background, pixel-drawn drop shadow
+- Colors drawn from the `NIGHT_PALETTE` / `PIGEON_PALETTE` families
+- At minimum: idle, running, and one terminal pose; a state-tint area where the character design allows
 
-PNG versions exist alongside each WebP as source/fallback assets. Prefer WebP for runtime use.
+### Legacy WebP sprite sheets
 
-### Asset format requirements
-- **Format:** WebP sprite sheets; PNG as explicit fallback
-- **Layout:** horizontal strip, left-to-right frame order
-- **Frame size:** must be square; document the px value per character set
-- **Background:** transparent (RGBA)
-- **Naming:** `character_<animation_name>.webp` for the Agent/pigeon set; `<node_type>_<animation_name>.webp` for other node types once those assets exist
-- **Storage:** source assets in `assets/character-sprites/<dated-folder>/`; runtime copies in `apps/desktop/public/sprites/`
+The original pipeline (superseded by DEC-008, retained as fallback assets only — do not extend):
+
+Source: `assets/character-sprites/assets_2026-03-27/` · Runtime: `apps/desktop/public/sprites/` (Vite static, `/sprites/<filename>`)
+
+| File | Dimensions | Frames | Frame size |
+|---|---|---|---|
+| `character_idle.webp` | 688×86px | 8 | 86×86px |
+| `character_walk.webp` | 688×86px | 8 | 86×86px |
+| `character_front_run_run.webp` | 688×86px | 8 | 86×86px |
+| `character_jump.webp` | 688×86px | 8 | 86×86px |
+| `character_hurt.webp` | 688×86px | 8 | 86×86px |
+| `character_death.webp` | 1032×86px | 12 | 86×86px |
+
+If static sheets are ever needed again (palette previews, export), render procedural poses to offscreen canvases and stitch — do not hand-author new image frames.
 
 ---
 
@@ -63,63 +74,50 @@ PNG versions exist alongside each WebP as source/fallback assets. Prefer WebP fo
 
 ### Agent node (pigeon character)
 
-| Node state | Sprite | Loop | Speed | Notes |
-|---|---|---|---|---|
-| `idle` | `character_idle` | ∞ | 1.0s / 8 steps | default, resting |
-| `queued` | `character_idle` | ∞ | 1.6s / 8 steps | slower — pending, not active |
-| `running` | `character_front_run_run` | ∞ | 0.55s / 8 steps | fast — conveys urgency |
-| `waiting` | `character_walk` | ∞ | 1.0s / 8 steps | moving but not progressing |
-| `paused` | `character_idle` | ∞ | 2.5s / 8 steps | very slow — system waiting on user |
-| `succeeded` | `character_jump` | 1× | 0.6s / 8 steps | plays once, holds last frame |
-| `failed` | `character_death` | 1× | 1.0s / 12 steps | plays once, holds last frame |
-| `skipped` | `character_idle` | ∞ | 1.0s / 8 steps | same as idle but node opacity 0.45 |
+Poses and cadences are defined by `poseForState(state, frame)` in `pigeonDrawing.ts`. The animation tick runs at ~100ms (~10 ticks/sec); "every N ticks" below is the pose-alternation cadence.
 
-### Implementation note — one-shot animations
-For `succeeded` and `failed`, use `animation-iteration-count: 1` with `animation-fill-mode: forwards`. The sprite freezes on the final frame after playing once.
+| Node state | Poses | Cadence | Neck tint | Notes |
+|---|---|---|---|---|
+| `idle` | `idle` ↔ `idleUp` | every 4 ticks | neutral grey | normal breathing |
+| `queued` | `idle` ↔ `idleUp` | every 6 ticks | neutral grey | slower — pending, not active |
+| `running` | `stepA` ↔ `stepB` | every tick | cool blue | fast run — conveys urgency |
+| `waiting` | `stepA` ↔ `stepB` | every 3 ticks | warm amber | slow walk — moving, not progressing |
+| `paused` | `idle` ↔ `idleUp` | every 12 ticks | deeper amber | very slow — system waiting on user |
+| `succeeded` | `hop` | one-shot, holds | green | feet tucked, celebratory |
+| `failed` | `down` | one-shot, holds | red | head slumped, eyes closed |
+| `skipped` | `idle` ↔ `idleUp` | every 4 ticks | dim grey | plus node opacity 0.45 |
+
+Exact tint hex values live in `NECK_BY_STATE` — import them, never re-transcribe.
+
+### Implementation note — one-shot poses
+`succeeded` and `failed` are single poses: draw once and hold. Do not keep alternating the tick for terminal states (matches the legacy `animation-iteration-count: 1; animation-fill-mode: forwards` behavior).
 
 ### Other node types
-Node types without dedicated sprite assets continue using the text-based `WorkflowNode` component (icon + type abbreviation + state badge). State-based glow/ring animations from `global.css` still apply to these nodes. Sprite assets for the remaining node types will be added in future sprints (see §8 — Roadmap).
+Node types without dedicated characters continue using the text-based `WorkflowNode` component (icon + type abbreviation + state badge). State-based glow/ring animations from `global.css` still apply to these nodes. Procedural characters for the remaining node types are tracked in §8 — Roadmap.
 
 ---
 
 ## 4. Technical implementation
 
-### CSS sprite sheet animation
-All animation is driven by CSS `steps()` keyframes on `background-position-x`. No JavaScript animation timers.
+### Canvas rendering with a shared animation tick (DEC-008)
+Sprites are drawn onto a `<canvas>` per node by the character's drawing module (`drawPigeon`). Animation is driven by a **single shared ~100ms tick** — one interval/rAF source feeding a frame counter to every sprite on the canvas. Never create one timer per node. On each tick, each sprite calls `poseForState(state, frame)` and redraws only if its pose changed.
 
-```css
-/* Generic 8-frame keyframe */
-@keyframes ag-sprite-8 {
-  to { background-position-x: -688px; }
-}
+Rules:
+- One tick source for all sprites (a shared hook/context), ~10 ticks/sec
+- Terminal states (`succeeded`/`failed`) draw once and hold — no further redraws
+- `prefers-reduced-motion: reduce` freezes the tick; sprites hold their current pose
+- Canvas size = native grid × integer scale; never fractional scales
 
-/* Generic 12-frame keyframe */
-@keyframes ag-sprite-12 {
-  to { background-position-x: -1032px; }
-}
-
-/* Per-state example */
-.ag-node-sprite[data-state="running"] {
-  background-image: url('/sprites/character_front_run_run.webp');
-  background-size: 688px 86px;
-  animation: ag-sprite-8 0.55s steps(8) infinite;
-}
-
-.ag-node-sprite[data-state="failed"] {
-  background-image: url('/sprites/character_death.webp');
-  background-size: 1032px 86px;
-  animation: ag-sprite-12 1.0s steps(12) 1 forwards;
-}
-```
+*(The previous CSS `steps()` sprite-sheet system remains documented in git history and applies only to the legacy WebP assets in §2. Do not build new animation on it.)*
 
 ### Pixel rendering
-Always apply `image-rendering: pixelated` to sprite elements. This preserves the crisp pixel-art appearance when React Flow zooms the canvas in or out.
+Always apply `image-rendering: pixelated` to sprite canvases. This preserves the crisp pixel-art appearance when React Flow zooms the canvas in or out. Draw with 1px-aligned `fillRect` calls only — no anti-aliasing, no CSS box-shadows on the art itself.
 
-### Component structure (`AgentNode.tsx`)
+### Component structure (`AgentNode.tsx` + `PigeonSprite.tsx`)
 ```
 <div className="ag-node wf-node wf-node--agent [state-classes]">
   <Handle type="target" position={Position.Top} />
-  <div className="ag-node-sprite" data-state={state} />
+  <PigeonSprite state={state} frame={sharedTick} />   ← <canvas className="ag-node-sprite">
   <div className="ag-node-health-bar" style={{ '--fill': contextPct }} />  ← optional
   <div className="ag-node-footer">
     <span className="ag-node-label">{label}</span>
@@ -129,7 +127,7 @@ Always apply `image-rendering: pixelated` to sprite elements. This preserves the
 </div>
 ```
 
-The `AgentNode` component reuses `.wf-node` base classes so all existing state glow/ring animations (node-pulse, node-fail-flash, node-paused-blink) still apply at the border level. The sprite layer adds the character identity on top.
+The `AgentNode` component reuses `.wf-node` base classes so all existing state glow/ring animations (node-pulse, node-fail-flash, node-paused-blink) still apply at the border level. The sprite itself carries state via the neck-patch tint (§2); the character has no frame or box of its own.
 
 ### CSS class namespacing
 - `.ag-node` — root element, agent-node specific overrides
@@ -204,29 +202,34 @@ The canvas background is not a blank dark surface. It is a stylized game world �
 - It must work at all React Flow zoom levels (scale-agnostic or tiled)
 - It must respect `prefers-reduced-motion: reduce` — animated backdrop elements must pause
 
-### Planned visual elements
-- **Ground layer:** pixel-art terrain tiles (grass, cobblestone, or circuit-board motif) as a repeating background behind the canvas
-- **Environmental details:** scattered ambient elements (small pixel objects, shadows) that add life without cluttering
-- **Grid overlay:** the existing 48px CSS grid (`linear-gradient` at `--grid-color`) remains on top of the terrain, maintaining the tactical-map readability
-- **Parallax (optional):** very subtle parallax between backdrop and node layer when panning — depth effect, not distraction
+### The city tile (DEC-008)
+The backdrop is a **procedurally drawn, seeded pixel-art night cityscape** — no image assets. It is rendered by `drawCityTile(ctx, {seed, palette})` in `apps/desktop/src/components/canvas/cityDrawing.ts`, integrated from the design handoff at `assets/design_handoff_city_backdrop_pigeon_sprites/`. Same seed → same city, always.
+
+Layout contract (all values are exported consts in `cityDrawing.ts` — import, never re-transcribe):
+- **Tile:** 1024×1024 px (`TILE_SIZE`), seamless on all four edges — half-streets (`EDGE_STREET` = 40px) frame the tile so adjacent tiles join into full streets
+- **City blocks:** 2×2 grid of 400×400 px rooftops (`BLOCK`) — Apartment, Park/Plaza, Industrial, Commercial — separated by 80px cross streets (`MID_STREET`), 16px sidewalks (`SIDEWALK`)
+- **Scale anchor:** one block is ~4.6× a node — big enough to host a small flock of agent nodes on one rooftop
+- **Palette:** `NIGHT_PALETTE` (~50 named colors); the pigeon's body palette is drawn from the same family
+- **No text anywhere in the tile** (the billboard uses an abstract dot-logo + bar graph)
+- Rendering: hard 1px-aligned `fillRect` calls, `image-rendering: pixelated`, streetlamp glows drawn last on top
 
 ### Implementation approach
-- Backdrop is a `<div>` positioned behind the React Flow canvas, using `background-image` with a tiled PNG/WebP terrain sheet
-- React Flow's `.react-flow__background` is hidden or replaced
-- Zoom sync: backdrop scale is tied to React Flow's transform via a CSS variable or inline style, so terrain tiles don't drift as the user zooms
-
-### Asset requirements
-- Terrain tile: seamless repeating square (e.g. 64×64px or 128×128px)
-- Format: WebP, pixel-art style matching the character sprites
-- Storage: `assets/backdrops/<name>.webp` → deployed to `apps/desktop/public/backdrops/`
+- `CityBackdrop.tsx` (same handoff, target `apps/desktop/src/components/canvas/`) exports three variants:
+  - `<CityBackdrop>` — static tiled div (repeating tile as background)
+  - `<CityBackdropViewportSynced>` — **the one to use on the workflow canvas**; must be mounted inside `<ReactFlow>`, uses `useViewport()` to pan/scale with the graph so tiles never drift during zoom
+  - `<CityBackdropCanvas>` — bare canvas, reserved for a future animated overlay layer
+- Positioning/z-index/`prefers-reduced-motion` hooks live in `cityBackdrop.css` (target `apps/desktop/src/styles/`)
+- The layer is non-interactive: `pointer-events: none`, below nodes/edges, above the app background; React Flow's `.react-flow__background` is hidden or replaced
+- **Grid overlay:** the existing 48px CSS grid (`linear-gradient` at `--grid-color`) remains on top of the city tile, maintaining tactical-map readability — reduce its opacity if it fights the backdrop rather than removing it
+- The backdrop is static in v1 (no animation loop); any future ambient animation goes through the `CityBackdropCanvas` variant and must honor the §6 constraints above
 
 ---
 
 ## 7. Node palette preview
 
-Once sprite assets exist for a node type, the drag-and-drop tile in `NodePalette.tsx` should show a static 1-frame preview of the character's idle pose (first frame = `background-position-x: 0`). This gives the user a visual match between the palette and the canvas.
+Once a procedural character exists for a node type, the drag-and-drop tile in `NodePalette.tsx` should show a static preview of the character's idle pose (render the `idle` pose once to a small canvas — no tick needed). This gives the user a visual match between the palette and the canvas.
 
-Until assets exist: label-based tiles remain as-is.
+Until a character exists: label-based tiles remain as-is.
 
 ---
 
@@ -236,7 +239,7 @@ The target is one unique character per node type. Design priority order reflects
 
 | Node type | Current state | Target character concept |
 |---|---|---|
-| Agent | pigeon sprite (implemented) | pigeon — the primary actor |
+| Agent | procedural pigeon designed (integration in SPRITE-002) | pigeon — the primary actor |
 | Tool | text-based | wrench-bot or mechanical bird |
 | Router | text-based | signpost character / traffic controller |
 | Human Review | text-based | human silhouette / overseer |
@@ -244,17 +247,18 @@ The target is one unique character per node type. Design priority order reflects
 | Start | text-based | launch platform / flag |
 | End | text-based | destination marker / nest |
 
-Each new character should:
-- Match the pixel-art style and frame dimensions of the existing pigeon set (86×86px per frame)
-- Have at minimum: `idle`, `running`, and a terminal state (`succeeded` or `failed`)
-- Be stored in a dated asset folder matching the convention in §2
+Each new character is authored **procedurally in code** (DEC-008) — a hand-drawn ASCII pixel grid + color legend following the `pigeonDrawing.ts` pattern. No external asset creation is required. Each new character should:
+- Match the pigeon's pixel-art style and scale family (~26×24 native grid, hard edges, pixel drop shadow)
+- Draw its colors from the `NIGHT_PALETTE` / `PIGEON_PALETTE` families
+- Have at minimum: `idle`, `running`, and a terminal pose (`succeeded` or `failed`), plus a state-tint area where the design allows
+- Static node types (Start, End) may be single-pose landmarks (flag, nest) rather than animated characters
 
 ---
 
 ## 9. Accessibility
 
 - All important state information communicated by animation or color must also be present as text (state badge) — color/motion alone is not sufficient
-- `prefers-reduced-motion: reduce` must disable all CSS animations, including sprite sheet animation and backdrop motion. Apply:
+- `prefers-reduced-motion: reduce` must disable all animation: the shared sprite tick freezes (sprites hold their current pose — check `window.matchMedia('(prefers-reduced-motion: reduce)')` in the tick hook), and any CSS animation is suppressed:
   ```css
   @media (prefers-reduced-motion: reduce) {
     .ag-node-sprite { animation: none !important; }
@@ -267,11 +271,16 @@ Each new character should:
 
 ## 10. File locations reference
 
-| Purpose | Source path | Deployed path |
-|---|---|---|
-| Character sprite assets | `assets/character-sprites/<dated>/` | `apps/desktop/public/sprites/` |
-| Backdrop tile assets | `assets/backdrops/` | `apps/desktop/public/backdrops/` |
-| AgentNode component | `apps/desktop/src/components/nodes/AgentNode.tsx` | — |
-| Sprite CSS | `apps/desktop/src/styles/global.css` (ag-node section) | — |
-| WorkflowCanvas registration | `apps/desktop/src/components/canvas/WorkflowCanvas.tsx` | — |
-| WorkflowNode (text-based) | `apps/desktop/src/components/nodes/WorkflowNode.tsx` | — |
+| Purpose | Path |
+|---|---|
+| Design handoff (source of truth for backdrop + pigeon) | `assets/design_handoff_city_backdrop_pigeon_sprites/` |
+| Pigeon drawing module | `apps/desktop/src/components/canvas/pigeonDrawing.ts` |
+| City backdrop drawing module | `apps/desktop/src/components/canvas/cityDrawing.ts` |
+| City backdrop React components | `apps/desktop/src/components/canvas/CityBackdrop.tsx` |
+| City backdrop CSS | `apps/desktop/src/styles/cityBackdrop.css` |
+| PigeonSprite component | `apps/desktop/src/components/nodes/PigeonSprite.tsx` |
+| AgentNode component | `apps/desktop/src/components/nodes/AgentNode.tsx` |
+| Sprite CSS | `apps/desktop/src/styles/global.css` (ag-node section) |
+| WorkflowCanvas registration | `apps/desktop/src/components/canvas/WorkflowCanvas.tsx` |
+| WorkflowNode (text-based) | `apps/desktop/src/components/nodes/WorkflowNode.tsx` |
+| Legacy WebP sprite sheets | `assets/character-sprites/<dated>/` → `apps/desktop/public/sprites/` |

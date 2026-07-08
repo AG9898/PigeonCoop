@@ -41,15 +41,15 @@ apps/
     package-lock.json
     package.json
     public/
-      sprites/             # Runtime WebP sprite sheets served by Vite at /sprites/<filename>
-      backdrops/           # Runtime backdrop tiles served by Vite at /backdrops/<filename>
+      sprites/             # Legacy WebP sprite sheets served by Vite at /sprites/<filename> (fallback only; procedural rendering is primary per DEC-008)
+      backdrops/           # Superseded by procedural city backdrop (DEC-008); kept for legacy tiles if any
     src/
       __mocks__/
       __tests__/
       app/
       components/
-        canvas/
-        nodes/             # WorkflowNode (text-based); AgentNode sprite component planned in SPRITE-002
+        canvas/            # WorkflowCanvas; procedural drawing modules planned: cityDrawing.ts, CityBackdrop.tsx (SPRITE-003), pigeonDrawing.ts (SPRITE-002)
+        nodes/             # WorkflowNode (text-based); PigeonSprite + AgentNode planned in SPRITE-002
         panels/
       data/               # Embedded static data (e.g. demo workflow for first-run seeding)
       hooks/              # React hooks (useFirstRun for demo seeding, useCanvasKeyboard for keyboard-driven canvas navigation)
@@ -108,8 +108,9 @@ schemas/
 
 assets/
   character-sprites/
-    assets_2026-03-27/    # Pigeon character sprite sheets (WebP + PNG); see docs/VISUAL_IDENTITY.md
-  backdrops/              # Source backdrop tile assets; runtime copies go to apps/desktop/public/backdrops/
+    assets_2026-03-27/    # Legacy pigeon sprite sheets (WebP + PNG); superseded by procedural rendering (DEC-008)
+  backdrops/              # Legacy source backdrop tiles; superseded by procedural city backdrop (DEC-008)
+  design_handoff_city_backdrop_pigeon_sprites/  # High-fidelity design handoff: procedural city backdrop + pigeon sprite (src/ modules are integration source of truth; preview/ is design-tool scaffolding — do not port); see docs/VISUAL_IDENTITY.md and DEC-008
 
 examples/
   plan-execute-critique-approve/

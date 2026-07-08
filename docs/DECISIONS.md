@@ -445,6 +445,32 @@ Key choices within this decision:
 
 ---
 
+### 2026-07-08 — Procedural canvas rendering for backdrop and character sprites (DEC-008)
+
+**Context:** DEC-007 established the character-sprite node identity system on a WebP sprite-sheet pipeline (86×86 frames, CSS `steps()` animation, assets in `public/sprites/`) and explicitly rejected JavaScript-driven canvas animation. It also assumed a tiled WebP terrain image for the game backdrop, gating SPRITE-003 on asset availability and SPRITE-005 on per-character asset commissions. A high-fidelity design handoff (`assets/design_handoff_city_backdrop_pigeon_sprites/`) has since delivered both visual pieces as **procedural canvas code**: a seeded, seamless 1024×1024 pixel-art night-city tile (`cityDrawing.ts` + `CityBackdrop.tsx`) and a 26×24 hand-authored pixel-grid pigeon (`pigeonDrawing.ts`) whose poses and state tints are drawn at runtime — no image assets at all. The drawing modules are written as real TypeScript/React source targeting this repo's paths, with final palettes and pixel layouts.
+
+**Decision:** Adopt procedural canvas rendering as the **primary** rendering approach for both the game backdrop and node character sprites. This amends DEC-007 in three ways:
+
+1. **Backdrop is fully procedural.** The city tile is drawn by `drawCityTile` (seeded, deterministic) and mounted via `<CityBackdropViewportSynced>` inside React Flow. The `public/backdrops/` WebP-tile plan is retired. The backdrop remains static and non-interactive per VISUAL_IDENTITY.md §6 constraints.
+2. **The agent sprite is procedural.** A new `PigeonSprite` canvas component calls `drawPigeon`/`poseForState` per animation tick. Run state is carried by the pigeon's neck-patch tint (`NECK_BY_STATE`, same semantic hues as the existing glow system) with no frame/box around the character; the container-level `.wf-node` glow states are retained on top. Future node-type characters (SPRITE-005) are authored the same way — ASCII pixel grids in code — removing the external asset-creation dependency entirely.
+3. **The "no JavaScript animation timers" rule is amended.** DEC-007's CSS-only constraint served the WebP pipeline; procedural drawing requires a JS tick. The amended rule: canvas sprites animate from a **single shared low-frequency tick** (~100ms) for all sprites — never one timer per node — and the tick freezes under `prefers-reduced-motion: reduce`. One-shot poses (`succeeded`/`failed`) hold their final frame.
+
+The WebP sprite sheets from SPRITE-001 (`public/sprites/`) are retained as **legacy/fallback assets** — not deleted, not extended. If static sheets are ever wanted again (e.g. palette previews or export), render the procedural poses to offscreen canvases and stitch — do not hand-author new WebP frames.
+
+**Alternatives considered:**
+- Keep WebP as primary, use procedural only for the backdrop — rejected: splits the character pipeline in two, keeps the per-character asset-commission bottleneck that had SPRITE-005 parked at low priority, and the procedural pigeon is already palette-matched to the backdrop while the WebP pigeon is not.
+- Pre-render procedural poses to WebP strips and keep the CSS `steps()` system — viable and preserves the DEC-007 rule, but adds an export/build step for zero user-visible benefit; kept as a documented fallback path if the shared tick shows measurable cost.
+- Reject the handoff and commission tile/sheet images matching the old specs — rejected: the handoff is final-fidelity and eliminates the asset bottleneck; re-deriving it as images is pure waste.
+
+**Tradeoffs:**
+- A JS animation tick enters the frontend. Bounded: one interval for all sprites, ~10Hz, pausable; canvas redraws of a 26×24 grid are trivial.
+- Pixel art now lives in code. Editing a pose means editing an ASCII grid, not an image editor — acceptable for a developer-first project, and grids are reviewable in diffs.
+- Two pigeon renditions exist during transition (legacy WebP, procedural). The procedural one is canonical; VISUAL_IDENTITY.md marks the WebP tables as legacy.
+
+**Follow-up implications:** SPRITE-002, SPRITE-003, SPRITE-004, SPRITE-005 have been rewritten on the workboard against this decision. VISUAL_IDENTITY.md §2/§3/§4/§6/§8/§10 updated in the same change. Optional v1.1 item: WebP export of procedural poses (see handoff README "Assets").
+
+---
+
 ## Open decisions
 
 *(No open decisions at this time.)*
