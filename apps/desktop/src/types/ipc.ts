@@ -8,6 +8,7 @@ import type {
   RunEvent,
   RunInstance,
   RunStatus,
+  ValidationResult,
   WorkflowDefinition,
 } from "./workflow";
 
@@ -62,6 +63,10 @@ export interface DeleteWorkflowArgs {
 
 export interface ImportWorkflowArgs {
   json: string;
+}
+
+export interface ValidateWorkflowArgs {
+  workflow: WorkflowDefinition;
 }
 
 export interface ExportWorkflowArgs {
@@ -217,6 +222,9 @@ export const ipc = {
 
   importWorkflow: (args: ImportWorkflowArgs) =>
     invokeTyped<WorkflowDefinition>("import_workflow", args),
+
+  validateWorkflow: (args: ValidateWorkflowArgs) =>
+    invokeTyped<ValidationResult>("validate_workflow", args),
 
   exportWorkflow: (args: ExportWorkflowArgs) =>
     invokeTyped<string>("export_workflow", args),

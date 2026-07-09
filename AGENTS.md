@@ -187,11 +187,11 @@ Prioritize:
 3. live visibility
 4. aesthetic differentiation
 
-Required views:
-- Builder View
-- Live Run View
-- Replay View
-- Workflow/Run Library View
+Required surfaces (one unified workspace since DEC-011 — no view routing):
+- Workflow sidebar (library: workflows + run history, always visible)
+- Design surface (canvas + palette + inspector)
+- Run surface (live monitoring and replay unified; scrubbable event timeline)
+- Shared top bar (workflow identity, Save/Validate, workspace root, one-click Run)
 
 ---
 
@@ -337,3 +337,6 @@ A pre-built `target/debug/agent-arcade` binary and `tauri-driver` are both prese
 
 ### 2026-07-09 — Headed Tauri E2E can run with an extracted WebKitWebDriver
 The previous sandbox E2E rendering issue was not reproduced after providing a native `WebKitWebDriver`. `tauri-driver` initially failed because `webkit2gtk-driver` was not installed on `PATH`; without sudo, `apt-get download webkit2gtk-driver` plus `dpkg-deb -x` into `/tmp/webkit2gtk-driver-extract` worked, then `tauri-driver --native-driver /tmp/webkit2gtk-driver-extract/usr/bin/WebKitWebDriver` launched the headed app. `app.spec.js` passed (`Agent Arcade` title and `#root` found). Current failures are spec drift, not startup: `builder.spec.js` searches for `workflow-card-null`, and `failure.spec.js` sends a `create_workflow` fixture missing required `created_at`, causing later `runId: null` cascades. Future agents should use the extracted-driver workaround before assuming the sandbox cannot run headed E2E, then fix the stale specs.
+
+### 2026-07-09 — UI restructured to a unified single-screen workspace (DEC-011); handoff state
+The four routed views (Builder/Live Run/Replay/Library) were replaced in one change by a single workspace: `WorkflowSidebar` (library, always visible) + top bar (name, Save/Validate, persisted workspace root, one-click Run) + one stage showing `DesignSurface` or `RunPanel` (live + replay unified over the event log with a scrubbable timeline). Full rationale, file map, and the **remaining-work checklist** live in `docs/DECISIONS.md` DEC-011 — read that before touching the frontend. Verified: `tsc` clean, 174 vitest tests green, E2E specs ported and `node --check`ed but **not executed**; the new UI has **not yet been visually verified** in `npm run tauri dev`. Unrelated to the repo: a ready-to-import demo workflow with real claude agent nodes (haiku, plan mode) sits at `/home/ag9898/claude-live-demo.workflow.json` for demoing runs.

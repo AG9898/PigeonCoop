@@ -525,6 +525,39 @@ Neither new config field bumps `schema_version` — both are additive optional f
 
 ---
 
+### DEC-011 — Unified single-screen workspace (replaces the four routed views)
+
+**Status:** accepted, implemented (frontend); doc/spec follow-ups listed below.
+
+**Context:** The UI was four keyboard-routed views (Builder / Live Run / Replay / Library) whose connections were implicit and partly broken: Library's "Open" button never actually loaded the workflow into the Builder (`App.openBuilder` ignored the id); Live Run only showed events received *after* mount, so opening an in-flight run gave an empty feed; Replay rendered node states as a text list, not a graph; starting a run required finding a per-card "Start Run" form and retyping the workspace path every time; token-usage derivation was duplicated verbatim in two views. User feedback: "so many panes that feel like they aren't connected but are."
+
+**Decision:** One screen with three regions, no view routing:
+- **Workflow sidebar** (`components/sidebar/WorkflowSidebar.tsx`) — always-visible library: workflows (new/import/export) with the selected one expanded to show run history. Selecting a workflow loads it onto the canvas; selecting a run opens the run surface.
+- **Top bar** (`app/App.tsx`) — editable workflow name, Save (Ctrl+S), Validate, a **persisted** workspace-root input (`localStorage: agent-arcade.workspaceRoot`), and one **Run** button that saves the canvas, creates the run, starts it, and opens the run surface.
+- **Stage** — either `views/DesignSurface.tsx` (edit mode: palette + canvas + inspector + floating validation overlay; exposes `buildWorkflow()` handle) or `views/RunPanel.tsx`.
+
+**Live and replay are unified** in `RunPanel`: everything derives from the event log (`deriveNodeStates`, new shared `state/deriveTokenPcts.ts`) at an index. Following the live tail = index at end (LIVE badge, auto-scroll); scrubbing = an earlier index on the same timeline. The panel backfills `list_events_for_run` on open and dedupes against streamed `run_event_appended` by `event_id`, fixing the mid-flight-open bug. The graph is the real workflow canvas with state overlays (replacing Replay's text list). No backend changes; one IPC helper added (`ipc.validateWorkflow`, command already existed).
+
+**Alternatives considered:**
+- Keep four views but fix the broken links (load-on-open, backfill) — rejected: preserves the disconnected-panes mental model and the Live/Replay duplication.
+- Tabbed single window (views as tabs) — rejected: still hides the workflow↔run relationship the sidebar now makes structural.
+- Backend-driven "open run" navigation events — rejected: UI concern, engine stays authoritative on execution only.
+
+**Tradeoffs:** removed the 1–4 view keyboard shortcuts and the four-view vocabulary that older docs/E2E specs used (specs ported, see below); the NODES status list panel was folded into the graph + event feed; `App.tsx` now owns more state (library, selection, run controls).
+
+**Implemented in this change:** deleted `views/{BuilderView,LibraryView,LiveRunView,ReplayView}.tsx`; added `WorkflowSidebar`, `DesignSurface`, `RunPanel`, `state/deriveTokenPcts.ts`; rewrote `app/App.tsx`; top-bar/sidebar/run-panel/scrubber CSS in `styles/global.css` (incl. previously missing `.toolbar-btn` and `.timeline-scrubber` styles); replaced the four view test suites with `App/WorkflowSidebar/DesignSurface/RunPanel` suites (174 frontend tests green, `tsc` clean); ported all six E2E specs in `tests/e2e/specs/` to the new selectors/flows (`node --check` clean; **not executed** — see repo Discoveries about sandbox E2E).
+
+**Follow-up implications (remaining work):**
+1. **Visual verification** — `npm run tauri dev` and click through: sidebar select → edit → Run → live run → scrub → human review approve. Not yet done after the restructure.
+2. **DESIGN_SPEC.md §4** still describes the old views in detail; a banner note marks it superseded — rewrite the section (and §13 keyboard-shortcut list: 1–4 nav removed, Ctrl+S added).
+3. **E2E specs** ported but unverified; run in CI or with the extracted-WebKitWebDriver workaround. `failure.spec.js`/`review.spec.js` UI sections assume the sidebar shows runs created via IPC after clicking the workflow card — App reloads runs on select, so this should hold, but verify.
+4. Sidebar has no delete-workflow affordance (`ipc.deleteWorkflow` exists, unused). Consider adding.
+5. Dead CSS from the removed views (`.lib-card*`, `.lr-hud*`, `.replay-*`, `.library-*`, `.view*`, picker styles) can be pruned.
+6. Non-selected runs' sidebar chips only refresh on workflow re-select; consider a global `run_status_changed` subscription in App.
+7. TESTING.md and workboard entries referencing the four views should be reconciled.
+
+---
+
 ## Open decisions
 
 *(No open decisions at this time.)*

@@ -94,21 +94,19 @@ describe('Agent Arcade — human review gate', () => {
     });
   });
 
-  // ── 2. Navigate to LiveRunView via Library run history ────────────────────
+  // ── 2. Open the run surface via the sidebar run history ──────────────────
   //
-  // Open the demo workflow card in Library to load its run history, then click
-  // the "Live Run" button on the newly created run card. This causes App.tsx to
-  // call openLiveRun(runId) → LiveRunView mounts with the runId → event
-  // listeners are registered BEFORE the run starts.
+  // Unified workspace (DEC-011): select the demo workflow in the sidebar to
+  // load its run history, then click the run card. This mounts RunPanel with
+  // the runId → event listeners are registered BEFORE the run starts.
 
-  describe('LiveRunView navigation (UI)', () => {
+  describe('Run surface navigation (UI)', () => {
     before(async () => {
-      // Navigate to Library view via keyboard shortcut '4'.
-      await browser.keys(['4']);
+      // The sidebar is always visible — no view navigation needed.
       await browser.pause(500);
     });
 
-    it('Library view is visible', async () => {
+    it('workflow sidebar is visible', async () => {
       const list = await $('[data-testid="workflow-list"]');
       await expect(list).toExist();
     });
@@ -132,30 +130,30 @@ describe('Agent Arcade — human review gate', () => {
       await expect(runCard).toExist();
     });
 
-    it('clicking "Live Run" button navigates to LiveRunView with the run ID', async () => {
-      const liveRunBtn = await $(`[data-testid="open-liverun-${runId}"]`);
-      await expect(liveRunBtn).toExist();
-      await liveRunBtn.click();
+    it('clicking the run card opens the run surface with the run ID', async () => {
+      const runCard = await $(`[data-testid="run-card-${runId}"]`);
+      await expect(runCard).toExist();
+      await runCard.click();
 
-      // Give React time to navigate, for LiveRunView to mount, and for all four
-      // listen() calls inside subscribe() to complete their async IPC registration.
+      // Give React time to mount RunPanel and for the listen() calls inside
+      // subscribe() to complete their async IPC registration.
       // WebKitGTK software rendering can be slower — 4s is conservative.
       await browser.pause(4000);
 
-      // Confirm LiveRunView is now showing.
-      const view = await $('.live-run-view');
+      // Confirm the run surface is now showing.
+      const view = await $('[data-testid="run-panel"]');
       await expect(view).toExist();
 
-      // Run HUD should be visible (not the placeholder).
+      // Run strip should be visible.
       const hud = await $('[data-testid="run-hud"]');
       await expect(hud).toExist();
     });
   });
 
-  // ── 3. Start the run (LiveRunView is now subscribed to events) ────────────
+  // ── 3. Start the run (RunPanel is now subscribed to events) ───────────────
 
   describe('Run start (IPC)', () => {
-    it('starts the run after LiveRunView is mounted', async () => {
+    it('starts the run after RunPanel is mounted', async () => {
       await tauriInvoke('start_run', { runId: runId });
 
       // Give the background task time to advance past the stub nodes.

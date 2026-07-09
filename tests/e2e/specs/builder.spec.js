@@ -46,15 +46,17 @@ describe('Agent Arcade — builder flow', () => {
 
   describe('Node creation via palette', () => {
     before(async () => {
-      // Give the app time to finish initial render and register keyboard listeners.
+      // Give the app time to finish initial render and load the library.
+      // The unified workspace (DEC-011) auto-opens the first workflow, so
+      // start a fresh empty canvas before building.
       await browser.pause(1500);
-      // Navigate to Builder view via keyboard shortcut '1'.
-      await browser.keys(['1']);
-      await browser.pause(1000);
+      const newBtn = await $('[data-testid="new-workflow-btn"]');
+      await newBtn.click();
+      await browser.pause(500);
     });
 
-    it('Builder view is visible', async () => {
-      const view = await $('.builder-view');
+    it('design surface is visible', async () => {
+      const view = await $('[data-testid="design-surface"]');
       await expect(view).toExist();
     });
 
@@ -89,19 +91,13 @@ describe('Agent Arcade — builder flow', () => {
 
   describe('Workflow save (UI + IPC verification)', () => {
     it('clicking Save shows "Saved" status', async () => {
-      // Find the Save button in the builder toolbar.
-      const buttons = await $$('button.toolbar-btn');
-      let saveBtn = null;
-      for (const btn of buttons) {
-        const text = await browser.execute((el) => el.textContent.trim(), btn);
-        if (text === 'Save') { saveBtn = btn; break; }
-      }
-      expect(saveBtn).toBeTruthy();
+      const saveBtn = await $('[data-testid="save-btn"]');
+      await expect(saveBtn).toExist();
       await saveBtn.click();
       await browser.pause(500);
 
-      // Status indicator should confirm success.
-      const status = await $('.builder-status');
+      // Status indicator in the top bar should confirm success.
+      const status = await $('[data-testid="topbar-status"]');
       const text = await browser.execute((el) => el.textContent.trim(), status);
       expect(text).toBe('Saved');
     });
@@ -157,36 +153,12 @@ describe('Agent Arcade — builder flow', () => {
       expect(fetched.edges.length).toBe(6);
     });
 
-    it('loading the updated workflow in Builder renders nodes and edges', async () => {
-      // Click Load in the builder toolbar.
-      const buttons = await $$('button.toolbar-btn');
-      let loadBtn = null;
-      for (const btn of buttons) {
-        const text = await browser.execute((el) => el.textContent.trim(), btn);
-        if (text === 'Load') { loadBtn = btn; break; }
-      }
-      expect(loadBtn).toBeTruthy();
-      await loadBtn.click();
-      await browser.pause(500);
-
-      // Picker modal should appear.
-      const picker = await $('.workflow-picker');
-      await expect(picker).toExist();
-
-      // Select "Untitled Workflow" from the picker list.
-      const pickerItems = await $$('.picker-item');
-      expect(pickerItems.length).toBeGreaterThanOrEqual(2);
-
-      let clicked = false;
-      for (const item of pickerItems) {
-        const text = await browser.execute((el) => el.textContent.trim(), item);
-        if (text === 'Untitled Workflow') {
-          await item.click();
-          clicked = true;
-          break;
-        }
-      }
-      expect(clicked).toBe(true);
+    it('loading the updated workflow from the sidebar renders nodes and edges', async () => {
+      // The saved workflow appears in the always-visible sidebar. Loading it
+      // means clicking its card — no picker modal (DEC-011).
+      const card = await $(`[data-testid="workflow-card-${savedWorkflowId}"]`);
+      await expect(card).toExist();
+      await card.click();
       // Allow React Flow to lay out the loaded graph.
       await browser.pause(1500);
 
@@ -200,15 +172,9 @@ describe('Agent Arcade — builder flow', () => {
     });
   });
 
-  // ── 4. Workflow appears in Library view ──────────────────────────────────
+  // ── 4. Workflow appears in the sidebar ───────────────────────────────────
 
-  describe('Library view', () => {
-    before(async () => {
-      // Navigate to Library view via keyboard shortcut '4'.
-      await browser.keys(['4']);
-      await browser.pause(1000);
-    });
-
+  describe('Workflow sidebar', () => {
     it('workflow list is visible', async () => {
       const list = await $('[data-testid="workflow-list"]');
       await expect(list).toExist();
@@ -221,7 +187,7 @@ describe('Agent Arcade — builder flow', () => {
 
     it('card displays the correct workflow name', async () => {
       const nameEl = await $(
-        `[data-testid="workflow-card-${savedWorkflowId}"] .lib-card-name`
+        `[data-testid="workflow-card-${savedWorkflowId}"] .sidebar-card-name`
       );
       await expect(nameEl).toExist();
       // Use browser.execute for reliable text extraction (WebKitWebDriver quirk).

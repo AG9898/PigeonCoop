@@ -45,6 +45,19 @@ If a visual flourish conflicts with clarity, clarity wins.
 
 ## 4. Primary views
 
+> **DEC-011 — unified workspace.** These four "views" are no longer routed
+> screens. The app is now a single workspace: a persistent workflow sidebar
+> (the Library, §4.4), a shared top bar (workflow name, Save, Validate,
+> workspace root, one-click Run), and one stage that shows either the design
+> surface (§4.1) or the run surface (§4.2 + §4.3 merged — a run streams live
+> at the tail of its event log and is scrubbable through the same timeline
+> once you rewind or it finishes). Selecting a workflow in the sidebar loads
+> it onto the canvas; selecting a run opens the run surface; "Edit workflow"
+> returns. The section contents below still describe the required elements of
+> each surface; the routing/navigation language predates DEC-011 and is
+> superseded by ARCHITECTURE.md §10. A full rewrite of this section is
+> tracked as follow-up work in DEC-011.
+
 ### 4.1 Builder View
 Purpose: create and configure workflows.
 
