@@ -6,8 +6,6 @@
 
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from "react";
 import ReactFlow, {
-  Background,
-  BackgroundVariant,
   Controls,
   MiniMap,
   Node,
@@ -23,16 +21,18 @@ import ReactFlow, {
 import "reactflow/dist/style.css";
 import WorkflowNode, { WorkflowNodeData } from "../nodes/WorkflowNode";
 import AgentNode from "../nodes/AgentNode";
+import ToolNode from "../nodes/ToolNode";
 import type { ConditionKind, NodeKind, WorkflowDefinition } from "../../types/workflow";
 import { useCanvasKeyboard } from "../../hooks/useCanvasKeyboard";
+import { CityBackdropViewportSynced } from "./CityBackdrop";
 
-// Agent nodes render the procedural pigeon sprite (AgentNode, DEC-008); all
-// other node types remain the text-based WorkflowNode.
+// Agent and Tool nodes render procedural sprites (DEC-008); remaining node
+// types stay on the text-based WorkflowNode until their characters land.
 const NODE_TYPES: NodeTypes = {
   start:        WorkflowNode,
   end:          WorkflowNode,
   agent:        AgentNode,
-  tool:         WorkflowNode,
+  tool:         ToolNode,
   router:       WorkflowNode,
   memory:       WorkflowNode,
   human_review: WorkflowNode,
@@ -322,12 +322,8 @@ const CanvasInner = forwardRef<WorkflowCanvasHandle, WorkflowCanvasProps>(
           deleteKeyCode="Delete"
           proOptions={{ hideAttribution: true }}
         >
-          <Background
-            variant={BackgroundVariant.Dots}
-            gap={20}
-            size={1}
-            color="var(--color-border)"
-          />
+          <CityBackdropViewportSynced />
+          <div className="wf-canvas-grid" aria-hidden="true" />
           <Controls showInteractive={false} />
           <MiniMap
             nodeColor="var(--color-surface)"

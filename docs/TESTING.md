@@ -217,6 +217,16 @@ All 7 palette items render; clicking each item calls `onAddNode` with the correc
 
 **Reactflow callback capture pattern:** `WorkflowCanvas.test.tsx` uses `vi.hoisted()` to create a `hooks` object that the local `vi.mock("reactflow", ...)` factory writes into. This lets tests invoke `onConnect` and `onSelectionChange` directly without a real browser drag gesture.
 
+### Live run view test suite (UI-RUN-006)
+
+`apps/desktop/src/__tests__/LiveRunView.test.tsx` covers:
+
+**Run shell and subscriptions** — placeholder state, app-shell reachability, run HUD loading from mocked IPC, event subscription registration, listener cleanup, start/cancel keyboard shortcuts, and no real Tauri bridge calls.
+
+**Live events and graph state** — run status events, event-feed population and filtering by run ID, event-detail selection, event family color classes, timestamps, graph panel mounting, node status badges, and all 8 shared workflow node visual states (`idle`, `queued`, `running`, `waiting`, `succeeded`, `failed`, `skipped`, `paused`).
+
+**Command output and human review** — command stdout rendering through `CommandOutputPanel` while preserving generic detail for non-command events; human review request filtering, modal rendering, and approve/reject/retry decision submission through mocked `invoke()`.
+
 ### Replay view test suite (UI-RPL-004)
 
 `apps/desktop/src/__tests__/ReplayView.test.tsx` covers:

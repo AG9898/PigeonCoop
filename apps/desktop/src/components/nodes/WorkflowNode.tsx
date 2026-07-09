@@ -10,6 +10,8 @@ export interface WorkflowNodeData {
   kind: NodeKind;
   label: string;
   state?: NodeState;
+  /** Runtime-only LLM context fill percentage for AgentNode health bars. */
+  tokenPct?: number | null;
   /** True when the engine validator has flagged this node with an error. */
   invalid?: boolean;
   /** Node-kind-specific configuration, mirrors Rust NodeConfig variants. */

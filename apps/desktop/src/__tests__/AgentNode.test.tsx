@@ -63,4 +63,35 @@ describe("AgentNode", () => {
     const { container } = render(<AgentNode {...makeProps({ kind: "agent", label: "Planner" })} />);
     expect(container.querySelector("canvas.ag-node-sprite")).toBeTruthy();
   });
+
+  it("hides the token health bar when tokenPct is absent", () => {
+    const { queryByTestId } = render(
+      <AgentNode {...makeProps({ kind: "agent", label: "Planner" })} />
+    );
+    expect(queryByTestId("agent-token-health")).toBeNull();
+  });
+
+  it.each([
+    [42, "#22c55e"],
+    [60, "#f59e0b"],
+    [86, "#ef4444"],
+  ])("renders token health color for %s%% usage", (tokenPct, color) => {
+    const { getByTestId } = render(
+      <AgentNode
+        {...makeProps({ kind: "agent", label: "Planner", tokenPct })}
+      />
+    );
+    const bar = getByTestId("agent-token-health");
+    expect(bar.style.getPropertyValue("--fill")).toBe(String(tokenPct));
+    expect(bar.style.getPropertyValue("--health-color")).toBe(color);
+  });
+
+  it("keeps 85% usage in the amber threshold", () => {
+    const { getByTestId } = render(
+      <AgentNode
+        {...makeProps({ kind: "agent", label: "Planner", tokenPct: 85 })}
+      />
+    );
+    expect(getByTestId("agent-token-health").style.getPropertyValue("--health-color")).toBe("#f59e0b");
+  });
 });

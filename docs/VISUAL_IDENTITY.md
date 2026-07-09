@@ -93,7 +93,7 @@ Exact tint hex values live in `NECK_BY_STATE` — import them, never re-transcri
 `succeeded` and `failed` are single poses: draw once and hold. Do not keep alternating the tick for terminal states (matches the legacy `animation-iteration-count: 1; animation-fill-mode: forwards` behavior).
 
 ### Other node types
-Node types without dedicated characters continue using the text-based `WorkflowNode` component (icon + type abbreviation + state badge). State-based glow/ring animations from `global.css` still apply to these nodes. Procedural characters for the remaining node types are tracked in §8 — Roadmap.
+Tool nodes now use the procedural wrench-bot character (`ToolNode` + `ToolSprite`) with the same state tint and container glow language as the pigeon. Node types without dedicated characters continue using the text-based `WorkflowNode` component (icon + type abbreviation + state badge). State-based glow/ring animations from `global.css` still apply to these nodes. Procedural characters for the remaining node types are tracked in §8 — Roadmap.
 
 ---
 
@@ -147,16 +147,16 @@ The `AgentNode` component reuses `.wf-node` base classes so all existing state g
 Agent nodes that interact with an LLM provider have a finite context window. As the context fills, the agent node shows a visual health bar, communicating remaining capacity at a glance — the same way an RPG character's health bar communicates vitality.
 
 ### Data source
-Token usage is emitted as part of agent lifecycle events (`agent.completed`, `agent.response`). The Rust adapter populates `tokens_used` and `context_limit` in the event payload when the provider exposes this data. When token data is unavailable (provider does not expose it, or run has not started), the bar is hidden.
+Token usage is emitted as part of agent lifecycle events (`agent.completed`; imported/provider-normalized `agent.response` events use the same token fields when present). The payload may include `tokens_used` and `context_limit`; consumers may derive `tokens_used` from `input_tokens + output_tokens` when `context_limit` is present. When token data is unavailable (provider does not expose it, or run has not started), the bar is hidden.
 
 ### Visual specification
 - **Position:** narrow horizontal bar immediately below the sprite, above the footer
 - **Height:** 4px
-- **Width:** matches sprite width (86px at native scale)
+- **Width:** matches the rendered procedural pigeon sprite width (**78px**, 26px native grid at 3x scale)
 - **Fill colors:**
-  - 0–60% used: `#22c55e` (green — healthy)
+  - <60% used: `#22c55e` (green — healthy)
   - 60–85% used: `#f59e0b` (amber — caution)
-  - 85–100% used: `#ef4444` (red — critical)
+  - >85% used: `#ef4444` (red — critical)
 - **Background:** `var(--color-border)` (empty portion)
 - **Border-radius:** 2px
 - **Transitions:** smooth fill changes via `transition: width 0.3s ease`
@@ -165,7 +165,7 @@ Token usage is emitted as part of agent lifecycle events (`agent.completed`, `ag
 ### CSS
 ```css
 .ag-node-health-bar {
-  width: 86px;
+  width: 78px;
   height: 4px;
   border-radius: 2px;
   background: var(--color-border);
@@ -225,6 +225,8 @@ Layout contract (all values are exported consts in `cityDrawing.ts` — import, 
 - **Grid overlay:** the existing 48px CSS grid (`linear-gradient` at `--grid-color`) remains on top of the city tile, maintaining tactical-map readability — reduce its opacity if it fights the backdrop rather than removing it
 - The backdrop is static in v1 (no animation loop); any future ambient animation goes through the `CityBackdropCanvas` variant and must honor the §6 constraints above
 
+**Implementation (SPRITE-003):** `CityBackdropViewportSynced` is mounted inside the Builder and Live Run React Flow canvases so the seeded tile pans and scales with the graph viewport. React Flow's dot background is replaced by the shared `.wf-canvas-grid` 48px overlay above the tile and below graph nodes/edges. Replay's current graph-state panel is not a React Flow canvas yet, so it uses the static `CityBackdrop` variant behind derived node-state rows until the replay graph canvas is promoted.
+
 ---
 
 ## 7. Node palette preview
@@ -242,7 +244,7 @@ The target is one unique character per node type. Design priority order reflects
 | Node type | Current state | Target character concept |
 |---|---|---|
 | Agent | procedural pigeon integrated (SPRITE-002) — `AgentNode` registered for the `agent` node type in `WorkflowCanvas` | pigeon — the primary actor |
-| Tool | text-based | wrench-bot or mechanical bird |
+| Tool | procedural wrench-bot integrated (SPRITE-005 slice) — `ToolNode` registered for the `tool` node type in `WorkflowCanvas` | wrench-bot or mechanical bird |
 | Router | text-based | signpost character / traffic controller |
 | Human Review | text-based | human silhouette / overseer |
 | Memory | text-based | filing-cabinet bird or archive unit |
@@ -282,6 +284,9 @@ Each new character is authored **procedurally in code** (DEC-008) — a hand-dra
 | City backdrop CSS | `apps/desktop/src/styles/cityBackdrop.css` |
 | PigeonSprite component | `apps/desktop/src/components/nodes/PigeonSprite.tsx` |
 | AgentNode component | `apps/desktop/src/components/nodes/AgentNode.tsx` |
+| Tool drawing module | `apps/desktop/src/components/canvas/toolDrawing.ts` |
+| ToolSprite component | `apps/desktop/src/components/nodes/ToolSprite.tsx` |
+| ToolNode component | `apps/desktop/src/components/nodes/ToolNode.tsx` |
 | Shared animation tick hook | `apps/desktop/src/hooks/useAnimationTick.ts` |
 | Sprite CSS | `apps/desktop/src/styles/global.css` (ag-node section) |
 | WorkflowCanvas registration | `apps/desktop/src/components/canvas/WorkflowCanvas.tsx` |

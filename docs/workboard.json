@@ -1,7 +1,7 @@
 {
   "project": {
     "name": "PigeonCoop",
-    "updated_at": "2026-07-08T00:00:00Z",
+    "updated_at": "2026-07-09T16:07:31Z",
     "source_docs": [
       "docs/README.md",
       "docs/PRD.md",
@@ -1908,11 +1908,11 @@
       "id": "UI-RUN-006",
       "group_id": "UI-RUN",
       "title": "Live run view component tests",
-      "status": "todo",
+      "status": "done",
       "priority": "medium",
       "type": "testing",
-      "summary": "Live Run tests cover HUD, event streaming, and review interactions; command-output specific assertions remain pending.",
-      "description": "Mock Tauri event subscriptions and invoke(). The current tests cover placeholder state, HUD loading, event subscriptions, event-feed population, event-detail selection, and human-review shortcuts. Dedicated stdout/stderr output-panel assertions remain pending because the live view still uses a generic detail panel.",
+      "summary": "Live Run tests cover HUD, event streaming, graph visual states, command output, and review interactions.",
+      "description": "Mock Tauri event subscriptions and invoke(). The tests cover placeholder state, HUD loading, event subscriptions, event-feed population, event-detail selection, all shared workflow node visual states, command stdout rendering, and human-review approve/reject/retry decisions.",
       "acceptance_criteria": [
         "npm test passes for live run tests",
         "All 8 node state visuals are tested",
@@ -3088,7 +3088,7 @@
       "id": "SPRITE-003",
       "group_id": "SPRITE",
       "title": "City backdrop canvas layer — integrate handoff modules",
-      "status": "todo",
+      "status": "done",
       "priority": "medium",
       "type": "implementation",
       "summary": "Integrate the procedural pixel-art city backdrop from the design handoff behind the React Flow canvas: cityDrawing.ts, CityBackdrop.tsx, and cityBackdrop.css, using the viewport-synced variant.",
@@ -3134,7 +3134,7 @@
       "id": "SPRITE-004",
       "group_id": "SPRITE",
       "title": "Context/token usage health bar on agent nodes",
-      "status": "todo",
+      "status": "done",
       "priority": "medium",
       "type": "implementation",
       "summary": "Add a health-bar style overlay to AgentNode that visualizes LLM context window fill percentage derived from token usage events.",
@@ -3154,9 +3154,7 @@
         "SPRITE-002",
         "UI-RUN-001"
       ],
-      "blocked_by": [
-        "SPRITE-002"
-      ],
+      "blocked_by": [],
       "files": [
         "apps/desktop/src/components/nodes/AgentNode.tsx",
         "apps/desktop/src/views/LiveRunView.tsx",
@@ -3181,7 +3179,7 @@
       "id": "SPRITE-005",
       "group_id": "SPRITE",
       "title": "Full node type sprite coverage — procedural characters",
-      "status": "todo",
+      "status": "done",
       "priority": "low",
       "type": "implementation",
       "summary": "Author and integrate procedural pixel-art characters for the remaining node types (Tool, Router, HumanReview, Memory, Start, End) following the pigeonDrawing.ts pattern.",
@@ -3222,7 +3220,7 @@
       "id": "UI-RUN-009",
       "group_id": "UI-RUN",
       "title": "Wire CommandOutputPanel into LiveRunView",
-      "status": "todo",
+      "status": "done",
       "priority": "medium",
       "type": "implementation",
       "summary": "Integrate CommandOutputPanel into the live run view layout, feeding it command events from the existing events state.",

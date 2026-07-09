@@ -129,7 +129,7 @@ The feed auto-scrolls to the latest event. Clicking an event selects it and popu
 - wraps output in a scrollable `<pre>` (`max-height: 320px`) with `user-select: text` so all output is copyable
 - shows a placeholder ("No command output for this run.") when no stdout/stderr events are present
 
-Wiring the panel into `LiveRunView` (selecting the current run's command events and passing them as the `events` prop) is a separate task (UI-RUN-009).
+`LiveRunView` selects the current run's `command.*` events with `useMemo` and passes them to `CommandOutputPanel` in the existing detail column. The command output panel renders when command events are present and no non-command event is selected; selecting a non-command event keeps the generic event detail inspector visible.
 
 ### 4.3 Replay View
 Purpose: inspect completed runs.

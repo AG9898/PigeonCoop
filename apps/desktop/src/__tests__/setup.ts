@@ -43,6 +43,7 @@ if (typeof HTMLCanvasElement !== "undefined") {
     set imageSmoothingEnabled(_v: unknown) {},
     get imageSmoothingEnabled() { return false; },
   })) as unknown as typeof HTMLCanvasElement.prototype.getContext;
+  HTMLCanvasElement.prototype.toDataURL = vi.fn(() => "data:image/png;base64,");
 }
 
 // Mock reactflow: jsdom lacks ResizeObserver and SVG APIs required by the
@@ -76,4 +77,5 @@ vi.mock("reactflow", () => ({
     };
     return () => instance;
   })(),
+  useViewport: () => ({ x: 0, y: 0, zoom: 1 }),
 }));
