@@ -1842,7 +1842,7 @@
       "id": "UI-RUN-004",
       "group_id": "UI-RUN",
       "title": "CommandOutputPanel component",
-      "status": "todo",
+      "status": "done",
       "priority": "medium",
       "type": "implementation",
       "summary": "Build a standalone CommandOutputPanel React component that accumulates and renders stdout/stderr chunks from command events.",

@@ -1431,6 +1431,93 @@ body {
   max-height: 300px;
 }
 
+/* ── Command Output Panel (Live Run View) ──────────────────────────── */
+
+.cop-root {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.5rem;
+  overflow-y: auto;
+}
+
+.cop-root--empty {
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.cop-empty {
+  color: var(--color-text-muted);
+  font-size: 0.65rem;
+}
+
+.cop-section {
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  background: var(--color-bg);
+  box-shadow: var(--shadow-panel);
+  overflow: hidden;
+}
+
+.cop-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.3rem 0.5rem;
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-surface);
+}
+
+.cop-section-label {
+  font-size: 0.55rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: var(--color-text-muted);
+}
+
+.cop-section--stdout .cop-section-label {
+  color: var(--ev-command);
+}
+
+.cop-section--stderr .cop-section-label {
+  color: #ef4444;
+}
+
+.cop-toggle {
+  font-size: 0.55rem;
+  color: var(--color-text-muted);
+  background: transparent;
+  border: 1px solid var(--color-border);
+  border-radius: 3px;
+  padding: 0.1rem 0.4rem;
+  cursor: pointer;
+}
+
+.cop-toggle:hover {
+  color: var(--color-text);
+  border-color: var(--color-accent);
+}
+
+.cop-pre {
+  font-family: "JetBrains Mono", "Fira Code", monospace;
+  font-size: 0.6rem;
+  white-space: pre-wrap;
+  word-break: break-all;
+  color: var(--color-text);
+  background: var(--color-surface);
+  padding: 0.5rem;
+  margin: 0;
+  max-height: 320px;
+  overflow-y: auto;
+  user-select: text;
+}
+
+.cop-pre--stderr {
+  color: #f87171;
+}
+
 /* ── Event detail panel (Live Run View) ────────────────────────────── */
 .lr-detail-content {
   padding: 0.5rem;

@@ -118,6 +118,19 @@ Events are color-coded by family — the prefix before the dot in `event_type`. 
 
 The feed auto-scrolls to the latest event. Clicking an event selects it and populates the detail panel with the full event payload.
 
+#### Command output panel
+
+`CommandOutputPanel` (`components/panels/CommandOutputPanel.tsx`) is a self-contained component that accepts a filtered `RunEvent[]` and derives its display with no dependency on `LiveRunView` internals. It:
+
+- filters for `event_type == "command.stdout"` and `"command.stderr"`, reading `payload.chunk` (string) and `payload.byte_offset` (number) from each event; events with a malformed payload are ignored
+- concatenates each stream's chunks in ascending `byte_offset` order (not event arrival order) — this tolerates out-of-order delivery
+- renders stdout and stderr as separate sections (`cop-section--stdout` / `cop-section--stderr`), each with its own header label and colour (`--ev-command` purple for stdout, red for stderr) so the two streams are distinguishable without relying on position alone
+- collapses a stream to its first 20 lines by default once it exceeds 20 lines, with a toggle button (`Show all (N lines)` / `Collapse`) in the section header; short streams render fully with no toggle
+- wraps output in a scrollable `<pre>` (`max-height: 320px`) with `user-select: text` so all output is copyable
+- shows a placeholder ("No command output for this run.") when no stdout/stderr events are present
+
+Wiring the panel into `LiveRunView` (selecting the current run's command events and passing them as the `events` prop) is a separate task (UI-RUN-009).
+
 ### 4.3 Replay View
 Purpose: inspect completed runs.
 
