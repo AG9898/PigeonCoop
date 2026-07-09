@@ -73,16 +73,14 @@ async function pollUntil(command, args, predicate, { intervalMs = 500, timeoutMs
 describe('Agent Arcade — run flow and node state transitions', () => {
   let runId = null;
 
-  // ── 1. Library view shows the demo workflow ──────────────────────────────
+  // ── 1. Workflow sidebar shows the demo workflow ──────────────────────────
+  // The unified workspace (DEC-011) has no view routing: the sidebar is
+  // always visible, so no keyboard navigation is needed.
 
-  describe('Library view', () => {
+  describe('Workflow sidebar', () => {
     before(async () => {
-      // Give the app time to finish initial render and register keyboard listeners
-      // before sending the navigation shortcut. The first session has no warmup.
+      // Give the app time to finish initial render and load the library.
       await browser.pause(1500);
-      // Navigate to Library view via keyboard shortcut '4'.
-      await browser.keys(['4']);
-      await browser.pause(1000);
     });
 
     it('shows the demo workflow card', async () => {
@@ -96,7 +94,7 @@ describe('Agent Arcade — run flow and node state transitions', () => {
     it('demo workflow card displays the correct name', async () => {
       // Use browser.execute to read textContent directly — WebKitWebDriver's
       // getText() can return an empty string for certain CSS-rendered spans.
-      const nameEl = await $(`[data-testid="workflow-card-${DEMO_WORKFLOW_ID}"] .lib-card-name`);
+      const nameEl = await $(`[data-testid="workflow-card-${DEMO_WORKFLOW_ID}"] .sidebar-card-name`);
       await expect(nameEl).toExist();
       const text = await browser.execute((el) => el.textContent.trim(), nameEl);
       expect(text.length).toBeGreaterThan(0);
@@ -185,50 +183,59 @@ describe('Agent Arcade — run flow and node state transitions', () => {
     });
   });
 
-  // ── 3. Live Run view UI ──────────────────────────────────────────────────
+  // ── 3. Run surface UI ────────────────────────────────────────────────────
+  // In the unified workspace, opening a run is: select the workflow in the
+  // sidebar → click the run card that appears under it. The same surface
+  // covers live monitoring and replay (DEC-011).
 
-  describe('Live Run view', () => {
+  describe('Run surface', () => {
     before(async () => {
-      // Navigate to Live Run view via keyboard shortcut '2'.
-      await browser.keys(['2']);
+      // Select the demo workflow so its runs list loads in the sidebar.
+      const card = await $(`[data-testid="workflow-card-${DEMO_WORKFLOW_ID}"]`);
+      await card.click();
+      await browser.pause(500);
+
+      // Open the run created via IPC earlier.
+      const runCard = await $(`[data-testid="run-card-${runId}"]`);
+      await runCard.waitForExist({ timeout: 10000 });
+      await runCard.click();
       await browser.pause(500);
     });
 
-    it('live run view is reachable and rendered', async () => {
-      const view = await $('.live-run-view');
-      await expect(view).toExist();
+    it('run surface renders with the run strip', async () => {
+      const panel = await $('[data-testid="run-panel"]');
+      await expect(panel).toExist();
+      const hud = await $('[data-testid="run-hud"]');
+      await expect(hud).toExist();
     });
 
-    it('shows LIVE RUN title in the header', async () => {
-      const title = await $('.view-title');
-      const text = await title.getText();
-      expect(text).toBe('LIVE RUN');
+    it('run strip shows paused status for the review-gated run', async () => {
+      const statusEl = await $('[data-testid="run-status"]');
+      await statusEl.waitForExist({ timeout: 5000 });
+      const text = await browser.execute((el) => el.textContent.trim(), statusEl);
+      expect(['paused', 'running']).toContain(text);
     });
 
-    // NOTE: The UI path for starting a run now exists in LibraryView, but this
-    // spec still bypasses it and drives the run through IPC. That means the
-    // live view here is only partially wired to the active run unless the test
-    // also navigates through the UI-owned run-selection state.
+    it('event feed backfills the persisted event log', async () => {
+      const list = await $('[data-testid="event-list"]');
+      await expect(list).toExist();
+      // The run already produced node lifecycle events via IPC — the panel
+      // must show them even though it was opened mid-flight.
+      await browser.waitUntil(async () => {
+        const items = await $$('[data-testid="event-list"] .lr-event-item');
+        return items.length > 0;
+      }, { timeout: 10000, timeoutMsg: 'event feed stayed empty' });
+    });
 
-    it('HumanReviewPanel appears when run_id is linked to the view', async () => {
-      // This remains limited by how the spec injects run state: the panel only
-      // renders when the active runId is linked through the UI shell.
+    it('HumanReviewPanel appears for the paused run', async () => {
       const panel = await $('[data-testid="human-review-panel"]');
-      // Expect not to exist when no runId is passed to LiveRunView.
-      const exists = await panel.isExisting();
+      await panel.waitForExist({ timeout: 10000 });
 
-      if (!exists) {
-        // Correct: no run linked via UI — placeholder is shown.
-        const placeholder = await $('.view-placeholder');
-        await expect(placeholder).toExist();
-      } else {
-        // Panel is present — run is linked (ideal future state).
-        const nodeLabel = await $('[data-testid="hr-node-label"]');
-        const labelText = await nodeLabel.getText();
-        expect(labelText).toBeTruthy();
-        const approveBtn = await $('[data-testid="hr-btn-approve"]');
-        await expect(approveBtn).toExist();
-      }
+      const nodeLabel = await $('[data-testid="hr-node-label"]');
+      const labelText = await browser.execute((el) => el.textContent.trim(), nodeLabel);
+      expect(labelText).toBeTruthy();
+      const approveBtn = await $('[data-testid="hr-btn-approve"]');
+      await expect(approveBtn).toExist();
     });
   });
 

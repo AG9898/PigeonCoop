@@ -25,10 +25,10 @@ The architecture is intentionally optimized for:
 |                                                          |
 |  +-------------------+        +-----------------------+  |
 |  | React/TS UI       | <----> | Tauri Bridge         |  |
-|  | - Builder View    |        | commands / events    |  |
-|  | - Live Run View   |        +----------+------------+  |
-|  | - Replay View     |                   |               |
-|  | - Library View    |                   v               |
+|  | - Sidebar (lib)   |        | commands / events    |  |
+|  | - Design surface  |        +----------+------------+  |
+|  | - Run surface     |                   |               |
+|  |   (live + replay) |                   v               |
 |  +-------------------+        +-----------------------+  |
 |                               | Rust Core Engine      |  |
 |                               | - workflow validator  |  |
@@ -384,7 +384,25 @@ This flow must be reconstructable from persisted events.
 
 ## 10. UI architecture
 
-### 10.1 Builder View
+**Unified workspace (DEC-011).** The frontend is a single screen, not four
+routed views. `App.tsx` composes three regions:
+
+- **Workflow sidebar** (`components/sidebar/WorkflowSidebar.tsx`) — the
+  always-visible library: workflow list (new/import/export) with the selected
+  workflow expanded to show its run history.
+- **Top bar** — workflow name (editable), Save (Ctrl+S), Validate, the
+  persisted workspace-root input, and a one-click **Run** button
+  (save → `create_run` → `start_run` → open run surface).
+- **Stage** — shows exactly one of:
+  - `views/DesignSurface.tsx` (edit mode) when a workflow is selected, or
+  - `views/RunPanel.tsx` (run surface) when a run is selected.
+
+Selecting a workflow in the sidebar loads it onto the canvas; selecting a run
+overlays the run surface; "Edit workflow" returns to the canvas. The former
+Builder / Live Run / Replay / Library views map onto these surfaces as
+described below.
+
+### 10.1 Design surface (formerly Builder View)
 Purpose:
 - author workflows
 - configure nodes/edges
@@ -394,70 +412,52 @@ Key panels:
 - canvas
 - node palette
 - property inspector
-- validation/errors panel
+- validation/errors overlay (floats over the canvas)
 
-### 10.2 Live Run View
+Implementation notes:
+- `views/DesignSurface.tsx` exposes a `buildWorkflow(id, name)` imperative
+  handle; the App top bar owns Save/Validate and pulls flow data through it.
+- `flowToWorkflow()` (exported from the same module) converts React Flow
+  state to a `WorkflowDefinition`.
+
+### 10.2 Run surface (formerly Live Run View + Replay View)
 Purpose:
-- monitor active execution
+- monitor active execution and inspect completed runs — one surface
 
 Key panels:
-- animated graph state
-- active node details
-- event feed
-- workspace/run summary
+- read-only graph with event-derived node state overlays (same canvas
+  geometry the workflow was designed on)
+- run strip: status, workflow name, run id, workspace, elapsed, start/cancel
+- timeline dock: scrubber + LIVE badge, event feed, detail tabs
+  (EVENT → `EventInspector`, OUTPUT → `CommandOutputPanel`)
+- embedded agent session terminal (DEC-009) docked under the graph
 
-Implementation notes (UI-RUN-001):
-- `apps/desktop/src/views/LiveRunView.tsx`
-- Accepts `runId: string | null` prop from App shell
-- On mount/runId change, calls `ipc.getRun()` and `ipc.getWorkflow()` to populate the HUD
-- Subscribes to three Tauri events via `listen()`: `run_status_changed`, `node_status_changed`, `run_event_appended`
-- All state is derived from received events — the UI never polls
-- Run HUD displays: run_id (truncated), workflow name, run status, workspace_root, elapsed time (live ticker)
-- Four-column panel layout: live graph, node status list, event feed (auto-scrolling), event detail inspector
-- Clicking an event in the feed reveals its full payload in the detail panel
-- Listeners filter by `runId` so multiple runs do not cross-contaminate
-- Cleanup: all `UnlistenFn` handles called on unmount or runId change
-- `openLiveRun(runId)` callback added to `App.tsx` for future navigation from Library/Builder
+Implementation notes:
+- `apps/desktop/src/views/RunPanel.tsx`; accepts `runId: string` plus an
+  `onRunStatusChange` callback so the sidebar run chips stay in sync
+- On mount/runId change: `ipc.getRun()`, `ipc.getWorkflow()`, then
+  **backfills the persisted event log** via `ipc.listEventsForRun()` so runs
+  opened mid-flight (or after completion) show full history
+- Subscribes via `listen()` to `run_status_changed`, `run_event_appended`,
+  `human_review_requested`; streamed events are deduped against the backfill
+  by `event_id`; a 2s polling fallback covers unreliable event delivery
+- **Live and replay are the same derivation**: node states come from
+  `deriveNodeStates(events, index)` and token usage from
+  `deriveTokenPcts(events, index)` (`src/state/`); following the live tail
+  means `index = events.length - 1`, scrubbing just picks an earlier index
+- Scrub state: `null` = follow tail (auto-scroll feed, LIVE badge on active
+  runs); a number = rewound (jump-to-latest button appears)
+- `toVisualState()` maps backend `NodeStatus` to the 8 visual states; all 8
+  have distinct CSS styles in `global.css`; active edges animate
+- Listeners filter by `runId`; all `UnlistenFn` handles released on unmount
 
-Implementation notes (UI-RUN-002):
-- `LiveGraph` sub-component renders a read-only React Flow graph inside the live view
-- Fetched `WorkflowDefinition` provides node positions and edges; `nodeStatuses` map drives visual state
-- `toVisualState()` maps backend `NodeStatus` to the 8 visual states: idle, queued, running, waiting, succeeded, failed, skipped, paused
-- All 8 states have distinct CSS styles in `global.css`: dashed border (queued), pulse glow (running), amber (waiting), green ring (succeeded), red flash (failed), dimmed (skipped), orange blink (paused)
-- Active edges (source node running/waiting) use React Flow's `animated: true` + accent stroke
-- Graph is non-interactive (no drag/connect/select) — read-only monitoring
-
-### 10.3 Replay View
+### 10.3 Workflow sidebar (formerly Library View)
 Purpose:
-- inspect completed runs
+- manage workflows and run history; the only navigation surface
 
 Key panels:
-- timeline scrubber
-- event inspector
-- event list
-- command/payload details
-
-Implementation notes (UI-RPL-001):
-- `apps/desktop/src/views/ReplayView.tsx`
-- Accepts `runId: string | null` prop from App shell
-- On mount/runId change, the frontend currently calls `invoke("list_events_for_run", { runId, offset, limit })`
-- The matching Tauri command is not yet registered, so replay wiring is currently ahead of the backend IPC surface
-- All replay state is intended to be derived from the persisted event sequence — never from live engine state
-- Scrubber starts at index 0 (first event); prev/next buttons + range input control position
-- Current frontend implementation renders the event list, selected-event detail, and scrubber chrome
-- Graph playback and diff panes remain planned work on top of the current shell
-- Accessible from Library view via "Open in Replay" button (`LibraryView.onOpenReplay` callback)
-- `RunEvent` and `RunInstance` types defined in `apps/desktop/src/types/workflow.ts`
-
-### 10.4 Library View
-Purpose:
-- manage workflows and run history
-
-Key panels:
-- workflow list
-- versions
-- recent runs
-- import/export controls
+- workflow list with new/import/export
+- run history under the selected workflow (status chips, click to open)
 
 ---
 

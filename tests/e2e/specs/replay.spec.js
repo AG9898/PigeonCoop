@@ -107,17 +107,16 @@ describe('Agent Arcade — replay flow', () => {
     });
   });
 
-  // ── 2. Navigate to Replay via Library ─────────────────────────────────────
+  // ── 2. Open the completed run from the sidebar (DEC-011) ─────────────────
+  // Replay is not a separate view: opening any run shows the unified run
+  // surface, and a finished run is scrubbable through its full timeline.
 
-  describe('Library → Replay navigation', () => {
+  describe('Sidebar → run surface navigation', () => {
     before(async () => {
-      // Navigate to Library view via keyboard shortcut '4'.
-      await browser.pause(1000);
-      await browser.keys(['4']);
       await browser.pause(1000);
     });
 
-    it('Library view shows the demo workflow card', async () => {
+    it('sidebar shows the demo workflow card', async () => {
       const card = await $(`[data-testid="workflow-card-${DEMO_WORKFLOW_ID}"]`);
       await expect(card).toExist();
     });
@@ -133,33 +132,25 @@ describe('Agent Arcade — replay flow', () => {
       await expect(runCard).toExist();
     });
 
-    it('clicking Replay button opens ReplayView with the completed run', async () => {
-      const replayBtn = await $(`[data-testid="open-replay-${runId}"]`);
-      await expect(replayBtn).toExist();
-      await replayBtn.click();
+    it('clicking the run card opens the run surface with the completed run', async () => {
+      const runCard = await $(`[data-testid="run-card-${runId}"]`);
+      await runCard.click();
 
-      // Wait for ReplayView to mount and load events.
+      // Wait for RunPanel to mount and load events.
       await browser.pause(3000);
 
-      // Confirm ReplayView is showing.
-      const view = await $('.replay-view');
+      const view = await $('[data-testid="run-panel"]');
       await expect(view).toExist();
     });
   });
 
-  // ── 3. ReplayView loads events for the completed run ──────────────────────
+  // ── 3. Run surface loads events for the completed run ─────────────────────
 
-  describe('Replay view opens a completed run', () => {
-    it('displays REPLAY title', async () => {
-      const title = await $('.view-title');
-      const text = await browser.execute((el) => el.textContent.trim(), title);
-      expect(text).toBe('REPLAY');
-    });
-
-    it('subtitle shows the run ID', async () => {
-      const subtitle = await $('.view-subtitle');
-      const text = await browser.execute((el) => el.textContent.trim(), subtitle);
-      expect(text).toContain(runId);
+  describe('Run surface opens a completed run', () => {
+    it('run strip shows the succeeded status', async () => {
+      const statusEl = await $('[data-testid="run-status"]');
+      const text = await browser.execute((el) => el.textContent.trim(), statusEl);
+      expect(text).toBe('succeeded');
     });
 
     it('event list is populated with events', async () => {
@@ -171,8 +162,8 @@ describe('Agent Arcade — replay flow', () => {
       expect(items.length).toBeGreaterThan(0);
     });
 
-    it('graph state panel is visible', async () => {
-      const panel = await $('[data-testid="graph-state-panel"]');
+    it('run graph is visible', async () => {
+      const panel = await $('[data-testid="live-graph"]');
       await expect(panel).toExist();
     });
 
@@ -185,6 +176,11 @@ describe('Agent Arcade — replay flow', () => {
   // ── 4. Timeline scrubbing changes node states on the graph ────────────────
 
   describe('Timeline scrubbing changes node states', () => {
+    // Node states now render directly on the run graph: each node carries a
+    // `wf-node--<state>` class derived from the event log at the scrub point.
+    const countTerminalNodes = async () =>
+      (await $$('[data-testid="live-graph"] .wf-node--succeeded, [data-testid="live-graph"] .wf-node--failed')).length;
+
     it('scrubbing to the last event shows completed node states', async () => {
       // Click the "go to last" button to scrub to the final event.
       const lastBtn = await $('button[aria-label="go to last event"]');
@@ -192,17 +188,9 @@ describe('Agent Arcade — replay flow', () => {
       await lastBtn.click();
       await browser.pause(500);
 
-      // At the last event, multiple nodes should have reached terminal states.
-      // The plan node should show as succeeded.
-      const planState = await $(`[data-testid="node-state-${NODE.plan}"]`);
-      const planExists = await planState.isExisting();
-      if (planExists) {
-        const badge = await browser.execute(
-          (el) => el.querySelector('.node-state-badge')?.textContent?.trim(),
-          planState
-        );
-        expect(badge).toBe('succeeded');
-      }
+      // At the last event, at least one node should be terminal on the graph.
+      const count = await countTerminalNodes();
+      expect(count).toBeGreaterThan(0);
     });
 
     it('scrubbing to the first event reduces visible node states', async () => {
@@ -212,20 +200,16 @@ describe('Agent Arcade — replay flow', () => {
       await firstBtn.click();
       await browser.pause(500);
 
-      // At the very first event (typically a run.started event), there
-      // should be fewer (or no) node states than at the end.
-      const nodeStatesAtStart = await $$('[data-testid="graph-state-panel"] .node-state-item');
-      const startCount = nodeStatesAtStart.length;
+      const startCount = await countTerminalNodes();
 
       // Scrub back to last to count states there.
       const lastBtn = await $('button[aria-label="go to last event"]');
       await lastBtn.click();
       await browser.pause(500);
 
-      const nodeStatesAtEnd = await $$('[data-testid="graph-state-panel"] .node-state-item');
-      const endCount = nodeStatesAtEnd.length;
+      const endCount = await countTerminalNodes();
 
-      // End of run should have more node states than the beginning.
+      // End of run should have more terminal nodes than the beginning.
       expect(endCount).toBeGreaterThanOrEqual(startCount);
     });
 
@@ -235,7 +219,7 @@ describe('Agent Arcade — replay flow', () => {
       await firstBtn.click();
       await browser.pause(300);
 
-      const initialCount = (await $$('[data-testid="graph-state-panel"] .node-state-item')).length;
+      const initialCount = await countTerminalNodes();
 
       // Click "next" several times to advance through node events.
       const nextBtn = await $('button[aria-label="next event"]');
@@ -243,12 +227,12 @@ describe('Agent Arcade — replay flow', () => {
       for (let i = 0; i < 10; i++) {
         await nextBtn.click();
         await browser.pause(200);
-        const currentCount = (await $$('[data-testid="graph-state-panel"] .node-state-item')).length;
+        const currentCount = await countTerminalNodes();
         if (currentCount > maxCount) maxCount = currentCount;
       }
 
       // After stepping forward through several events, we should have seen
-      // at least one new node state appear.
+      // at least one new terminal node appear.
       expect(maxCount).toBeGreaterThanOrEqual(initialCount);
     });
 
@@ -258,16 +242,16 @@ describe('Agent Arcade — replay flow', () => {
       await lastBtn.click();
       await browser.pause(300);
 
-      const endCount = (await $$('[data-testid="graph-state-panel"] .node-state-item')).length;
+      const endCount = await countTerminalNodes();
 
       // Go back to the first event.
       const firstBtn = await $('button[aria-label="go to first event"]');
       await firstBtn.click();
       await browser.pause(300);
 
-      const startCount = (await $$('[data-testid="graph-state-panel"] .node-state-item')).length;
+      const startCount = await countTerminalNodes();
 
-      // Start should have fewer or equal node states compared to end.
+      // Start should have fewer or equal terminal nodes compared to end.
       expect(startCount).toBeLessThanOrEqual(endCount);
     });
   });

@@ -173,23 +173,19 @@ describe('Agent Arcade — failure handling', () => {
     });
   });
 
-  // ── 2. Navigate to LiveRunView via Library run history ────────────────────
+  // ── 2. Open the run surface via the sidebar run history ──────────────────
   //
-  // Open the new workflow's card in Library to load its run history, then
-  // click the "Live Run" button on the pre-created run card. This causes
-  // App.tsx to call openLiveRun(runId) → LiveRunView mounts with the runId →
-  // event listeners are registered BEFORE the run starts, matching the
-  // pattern established by review.spec.js (TEST-004).
+  // Unified workspace (DEC-011): select the failure workflow in the sidebar
+  // to load its run history, then click the pre-created run card. RunPanel
+  // mounts with the runId → event listeners are registered BEFORE the run
+  // starts, matching the pattern established by review.spec.js (TEST-004).
 
-  describe('LiveRunView navigation (UI)', () => {
+  describe('Run surface navigation (UI)', () => {
     before(async () => {
-      // Navigate to Library view via keyboard shortcut '4'.
       await browser.pause(1000);
-      await browser.keys(['4']);
-      await browser.pause(500);
     });
 
-    it('Library view is visible', async () => {
+    it('workflow sidebar is visible', async () => {
       const list = await $('[data-testid="workflow-list"]');
       await expect(list).toExist();
     });
@@ -210,17 +206,17 @@ describe('Agent Arcade — failure handling', () => {
       await expect(runCard).toExist();
     });
 
-    it('clicking "Live Run" button navigates to LiveRunView with the run ID', async () => {
-      const liveRunBtn = await $(`[data-testid="open-liverun-${runId}"]`);
-      await expect(liveRunBtn).toExist();
-      await liveRunBtn.click();
+    it('clicking the run card opens the run surface with the run ID', async () => {
+      const runCard = await $(`[data-testid="run-card-${runId}"]`);
+      await expect(runCard).toExist();
+      await runCard.click();
 
-      // Give React time to navigate, for LiveRunView to mount, and for all
-      // listen() calls inside subscribe() to complete their async IPC
-      // registration. WebKitGTK software rendering can be slower.
+      // Give React time to mount RunPanel and for the listen() calls inside
+      // subscribe() to complete their async IPC registration. WebKitGTK
+      // software rendering can be slower.
       await browser.pause(4000);
 
-      const view = await $('.live-run-view');
+      const view = await $('[data-testid="run-panel"]');
       await expect(view).toExist();
 
       const hud = await $('[data-testid="run-hud"]');
@@ -231,7 +227,7 @@ describe('Agent Arcade — failure handling', () => {
   // ── 3. Start the run and wait for it to fail ───────────────────────────────
 
   describe('Run start and failure (IPC)', () => {
-    it('starts the run after LiveRunView is mounted', async () => {
+    it('starts the run after RunPanel is mounted', async () => {
       await tauriInvoke('start_run', { runId: runId });
       await browser.pause(500);
     });
@@ -296,9 +292,16 @@ describe('Agent Arcade — failure handling', () => {
       await expect(failedNode).toExist();
     });
 
-    it('the failed node is listed with the fail status class in the node panel', async () => {
-      const statusEl = await $('.lr-node-status--fail');
-      await expect(statusEl).toExist();
+    it('a node.failed event is visible in the event feed', async () => {
+      // The separate node panel was folded into the graph (DEC-011); the
+      // failure is asserted on the graph above and in the event feed here.
+      const feedItems = await $$('[data-testid="event-list"] .lr-event-item');
+      let sawFailed = false;
+      for (const item of feedItems) {
+        const text = await browser.execute((el) => el.textContent, item);
+        if (text.includes('node.failed')) { sawFailed = true; break; }
+      }
+      expect(sawFailed).toBe(true);
     });
 
     it('run status HUD reflects Failed', async () => {
