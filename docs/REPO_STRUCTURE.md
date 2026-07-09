@@ -89,7 +89,8 @@ crates/
       review/
   runtime-adapters/
     src/
-      agent.rs        # Agent CLI adapter (ADAPT-003)
+      agent.rs             # Agent CLI adapter, pipe path (ADAPT-003)
+      agent_interactive.rs # Interactive PTY claude sessions (DEC-009)
       cli/
       mock/
       tools/

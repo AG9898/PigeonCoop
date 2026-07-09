@@ -33,6 +33,7 @@ import type {
 import { ipc } from "../types/ipc";
 import { HumanReviewPanel } from "../components/panels/HumanReviewPanel";
 import { CommandOutputPanel } from "../components/panels/CommandOutputPanel";
+import { AgentSessionTerminal } from "../components/panels/AgentSessionTerminal";
 import { CityBackdropViewportSynced } from "../components/canvas/CityBackdrop";
 
 // Agent nodes render the procedural pigeon and runtime token health bar.
@@ -373,6 +374,7 @@ export function LiveRunView({ runId }: LiveRunViewProps) {
         />
       )}
       <div className="view-body lr-body">
+        <AgentSessionTerminal runId={runId} />
         {/* ── Run HUD ── */}
         <div className="lr-hud" data-testid="run-hud">
           <div className="lr-hud-row">

@@ -3,8 +3,9 @@
 // Uses key={node.id} in the parent to remount when a different node is selected,
 // which naturally resets all form state.
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { Node } from "reactflow";
+import { ipc } from "../../types/ipc";
 import type { AgentNodeConfig, NodeKind, RetryPolicy } from "../../types/workflow";
 import { CUSTOM_PROVIDER_ID, KNOWN_PROVIDERS, OTHER_MODEL_OPTION } from "../../types/providers";
 import type { WorkflowNodeData } from "../nodes/WorkflowNode";
@@ -83,7 +84,27 @@ interface AgentFormProps {
 function AgentForm({ config, onChange }: AgentFormProps) {
   const selectedProvider = KNOWN_PROVIDERS.find((p) => p.id === config.provider_hint);
   const isCustomProvider = config.provider_hint === CUSTOM_PROVIDER_ID;
+  const isClaudeProvider = config.provider_hint === "claude";
+  const isOpenAiProvider = config.provider_hint === "openai";
   const curatedModelIds = selectedProvider?.models.map((m) => m.id) ?? [];
+
+  // Default model from ~/.codex/config.toml, shown on the openai provider's
+  // no-model option (DEC-010). Null until loaded / when unavailable.
+  const [codexDefaultModel, setCodexDefaultModel] = useState<string | null>(null);
+  useEffect(() => {
+    if (!isOpenAiProvider) return;
+    let cancelled = false;
+    Promise.resolve(ipc.getCodexDefaultModel())
+      .then((m) => {
+        if (!cancelled) setCodexDefaultModel(m ?? null);
+      })
+      .catch(() => {
+        /* command unavailable (e.g. browser-only dev) — keep generic label */
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [isOpenAiProvider]);
 
   // Tracks whether the model dropdown is showing "Other..." (free-form input).
   // Initialized once per mount from the incoming config; NodeInspector remounts
@@ -142,7 +163,11 @@ function AgentForm({ config, onChange }: AgentFormProps) {
             value={modelSelectValue}
             onChange={(e) => handleModelSelect(e.target.value)}
           >
-            <option value="">— none —</option>
+            <option value="">
+              {isOpenAiProvider && codexDefaultModel
+                ? `Default (${codexDefaultModel} from codex config)`
+                : "— none —"}
+            </option>
             {selectedProvider?.models.map((m) => (
               <option key={m.id} value={m.id}>
                 {m.label}
@@ -158,7 +183,7 @@ function AgentForm({ config, onChange }: AgentFormProps) {
             className="ni-input"
             value={config.model ?? ""}
             onChange={(e) => onChange({ ...config, model: e.target.value || undefined })}
-            placeholder="e.g. claude-sonnet-4-6"
+            placeholder="e.g. claude-opus-4-8 or gpt-5.5"
           />
         </Field>
       )}
@@ -185,6 +210,44 @@ function AgentForm({ config, onChange }: AgentFormProps) {
           <option value="json_last_line">json_last_line</option>
         </select>
       </Field>
+      {isClaudeProvider && (
+        <Field label="COMPLETION MODE">
+          <select
+            className="ni-input ni-select"
+            value={config.completion_mode ?? "auto"}
+            onChange={(e) =>
+              onChange({
+                ...config,
+                completion_mode: e.target.value as AgentConfig["completion_mode"],
+              })
+            }
+          >
+            <option value="auto">auto — complete node when the turn ends</option>
+            <option value="manual">manual — keep session open until I complete it</option>
+          </select>
+        </Field>
+      )}
+      {isClaudeProvider && (
+        <Field label="PERMISSION MODE">
+          <select
+            className="ni-input ni-select"
+            value={config.permission_mode ?? "acceptEdits"}
+            onChange={(e) =>
+              onChange({
+                ...config,
+                permission_mode:
+                  e.target.value === "acceptEdits" ? undefined : e.target.value,
+              })
+            }
+          >
+            <option value="acceptEdits">acceptEdits (default)</option>
+            <option value="auto">auto</option>
+            <option value="plan">plan</option>
+            <option value="manual">manual</option>
+            <option value="dontAsk">dontAsk</option>
+          </select>
+        </Field>
+      )}
     </>
   );
 }

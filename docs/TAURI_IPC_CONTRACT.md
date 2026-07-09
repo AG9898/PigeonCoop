@@ -400,6 +400,84 @@ Note:
 
 ---
 
+### Interactive agent sessions (DEC-009)
+
+---
+
+#### `agent_terminal_input`
+
+Write user keystrokes to the PTY of a running interactive agent session.
+
+**Rust arg struct:**
+```rust
+run_id: String,   // UUID
+node_id: String,  // UUID
+data: String,     // UTF-8 keystroke bytes (may include control chars, e.g. "\r")
+```
+
+**TypeScript arg interface:**
+```ts
+{ runId: string; nodeId: string; data: string }
+```
+
+**Return type:** `void` — no-op error if no live session matches (session ended between render and keypress is expected, not exceptional)
+
+**Error type:** `CmdError`
+
+---
+
+#### `agent_terminal_resize`
+
+Resize the PTY of a running interactive agent session (cols × rows).
+
+**Rust arg struct:**
+```rust
+run_id: String, node_id: String, cols: u16, rows: u16,
+```
+
+**TypeScript arg interface:**
+```ts
+{ runId: string; nodeId: string; cols: number; rows: number }
+```
+
+**Return type:** `void`
+
+**Error type:** `CmdError`
+
+---
+
+#### `complete_agent_node`
+
+Complete an interactive agent node that is `Waiting` in `completion_mode: manual`. Finalizes the session (sends `/exit`, extracts output from the transcript) and resumes the run.
+
+**Rust arg struct:**
+```rust
+run_id: String, node_id: String,
+```
+
+**TypeScript arg interface:**
+```ts
+{ runId: string; nodeId: string }
+```
+
+**Return type:** `void`
+
+**Error type:** `CmdError` — errors if the node has no live session awaiting completion
+
+---
+
+#### `get_codex_default_model`
+
+Read the default model from `~/.codex/config.toml` (`model = "..."`). Used by the NodeInspector to label the OpenAI Codex no-model option (DEC-010).
+
+**Args:** none
+
+**Return type:** `string | null` — `null` when the file or key is absent
+
+**Error type:** `CmdError`
+
+---
+
 ## Events (listen)
 
 These events are emitted by the Rust backend and received via `listen()` on the frontend.
@@ -534,6 +612,45 @@ interface HumanReviewRequestedPayload {
   "reason": "Tests failed after patch application",
   "available_actions": ["approve", "reject", "retry", "edit_memory"],
   "timestamp": "2026-03-08T10:00:10Z"
+}
+```
+
+---
+
+### `agent_terminal_output`
+
+Raw PTY output bytes from a live interactive agent session (DEC-009). High-frequency; not persisted; never enters the run event log.
+
+**Emitter:** interactive-session bridge task in `apps/desktop/src-tauri/src/commands/mod.rs`
+
+**Subscriber:** `AgentSessionTerminal` (xterm.js) in `LiveRunView` — writes `data` to the terminal when `run_id`/`node_id` match
+
+**Payload interface:**
+```ts
+interface AgentTerminalOutputPayload {
+  run_id: string;
+  node_id: string;
+  data: string; // UTF-8 chunk of PTY output (lossy-decoded), may contain ANSI escapes
+}
+```
+
+---
+
+### `agent_session_state`
+
+Lifecycle of a live interactive agent session, for terminal-panel chrome (distinct from node status: the node may remain `Running` while claude is between turns).
+
+**Emitter:** interactive-session bridge task in `apps/desktop/src-tauri/src/commands/mod.rs`
+
+**Subscriber:** `AgentSessionTerminal` in `LiveRunView` — shows/hides the panel and the *Complete node* button
+
+**Payload interface:**
+```ts
+interface AgentSessionStatePayload {
+  run_id: string;
+  node_id: string;
+  state: "started" | "awaiting_user" | "ended";
+  session_id: string;
 }
 ```
 

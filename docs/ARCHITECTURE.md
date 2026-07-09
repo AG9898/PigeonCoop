@@ -338,10 +338,19 @@ Each adapter should expose a consistent interface such as:
 - Abort/timeout support identical to `CliAdapter` pattern (oneshot channel + `tokio::select!`)
 
 ### Implementation notes (ADAPT-005)
-- `PROVIDER_REGISTRY` — a private `&[(&str, &str, &str)]` constant in `crates/runtime-adapters/src/agent.rs` mapping known `provider_hint` keys to `(base_command, model_flag)`: `"claude"` → (`"claude"`, `"--model"`), `"openai"` → (`"codex"`, `"--model"`), `"gemini"` → (`"gemini"`, `"--model"`). Per DEC-006, this registry is adapter-layer static data, not part of the serialized schema.
+- `PROVIDER_REGISTRY` — a private `&[(&str, &str, &str)]` constant in `crates/runtime-adapters/src/agent.rs` mapping known `provider_hint` keys to `(base_command, model_flag)`: `"claude"` → (`"claude"`, `"--model"`), `"openai"` → (`"codex"`, `"--model"`). Gemini was removed per DEC-010. Per DEC-006, this registry is adapter-layer static data, not part of the serialized schema.
 - `resolve_command()` priority, updated: (1) `config.command` verbatim, always wins; (2) `config.provider_hint` matched against `PROVIDER_REGISTRY` — if `config.model` is set, the resolved command is `"<base_command> <model_flag> '<model>'"` (model value single-quote shell-escaped via a local `shell_quote` helper), otherwise just `<base_command>`; (3) unknown `provider_hint` falls back to using it as the raw command verbatim (pre-existing behaviour, model is ignored in this fallback since there is no known model flag to attach it to).
 - `provider()` — event metadata string, updated: returns `"<provider_hint>/<model>"` when both are set, `"<provider_hint>"` when only the hint is set, else falls back to `config.command`, else `"unknown"`. Enriches `AgentRequestPreparedPayload.provider` and `AgentStartedPayload.provider`.
 - TypeScript mirror of the registry belongs in `apps/desktop/src/types/providers.ts` (not yet created as of ADAPT-005; tracked by UI-BLD-008) — the Rust and TS tables must be kept in sync when a provider is added.
+
+### Implementation notes (interactive claude sessions — DEC-009)
+- Agent nodes with `provider_hint: "claude"` and no explicit `command` take the **interactive PTY path**; all other agent nodes keep the pipe path above.
+- The adapter spawns `claude --session-id <uuid> [--model <alias>] --permission-mode <mode> --settings <hook-json> <prompt>` inside a `portable-pty` pseudo-terminal (argv array, no `sh -c`), cwd = workspace root.
+- A `Stop` hook injected via `--settings` writes its stdin JSON (which includes `last_assistant_message` and `transcript_path`) to a per-session sentinel file; the adapter polls for it to detect turn completion.
+- Final output = the sentinel's `last_assistant_message` (primary), else the last `assistant` entry's text blocks from the transcript JSONL at `transcript_path` read at turn end while the session is live (the CLI rotates transcript files on exit). `AgentOutputMode` applies to that text (DEC-005 as amended by DEC-009).
+- Raw PTY bytes flow through a dedicated `TerminalIo` channel set (output bytes out, keystrokes in, resize) that the Tauri layer bridges to `agent_terminal_output` window events and `agent_terminal_input`/`agent_terminal_resize` commands. Terminal bytes never enter the run event log.
+- Two-phase API so the Tauri dispatcher controls state between turn-end and node completion: `start_interactive()` (spawn → prompt → first Stop sentinel) and `finalize_interactive()` (send `/exit`, await exit, parse transcript, emit `Completed`). `completion_mode: auto` finalizes immediately; `manual` transitions the node Running → Waiting and finalizes only when the `complete_agent_node` command fires.
+- Timeout (`retry_policy.max_runtime_ms`) bounds the first turn; abort kills the PTY child. A missing sentinel at timeout fails the node with an explicit reason — the adapter never silently falls back to headless mode.
 
 ### Execution assumptions approved for v1
 - commands execute within a chosen workspace root

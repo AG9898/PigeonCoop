@@ -2,6 +2,7 @@
 // v1 ships a CLI/shell adapter. See ARCHITECTURE.md §8.
 
 pub mod agent;
+pub mod agent_interactive;
 pub mod cli;
 pub mod tools;
 pub mod mock;

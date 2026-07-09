@@ -109,7 +109,7 @@ If tradeoffs are required, preserve this order:
 - Frontend: React, TypeScript, React Flow or equivalent
 - Persistence: SQLite
 - Serialization: JSON
-- Execution: CLI/shell command wrapper first
+- Execution: CLI/shell command wrapper first; claude agent nodes run as headed interactive PTY sessions with transcript-based output capture (DEC-009), other providers via pipe-based CLI wrapping
 
 Commands execute in a selected workspace root. Arbitrary shell commands are allowed in v1 behind explicit user configuration and safety controls. Prefer structured patch/edit flows when available, but raw write commands are allowed if execution logs capture command, working directory, exit code, stdout/stderr metadata, and detectable changed files.
 
@@ -334,3 +334,6 @@ Keep entries short. Do not reorganize or rewrite existing entries unless asked.
 
 ### 2026-07-08 — E2E tests (tauri-driver + WebdriverIO) cannot render the app window in this sandbox
 A pre-built `target/debug/agent-arcade` binary and `tauri-driver` are both present in this environment, and `tauri-driver` starts and answers `/status` fine. But running any spec — including the pre-existing, already-`done` `app.spec.js`, `run.spec.js` — fails identically: the window title is empty and `#root` never appears in the DOM, and any `browser.executeAsync(() => window.__TAURI_INTERNALS__.invoke(...))` call fails with `WebDriverError: Origin header is not a valid URL`. This reproduces with the documented WSL2 software-rendering env vars (`GDK_BACKEND=x11`, `WEBKIT_DISABLE_DMABUF_RENDERER=1`, `WEBKIT_DISABLE_COMPOSITING_MODE=1`, `LIBGL_ALWAYS_SOFTWARE=1`) and with `DISPLAY=:0` set. Root cause is environment-specific (likely this sandbox's display/webview stack, not app code) and was not resolved. Future agents: don't spend time trying to get `cd tests/e2e && npm test` fully green in this sandbox — verify new/changed E2E specs via `node --check specs/<file>.spec.js` plus close pattern-matching against the existing passing-in-CI specs, and note the limitation rather than treating it as a task failure.
+
+### 2026-07-09 — Headed Tauri E2E can run with an extracted WebKitWebDriver
+The previous sandbox E2E rendering issue was not reproduced after providing a native `WebKitWebDriver`. `tauri-driver` initially failed because `webkit2gtk-driver` was not installed on `PATH`; without sudo, `apt-get download webkit2gtk-driver` plus `dpkg-deb -x` into `/tmp/webkit2gtk-driver-extract` worked, then `tauri-driver --native-driver /tmp/webkit2gtk-driver-extract/usr/bin/WebKitWebDriver` launched the headed app. `app.spec.js` passed (`Agent Arcade` title and `#root` found). Current failures are spec drift, not startup: `builder.spec.js` searches for `workflow-card-null`, and `failure.spec.js` sends a `create_workflow` fixture missing required `created_at`, causing later `runId: null` cascades. Future agents should use the extracted-driver workaround before assuming the sandbox cannot run headed E2E, then fix the stale specs.

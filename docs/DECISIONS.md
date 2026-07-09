@@ -473,6 +473,58 @@ The WebP sprite sheets from SPRITE-001 (`public/sprites/`) are retained as **leg
 
 ---
 
+### 2026-07-09 — Headed interactive agent execution for claude (DEC-009)
+
+**Context:** The `AgentCliAdapter` pipes the prompt to the agent CLI's stdin. For `claude`, piped (non-TTY) stdin silently falls back to headless print mode. Claude pricing/terms differ between headless and interactive use, so the product requirement is that claude agent nodes run as **genuinely interactive (headed) sessions** while the engine still captures structured output and drives run state deterministically.
+
+**Decision:** Agent nodes with `provider_hint: "claude"` and no explicit `command` execute as an interactive session inside a PTY (`portable-pty`), rendered live in the Live Run View via an xterm.js terminal the user can watch and type into. Mechanics:
+
+1. **Spawn:** `claude --session-id <uuid> [--model <alias>] --permission-mode <mode> --settings <hook-json> <prompt>` is spawned in a PTY (argv array, no shell) with cwd = workspace root. The prompt is the initial argument, not stdin.
+2. **Turn completion:** a `Stop` hook is injected via `--settings` whose command writes the hook's stdin JSON to a per-session sentinel file. The hook payload carries `last_assistant_message` and `transcript_path`, so the engine never guesses transcript locations.
+3. **Output extraction:** the final assistant message text comes from the Stop-hook payload's `last_assistant_message` (primary), with the transcript JSONL at `transcript_path` (`type: "assistant"` entries → `message.content[].text`) as fallback — read at turn end while the session is live, because the CLI rotates transcript files on exit (verified empirically). TUI stdout is never scraped. `AgentOutputMode` (DEC-005) applies to that text for interactive sessions: `Raw` wraps it as `{"raw": ...}`, `JsonStdout`/`JsonLastLine` parse it.
+4. **Completion semantics:** new additive optional field `completion_mode` on `AgentNodeConfig` (default `auto`). `auto`: when the Stop hook fires, the engine sends `/exit` to the session and completes the node. `manual`: the node transitions Running → `Waiting` (existing state-machine transition), the session stays open for the user to keep steering claude in the terminal, and the node completes only when the user triggers *Complete node* in the Live Run View (Tauri command), which finalizes from the latest transcript state.
+5. **Permissions:** new additive optional field `permission_mode` on `AgentNodeConfig`, mapped to `--permission-mode` (default `acceptEdits` so unattended runs don't stall on file edits). Remaining TUI prompts (including the workspace-trust dialog and first-time MCP-server approval on first use of a directory) are answerable in the embedded terminal; `retry_policy.max_runtime_ms` remains the backstop.
+6. **Terminal streaming:** raw PTY bytes stream to the frontend over a dedicated Tauri window event (`agent_terminal_output`) and keystrokes return via a command (`agent_terminal_input`) — they do **not** enter the append-only run event log. The event log receives the same typed `AgentEventKind` sequence as before, with output chunks derived from the transcript.
+
+Neither new config field bumps `schema_version` — both are additive optional fields per the DEC-001 policy. Non-claude providers (`openai`/codex, custom commands, and any node with an explicit `command`) keep the existing pipe-based path unchanged.
+
+**Relationship to prior decisions:**
+- **Partially supersedes DEC-004:** xterm.js is now added — but only as the interactive session terminal for running Agent nodes. The `anser`-based custom output panel remains the renderer for Tool node output and post-hoc event review; DEC-004's rationale (event association, design-system fit for captured strings) still stands for that surface.
+- **Amends DEC-005:** for interactive sessions, `output_mode` operates on the transcript's final assistant message instead of raw stdout. Pipe-path semantics are unchanged.
+
+**Alternatives considered:**
+- Hidden PTY (no UI) — rejected: only technically "headed", user cannot see or steer the session, and permission prompts would stall invisibly.
+- External terminal window — rejected: flaky on WSL2 (launching Windows terminals from the Linux side), session lives outside the app, no event association.
+- Keep headless `-p` with `--output-format json` — rejected by product constraint (pricing/terms of headless use).
+- Transcript-path derivation from the workspace slug — rejected in favor of reading `transcript_path` from the Stop-hook payload; the slug algorithm is an undocumented CLI internal.
+
+**Tradeoffs:**
+- xterm.js (~300KB) enters the bundle after DEC-004 declined it; scoped to the Live Run agent terminal only.
+- The engine depends on claude CLI behaviors (`--session-id`, `--settings` hooks, transcript JSONL shape) that are versioned with the CLI. If the sentinel never appears (old CLI, hook misconfiguration), the node fails with a clear reason after timeout rather than silently degrading to headless.
+- `portable-pty` native dependency added to the workspace.
+- Interactive sessions cannot run fully detached from a display; the desktop app is a hard requirement for agent nodes on the claude path (acceptable: this is a desktop-first product).
+
+**Unblocks:** evergreen registry (DEC-010) UI changes ride along in the same node-inspector surface.
+
+---
+
+### 2026-07-09 — Evergreen provider/model registry (DEC-010)
+
+**Context:** The curated model lists in `apps/desktop/src/types/providers.ts` (per DEC-006) go stale as providers ship new models — the Claude list offered `claude-opus-4-6`-generation IDs while newer models existed, and the Codex list didn't match the user's configured default. Gemini support is unused and dropped.
+
+**Decision:**
+1. **Claude models are CLI aliases**, not dated IDs: `opus`, `sonnet`, `haiku`, `fable`. The claude CLI resolves each alias to the latest model of that tier, so the dropdown never goes stale. Users who need to pin an exact dated model ID use the existing "Other…" free-text entry.
+2. **Codex shows the configured default**: a small Tauri command (`get_codex_default_model`) reads `model = "..."` from `~/.codex/config.toml` so the model dropdown's no-model option displays what bare `codex` will actually use; free-text entry covers explicit overrides. This is a narrow exception to DEC-006's "no provider IPC" rule — it reads *local machine state*, not static registry data.
+3. **Gemini is removed** from both `PROVIDER_REGISTRY` (Rust) and `KNOWN_PROVIDERS` (TS). Saved workflows with `provider_hint: "gemini"` degrade gracefully to the existing unknown-provider fallback (hint used as raw command), so no migration is required.
+
+**Alternatives considered:**
+- Refresh button hitting provider model-list APIs — rejected: requires raw API keys (`ANTHROPIC_API_KEY`/`OPENAI_API_KEY`) that subscription-auth CLI users typically don't have; adds network + caching machinery for marginal benefit over aliases.
+- Keep curated dated IDs and update them each model launch — rejected: this is the maintenance treadmill being escaped.
+
+**Tradeoffs:** alias resolution delegates model choice to the installed CLI version (older CLI = older "latest"); acceptable, since the CLI is also what executes the session. Pinning exact models remains possible via free text.
+
+---
+
 ## Open decisions
 
 *(No open decisions at this time.)*

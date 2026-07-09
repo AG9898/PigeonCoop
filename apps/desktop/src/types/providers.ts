@@ -1,4 +1,4 @@
-// Known agent CLI providers and curated model lists for the NodeInspector's
+// Known agent CLI providers and model options for the NodeInspector's
 // Agent config form. Mirrors the Rust PROVIDER_REGISTRY in
 // crates/runtime-adapters/src/agent.rs — update both together when adding a
 // new provider (see DEC-006 in docs/DECISIONS.md).
@@ -38,30 +38,24 @@ export const KNOWN_PROVIDERS: ProviderSpec[] = [
     id: "claude",
     label: "Claude Code",
     baseCommand: "claude",
+    // CLI aliases, not dated IDs (DEC-010): the claude CLI resolves each alias
+    // to the latest model of that tier, so this list never goes stale. Exact
+    // dated model IDs go through the "Other..." free-text option.
     models: [
-      { id: "claude-opus-4-6", label: "Claude Opus 4.6" },
-      { id: "claude-sonnet-4-6", label: "Claude Sonnet 4.6" },
-      { id: "claude-haiku-4-5", label: "Claude Haiku 4.5" },
+      { id: "opus", label: "Opus (latest)" },
+      { id: "sonnet", label: "Sonnet (latest)" },
+      { id: "haiku", label: "Haiku (latest)" },
+      { id: "fable", label: "Fable (latest)" },
     ],
   },
   {
     id: "openai",
     label: "OpenAI Codex",
     baseCommand: "codex",
-    models: [
-      { id: "gpt-5.1-codex", label: "GPT-5.1 Codex" },
-      { id: "gpt-5.1-codex-mini", label: "GPT-5.1 Codex Mini" },
-      { id: "o4-mini", label: "o4-mini" },
-    ],
-  },
-  {
-    id: "gemini",
-    label: "Gemini CLI",
-    baseCommand: "gemini",
-    models: [
-      { id: "gemini-2.5-pro", label: "Gemini 2.5 Pro" },
-      { id: "gemini-2.5-flash", label: "Gemini 2.5 Flash" },
-    ],
+    // No curated list (DEC-010): codex has no stable aliases. The no-model
+    // option uses the default from ~/.codex/config.toml (surfaced via the
+    // get_codex_default_model command); explicit models go through "Other...".
+    models: [],
   },
   {
     id: CUSTOM_PROVIDER_ID,

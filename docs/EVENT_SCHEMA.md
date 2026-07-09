@@ -87,12 +87,14 @@ Implemented in `crates/event-model/src/command_events.rs` as typed payload struc
 - `agent.request_prepared`
 - `agent.started`
 - `agent.output_received`
+- `agent.awaiting_user`
 - `agent.response`
 - `agent.completed`
 - `agent.failed`
 
 Implemented in `crates/event-model/src/agent_events.rs` as typed payload structs and `AgentEventKind` enum.
 `agent.response` is reserved for provider-normalized response summaries and may carry the same optional token fields as `agent.completed`; the current Rust adapter emits `agent.output_received` chunks plus `agent.completed`.
+`agent.awaiting_user` is emitted only by interactive sessions (DEC-009) in `completion_mode: manual` when a turn ends and the session is held open for user steering. Raw PTY terminal bytes are **not** events — they stream over a dedicated Tauri channel (see TAURI_IPC_CONTRACT.md) and never enter the run event log; for interactive sessions `agent.output_received` carries transcript-derived assistant text.
 
 ### 3.7 Memory events
 - `memory.read`
@@ -403,10 +405,22 @@ Both fields are nullable.
 #### `agent.started`
 ```json
 {
-  "provider": "claude-sonnet-4-6",
-  "run_elapsed_ms": 250
+  "provider": "claude/sonnet",
+  "run_elapsed_ms": 250,
+  "session_id": "6f9619ff-8b86-4d01-b42d-00cf4fc964ff"
 }
 ```
+`session_id` is nullable — it is set only for interactive sessions (DEC-009), where it is the `--session-id` UUID pinned on the claude CLI invocation (also the transcript filename stem).
+
+#### `agent.awaiting_user`
+```json
+{
+  "provider": "claude/opus",
+  "session_id": "6f9619ff-8b86-4d01-b42d-00cf4fc964ff",
+  "turn_elapsed_ms": 45210
+}
+```
+Interactive sessions only, `completion_mode: manual`: the current turn has ended and the session is held open. The node is in `Waiting`; the run resumes when the user completes the node (Tauri `complete_agent_node`).
 
 #### `agent.output_received`
 ```json

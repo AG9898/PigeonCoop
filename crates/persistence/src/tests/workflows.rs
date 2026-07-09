@@ -213,6 +213,8 @@ fn agent_and_tool_nodes_round_trip_config() {
             provider_hint: Some("claude-sonnet-4-6".into()),
             model: None,
             output_mode: AgentOutputMode::Raw,
+                completion_mode: Default::default(),
+                permission_mode: None,
         }),
         "Plan",
     );

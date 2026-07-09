@@ -66,7 +66,10 @@ Behavior:
 
 - **Label** — editable text field; edits propagate to the canvas node immediately
 - **Config section** — per-kind form fields matching the Rust `NodeConfig` variants:
-  - *Agent*: `prompt` (textarea), `provider_hint` (select, populated from `KNOWN_PROVIDERS` in `types/providers.ts`), `model` (select of the provider's curated models plus an `Other...` option that reveals a free-form text input), `command` (text input, shown only when provider is `Custom Command`), `output_mode` (select: raw / json_stdout / json_last_line). Switching provider resets `model` to `undefined`. See DEC-006 in `DECISIONS.md`.
+  - *Agent*: `prompt` (textarea), `provider_hint` (select, populated from `KNOWN_PROVIDERS` in `types/providers.ts`), `model` (select of the provider's curated models plus an `Other...` option that reveals a free-form text input), `command` (text input, shown only when provider is `Custom Command`), `output_mode` (select: raw / json_stdout / json_last_line). Switching provider resets `model` to `undefined`. See DEC-006 and DEC-010 in `DECISIONS.md`.
+    - Claude Code model options are CLI aliases (`opus`, `sonnet`, `haiku`, `fable`) that resolve to the latest model of each tier (DEC-010); exact dated IDs go through `Other...`.
+    - OpenAI Codex has no curated list; the no-model option displays the default read from `~/.codex/config.toml` via the `get_codex_default_model` command, and explicit models go through `Other...`.
+    - Claude Code additionally shows `completion_mode` (select: auto / manual — DEC-009 turn semantics) and `permission_mode` (select: acceptEdits (default) / auto / plan / manual / dontAsk).
   - *Tool*: `command`, `shell`, `timeout_ms`
   - *Router*: ordered `rules` list with `condition` and `target_key` per row; add/remove rows
   - *Memory*: `key`, `scope` (run_shared / node_local), `operation` (read / write)
@@ -92,12 +95,24 @@ Required elements:
 - run summary HUD
 - selected node inspector
 - command output panel
+- agent session terminal (interactive claude nodes — DEC-009)
 
 Behavior:
 - transitions should make active flow obvious
 - active routes should pulse/animate subtly
 - errors should be impossible to miss
 - terminal-like output should be visible without taking over the entire screen
+
+#### Agent session terminal
+
+When an Agent node on the interactive claude path (DEC-009) is running, the Live Run View shows an embedded terminal (`xterm.js` + fit addon) bound to the node's PTY session:
+
+- renders raw PTY bytes streamed via the `agent_terminal_output` Tauri event (filtered by run_id + node_id)
+- keystrokes typed into the terminal are sent back via the `agent_terminal_input` command — the user can answer permission prompts, the workspace-trust dialog, or steer claude mid-turn
+- terminal resize invokes `agent_terminal_resize` so the CLI reflows correctly
+- session state (running / awaiting user / ended) arrives via the `agent_session_state` Tauri event
+- in `completion_mode: manual`, when the turn ends the node enters `Waiting` and the panel shows a **Complete node** button that invokes the `complete_agent_node` command; until then the user may keep conversing with claude in the terminal
+- the terminal is scoped to the running session; after node completion the panel closes and the transcript-derived output appears through the normal event feed / output surfaces
 
 #### Event feed panel
 The event feed renders a chronological list of `RunEvent` records as they arrive via the `run_event_appended` Tauri event. Each feed item shows:
@@ -306,9 +321,11 @@ Terminal output should be a panel within the app, not the whole experience.
 - collapse/expand for noisy outputs
 - link back to originating node/event
 
-### Decided implementation (DEC-004)
+### Decided implementation (DEC-004, amended by DEC-009)
 
-Custom styled `<div>`/`<pre>` output panel — no embedded terminal emulator. ANSI SGR escape codes (colors, bold, underline) are rendered to HTML `<span>` elements via the `anser` npm package. Non-SGR escape sequences (cursor movement, screen clear) are stripped. Output is rendered per-event as React components with click-through to the originating node/event in the inspector.
+Custom styled `<div>`/`<pre>` output panel for **captured output** (Tool nodes, post-hoc event review) — ANSI SGR escape codes (colors, bold, underline) are rendered to HTML `<span>` elements via the `anser` npm package. Non-SGR escape sequences (cursor movement, screen clear) are stripped. Output is rendered per-event as React components with click-through to the originating node/event in the inspector.
+
+**Live interactive agent sessions** are the one surface that uses a real terminal emulator: DEC-009 adds xterm.js scoped to the agent session terminal in the Live Run View (see §4.2), because those sessions are genuinely interactive PTY streams, not captured strings. DEC-004's rationale still governs every captured-output surface.
 
 ### Design stance
 The app should feel more visually rich than a terminal without hiding that terminal-backed execution is occurring.

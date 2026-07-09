@@ -12,3 +12,4 @@ tracing = { workspace = true }
 uuid = { workspace = true }
 workflow-model = { path = "../workflow-model" }
 event-model = { path = "../event-model" }
+portable-pty = "0.9"

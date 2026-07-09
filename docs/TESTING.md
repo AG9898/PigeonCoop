@@ -62,6 +62,21 @@ cargo test -p runtime-adapters tests::cli_adapter    # strict ordering + timeout
 cargo test -p runtime-adapters tests::mock_adapter   # mock/dyn-trait tests
 ```
 
+**Live agent CLI tests** (`tests/live_agent_claude.rs`):
+`#[ignore]`d integration tests that spawn the real installed `claude` binary.
+They require network access and Claude credentials, so they are excluded from
+normal `cargo test` runs. Coverage:
+- pipe path happy case (event sequence + output for a real model)
+- pipe path failure case (invalid model ID → non-zero exit → `Failed` event)
+- interactive PTY path (DEC-009): real headed session, Stop-hook turn
+  detection, transcript-derived output, `session_id` on `agent.started`,
+  terminal byte streaming (uses the repo root as workspace so the
+  workspace-trust dialog does not block)
+
+```bash
+cargo test -p runtime-adapters --test live_agent_claude -- --ignored --nocapture
+```
+
 ### persistence test suite (PERSIST-006)
 
 The `persistence` crate has tests at two levels:
@@ -287,10 +302,47 @@ npm test
 
 **WSL2 / software rendering:** The four env vars above disable GPU/DMA-buf rendering in WebKitGTK, falling back to software rendering. Without them, `tauri-driver` may fail to open the app window (`DRM_IOCTL_MODE_CREATE_DUMB failed`) on WSL2. The `MESA/ZINK` warnings that appear at startup are harmless.
 
+**Missing `WebKitWebDriver`:** On Linux, `tauri-driver` shells out to `WebKitWebDriver`. If `tauri-driver` fails with `can not find binary WebKitWebDriver in the PATH`, install the OS package when possible:
+```bash
+sudo apt install webkit2gtk-driver
+```
+
+If sudo is unavailable in the sandbox, a local extraction is enough for a headed test run:
+```bash
+rm -rf /tmp/webkit2gtk-driver-extract /tmp/webkit2gtk-driver.deb
+apt-get download webkit2gtk-driver
+mv webkit2gtk-driver_*_amd64.deb /tmp/webkit2gtk-driver.deb
+dpkg-deb -x /tmp/webkit2gtk-driver.deb /tmp/webkit2gtk-driver-extract
+
+GDK_BACKEND=x11 \
+WEBKIT_DISABLE_DMABUF_RENDERER=1 \
+WEBKIT_DISABLE_COMPOSITING_MODE=1 \
+LIBGL_ALWAYS_SOFTWARE=1 \
+tauri-driver --native-driver /tmp/webkit2gtk-driver-extract/usr/bin/WebKitWebDriver
+```
+
 **Fresh DB on each run:** The app stores its SQLite database at `~/.local/share/com.agent-arcade.dev/agent-arcade.db`. If a previous test run seeded the demo workflow with stale data (e.g. before a `demo-workflow.ts` fix), delete the DB before re-running:
 ```bash
 rm -f ~/.local/share/com.agent-arcade.dev/agent-arcade.db
 ```
+
+### 2026-07-09 headed sandbox run
+
+A headed full-stack run was verified in this sandbox using the local `WebKitWebDriver` extraction above:
+
+1. `cd apps/desktop && npm run tauri -- build --debug` built `target/debug/agent-arcade`.
+2. `tauri-driver --native-driver /tmp/webkit2gtk-driver-extract/usr/bin/WebKitWebDriver` started on `localhost:4444`.
+3. `cd tests/e2e && npm test` launched the native Tauri window and drove it through WebdriverIO.
+
+The app launched successfully: `tests/e2e/specs/app.spec.js` passed by reading the `Agent Arcade` window title and finding `#root`. This means the headed Tauri/WebDriver path works in this sandbox when the native WebKit driver is available.
+
+The same run exposed E2E spec drift rather than a Tauri startup problem:
+
+- `builder.spec.js` failed while looking for `[data-testid="workflow-card-null"] .lib-card-name`, indicating the spec was using a null workflow id or stale save/load assumptions.
+- `failure.spec.js` failed because `create_workflow` now rejects fixtures missing the required `created_at` field.
+- Later `failure.spec.js` assertions cascaded with `runId: null` after workflow creation failed.
+
+When this failure pattern appears, fix the E2E fixtures/spec assumptions before debugging display, WebKit, or Tauri startup.
 
 ### WebdriverIO configuration (outline)
 ```js

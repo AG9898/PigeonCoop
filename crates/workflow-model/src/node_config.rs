@@ -30,6 +30,22 @@ pub enum AgentOutputMode {
     JsonLastLine,
 }
 
+/// How an interactive agent session's node completes (DEC-009).
+///
+/// Only meaningful on the interactive claude path; the pipe path ignores it.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Default)]
+#[serde(rename_all = "snake_case")]
+pub enum AgentCompletionMode {
+    /// Complete the node as soon as the agent's turn ends (Stop hook fires);
+    /// the session is exited automatically.
+    #[default]
+    Auto,
+    /// Keep the session open after the turn ends; the node enters `Waiting`
+    /// and completes only when the user explicitly completes it from the
+    /// Live Run view.
+    Manual,
+}
+
 /// Config for Agent nodes.
 ///
 /// Required:
@@ -42,11 +58,16 @@ pub enum AgentOutputMode {
 ///   Used by the runtime adapter to build the CLI invocation. If `command` is
 ///   also set, `provider_hint` is advisory only.
 /// - `model`: the specific model identifier to pass to the provider adapter
-///   (e.g. `"claude-sonnet-4-6"`, `"gpt-4o"`). When absent, the adapter uses
+///   (e.g. `"sonnet"`, `"gpt-4o"`). When absent, the adapter uses
 ///   its default model for the selected provider. Distinct from `provider_hint`:
 ///   `provider_hint` selects *which* adapter handles the node; `model` selects
-///   *which model* that adapter requests.
-/// - `output_mode`: how to parse stdout (default: `raw`). See DEC-005.
+///   *which model* that adapter requests. For the claude provider, CLI aliases
+///   (`opus`, `sonnet`, `haiku`, `fable`) are preferred over dated IDs (DEC-010).
+/// - `output_mode`: how to parse output (default: `raw`). See DEC-005/DEC-009.
+/// - `completion_mode`: interactive-session turn semantics (default: `auto`).
+///   See DEC-009.
+/// - `permission_mode`: value passed to `--permission-mode` on the interactive
+///   claude path (default when absent: `acceptEdits`). See DEC-009.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct AgentNodeConfig {
     /// The instruction or prompt template for this agent step.
@@ -61,12 +82,19 @@ pub struct AgentNodeConfig {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub provider_hint: Option<String>,
     /// Specific model identifier requested from the provider adapter
-    /// (e.g. `"claude-sonnet-4-6"`). Absent means use the adapter's default.
+    /// (e.g. `"sonnet"`). Absent means use the adapter's default.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub model: Option<String>,
     /// How to interpret stdout from the agent CLI. Defaults to `raw`.
     #[serde(default)]
     pub output_mode: AgentOutputMode,
+    /// Interactive-session completion semantics (DEC-009). Defaults to `auto`.
+    #[serde(default)]
+    pub completion_mode: AgentCompletionMode,
+    /// Permission mode passed to the interactive claude CLI (DEC-009).
+    /// Absent means the adapter default (`acceptEdits`).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub permission_mode: Option<String>,
 }
 
 /// Config for Tool nodes.
@@ -220,6 +248,8 @@ mod tests {
             provider_hint: Some("claude-sonnet-4-6".to_string()),
             model: None,
             output_mode: AgentOutputMode::Raw,
+            completion_mode: Default::default(),
+            permission_mode: None,
         });
         let json = serde_json::to_string(&cfg).unwrap();
         let back = NodeConfig::from_value(&NodeKind::Agent, serde_json::from_str(&json).unwrap()).unwrap();
@@ -234,6 +264,8 @@ mod tests {
             provider_hint: Some("claude".to_string()),
             model: Some("claude-sonnet-4-6".to_string()),
             output_mode: AgentOutputMode::JsonLastLine,
+            completion_mode: Default::default(),
+            permission_mode: None,
         });
         let json = serde_json::to_string(&cfg).unwrap();
         // Verify both fields are present in the serialised form.

@@ -8,8 +8,8 @@ use std::sync::{Arc, Mutex};
 
 use chrono::Utc;
 use serde::{Deserialize, Serialize};
-use tauri::{AppHandle, State};
-use tokio::sync::mpsc;
+use tauri::{AppHandle, Emitter, Manager, State};
+use tokio::sync::{mpsc, oneshot};
 use uuid::Uuid;
 
 use core_engine::coordinator::RunCoordinator;
@@ -31,11 +31,13 @@ use persistence::{
     sqlite::Db,
 };
 use runtime_adapters::agent::AgentCliAdapter;
+use runtime_adapters::agent_interactive::{self, TerminalIo, TurnOutcome};
 use runtime_adapters::cli::CliAdapter;
 use runtime_adapters::Adapter;
 use workflow_model::{
     memory::{MemoryScope, MemoryState},
     node::NodeKind,
+    node_config::{AgentCompletionMode, NodeConfig},
     run::{NodeSnapshot, NodeStatus, RunInstance, RunStatus},
     workflow::WorkflowDefinition,
 };
@@ -56,6 +58,8 @@ pub struct AppState {
     pub active_runs: Mutex<HashMap<Uuid, Arc<AtomicBool>>>,
     /// Channels for sending review decisions to paused runs. Keyed by run_id.
     pub review_senders: Mutex<HashMap<Uuid, mpsc::Sender<ReviewMessage>>>,
+    /// Live interactive agent sessions (DEC-009). Keyed by (run_id, node_id).
+    pub agent_sessions: Mutex<HashMap<(Uuid, Uuid), AgentSessionHandle>>,
 }
 
 impl AppState {
@@ -64,8 +68,19 @@ impl AppState {
             db: Arc::new(Mutex::new(db)),
             active_runs: Mutex::new(HashMap::new()),
             review_senders: Mutex::new(HashMap::new()),
+            agent_sessions: Mutex::new(HashMap::new()),
         }
     }
+}
+
+/// Frontend-facing handles for one live interactive agent session (DEC-009).
+pub struct AgentSessionHandle {
+    /// Keystrokes → PTY (agent_terminal_input).
+    pub input_tx: mpsc::Sender<Vec<u8>>,
+    /// Terminal resize → PTY (agent_terminal_resize).
+    pub resize_tx: mpsc::Sender<(u16, u16)>,
+    /// Manual-mode completion signal (complete_agent_node). Consumed on use.
+    pub complete_tx: Option<oneshot::Sender<()>>,
 }
 
 /// Message sent through the review channel to the background execution task.
@@ -445,7 +460,7 @@ async fn run_workflow_background(
     let run_id = run.run_id;
     let node_count = workflow.nodes.len() as u32;
 
-    let event_log = TauriEventLog::new(app, Arc::clone(&db));
+    let event_log = TauriEventLog::new(app.clone(), Arc::clone(&db));
     let mut coordinator = RunCoordinator::new(run, event_log);
 
     // Initialize all node snapshots in Ready state.
@@ -586,7 +601,7 @@ async fn run_workflow_background(
             }
 
             // Dispatch through the appropriate runtime adapter.
-            dispatch_node_execution(&mut coordinator, &workflow, node_id).await;
+            dispatch_node_execution(&app, &mut coordinator, &workflow, node_id).await;
         }
     }
 
@@ -613,6 +628,7 @@ async fn run_workflow_background(
 /// Command and agent events from adapters are forwarded to the coordinator's
 /// event log, making them available to the Tauri event bridge in real time.
 async fn dispatch_node_execution(
+    app: &AppHandle,
     coordinator: &mut RunCoordinator<crate::bridge::TauriEventLog>,
     workflow: &WorkflowDefinition,
     node_id: Uuid,
@@ -680,6 +696,18 @@ async fn dispatch_node_execution(
             }
         }
 
+        NodeKind::Agent if agent_interactive::is_interactive_claude(node_def) => {
+            dispatch_interactive_agent(
+                app,
+                coordinator,
+                node_def,
+                node_id,
+                &workspace_root,
+                retries_remaining,
+            )
+            .await;
+        }
+
         NodeKind::Agent => {
             let adapter = AgentCliAdapter::new();
             let (tx, mut rx) = mpsc::channel::<event_model::agent_events::AgentEventKind>(4096);
@@ -709,6 +737,322 @@ async fn dispatch_node_execution(
             let _ = coordinator.complete_node_success(node_id, 0);
         }
     }
+}
+
+// ---------------------------------------------------------------------------
+// Interactive agent sessions (DEC-009)
+// ---------------------------------------------------------------------------
+
+/// Payload for the `agent_terminal_output` window event (raw PTY bytes).
+#[derive(Clone, Serialize)]
+struct AgentTerminalOutputPayload {
+    run_id: String,
+    node_id: String,
+    data: String,
+}
+
+/// Payload for the `agent_session_state` window event.
+#[derive(Clone, Serialize)]
+struct AgentSessionStatePayload {
+    run_id: String,
+    node_id: String,
+    state: String, // "started" | "awaiting_user" | "ended"
+    session_id: String,
+}
+
+/// Drive one Agent node through the interactive PTY path (DEC-009).
+///
+/// Registers terminal channels in `AppState.agent_sessions` so the
+/// `agent_terminal_input` / `agent_terminal_resize` / `complete_agent_node`
+/// commands can reach the live session, bridges PTY bytes to the
+/// `agent_terminal_output` window event, and applies `completion_mode`
+/// semantics (auto: finalize on turn end; manual: node → Waiting until
+/// `complete_agent_node`).
+async fn dispatch_interactive_agent(
+    app: &AppHandle,
+    coordinator: &mut RunCoordinator<crate::bridge::TauriEventLog>,
+    node_def: &workflow_model::node::NodeDefinition,
+    node_id: Uuid,
+    workspace_root: &str,
+    retries_remaining: u32,
+) {
+    let run_id = coordinator.run.run_id;
+    let workflow_id = coordinator.run.workflow_id;
+    let node_type = "agent".to_owned();
+
+    let completion_mode = match &node_def.config {
+        NodeConfig::Agent(cfg) => cfg.completion_mode.clone(),
+        _ => AgentCompletionMode::Auto,
+    };
+
+    // Terminal bridge channels.
+    let (term_out_tx, mut term_out_rx) = mpsc::channel::<Vec<u8>>(1024);
+    let (input_tx, input_rx) = mpsc::channel::<Vec<u8>>(256);
+    let (resize_tx, resize_rx) = mpsc::channel::<(u16, u16)>(16);
+    let (complete_tx, complete_rx) = oneshot::channel::<()>();
+
+    // Register handles for the frontend commands.
+    {
+        let state = app.state::<AppState>();
+        state.agent_sessions.lock().unwrap().insert(
+            (run_id, node_id),
+            AgentSessionHandle {
+                input_tx,
+                resize_tx,
+                complete_tx: Some(complete_tx),
+            },
+        );
+    }
+
+    // Forward raw PTY bytes to the frontend terminal.
+    let out_app = app.clone();
+    let out_run = run_id.to_string();
+    let out_node = node_id.to_string();
+    tokio::spawn(async move {
+        while let Some(bytes) = term_out_rx.recv().await {
+            let _ = out_app.emit(
+                "agent_terminal_output",
+                AgentTerminalOutputPayload {
+                    run_id: out_run.clone(),
+                    node_id: out_node.clone(),
+                    data: String::from_utf8_lossy(&bytes).into_owned(),
+                },
+            );
+        }
+    });
+
+    let emit_session_state = |state: &str, session_id: &str| {
+        let _ = app.emit(
+            "agent_session_state",
+            AgentSessionStatePayload {
+                run_id: run_id.to_string(),
+                node_id: node_id.to_string(),
+                state: state.to_owned(),
+                session_id: session_id.to_owned(),
+            },
+        );
+    };
+
+    let adapter = AgentCliAdapter::new();
+    let (tx, mut rx) = mpsc::channel::<event_model::agent_events::AgentEventKind>(4096);
+    let start = std::time::Instant::now();
+
+    // Phase A: spawn the session and wait for the first turn to end.
+    let outcome = adapter
+        .start_interactive(
+            node_def,
+            workspace_root,
+            tx.clone(),
+            TerminalIo {
+                output_tx: term_out_tx,
+                input_rx,
+                resize_rx,
+            },
+        )
+        .await;
+
+    // Forward events accumulated during phase A.
+    while let Ok(kind) = rx.try_recv() {
+        if let Some(event) = agent_kind_to_run_event(run_id, workflow_id, node_id, &kind) {
+            coordinator.emit_event(event);
+        }
+    }
+
+    let result = match outcome {
+        Ok(TurnOutcome::TurnEnded(session)) => {
+            emit_session_state("started", &session.session_id);
+
+            if matches!(completion_mode, AgentCompletionMode::Manual) {
+                // Turn ended but the session stays open for user steering.
+                session.emit_awaiting_user(&tx).await;
+                while let Ok(kind) = rx.try_recv() {
+                    if let Some(event) =
+                        agent_kind_to_run_event(run_id, workflow_id, node_id, &kind)
+                    {
+                        coordinator.emit_event(event);
+                    }
+                }
+                let _ = coordinator.transition_node(
+                    node_id,
+                    NodeTransitionInput::WaitForReview {
+                        reason: Some(
+                            "awaiting user completion of interactive agent session".to_owned(),
+                        ),
+                    },
+                );
+                emit_session_state("awaiting_user", &session.session_id);
+
+                // Wait for the completion signal or run cancellation.
+                let cancel_flag = {
+                    let state = app.state::<AppState>();
+                    let flags = state.active_runs.lock().unwrap();
+                    flags.get(&run_id).cloned()
+                };
+                let completed = wait_for_completion_or_cancel(complete_rx, cancel_flag).await;
+
+                if completed {
+                    let _ = coordinator.transition_node(
+                        node_id,
+                        NodeTransitionInput::Resume {
+                            node_type,
+                            input_refs: vec![],
+                            workspace_root: workspace_root.to_owned(),
+                        },
+                    );
+                    session.finalize(&tx).await
+                } else {
+                    session.kill().await;
+                    Err(runtime_adapters::AdapterError::ExecutionFailed(
+                        "run cancelled while awaiting user completion".to_owned(),
+                    ))
+                }
+            } else {
+                session.finalize(&tx).await
+            }
+        }
+        Ok(TurnOutcome::ExitedEarly { exit_code }) => Err(
+            runtime_adapters::AdapterError::ExecutionFailed(format!(
+                "claude session exited before completing a turn (exit code {:?})",
+                exit_code
+            )),
+        ),
+        Err(e) => Err(e),
+    };
+
+    // Forward remaining events and deregister the session.
+    while let Ok(kind) = rx.try_recv() {
+        if let Some(event) = agent_kind_to_run_event(run_id, workflow_id, node_id, &kind) {
+            coordinator.emit_event(event);
+        }
+    }
+    {
+        let state = app.state::<AppState>();
+        state.agent_sessions.lock().unwrap().remove(&(run_id, node_id));
+    }
+    emit_session_state("ended", "");
+
+    let duration_ms = start.elapsed().as_millis() as u64;
+    match result {
+        Ok(_output) => {
+            let _ = coordinator.complete_node_success(node_id, duration_ms);
+        }
+        Err(e) => {
+            let _ = coordinator.fail_node(node_id, e.to_string(), retries_remaining);
+        }
+    }
+}
+
+/// Wait for the manual completion signal, aborting early if the run's cancel
+/// flag is raised. Returns true when completion was signalled.
+async fn wait_for_completion_or_cancel(
+    complete_rx: oneshot::Receiver<()>,
+    cancel_flag: Option<Arc<AtomicBool>>,
+) -> bool {
+    tokio::pin!(complete_rx);
+    loop {
+        tokio::select! {
+            res = &mut complete_rx => return res.is_ok(),
+            _ = tokio::time::sleep(std::time::Duration::from_millis(200)) => {
+                if let Some(flag) = &cancel_flag {
+                    if flag.load(Ordering::SeqCst) {
+                        return false;
+                    }
+                }
+            }
+        }
+    }
+}
+
+/// Write user keystrokes to a live interactive agent session's PTY.
+///
+/// Missing sessions are a no-op (the session may have ended between the
+/// frontend render and the keypress) — per TAURI_IPC_CONTRACT.md.
+#[tauri::command]
+pub fn agent_terminal_input(
+    state: State<AppState>,
+    run_id: String,
+    node_id: String,
+    data: String,
+) -> CmdResult<()> {
+    let run_uuid = Uuid::parse_str(&run_id).map_err(cmd_err)?;
+    let node_uuid = Uuid::parse_str(&node_id).map_err(cmd_err)?;
+    let sessions = state.agent_sessions.lock().unwrap();
+    if let Some(handle) = sessions.get(&(run_uuid, node_uuid)) {
+        let _ = handle.input_tx.try_send(data.into_bytes());
+    }
+    Ok(())
+}
+
+/// Resize a live interactive agent session's PTY.
+#[tauri::command]
+pub fn agent_terminal_resize(
+    state: State<AppState>,
+    run_id: String,
+    node_id: String,
+    cols: u16,
+    rows: u16,
+) -> CmdResult<()> {
+    let run_uuid = Uuid::parse_str(&run_id).map_err(cmd_err)?;
+    let node_uuid = Uuid::parse_str(&node_id).map_err(cmd_err)?;
+    let sessions = state.agent_sessions.lock().unwrap();
+    if let Some(handle) = sessions.get(&(run_uuid, node_uuid)) {
+        let _ = handle.resize_tx.try_send((cols, rows));
+    }
+    Ok(())
+}
+
+/// Complete an interactive agent node held open in `completion_mode: manual`.
+#[tauri::command]
+pub fn complete_agent_node(
+    state: State<AppState>,
+    run_id: String,
+    node_id: String,
+) -> CmdResult<()> {
+    let run_uuid = Uuid::parse_str(&run_id).map_err(cmd_err)?;
+    let node_uuid = Uuid::parse_str(&node_id).map_err(cmd_err)?;
+    let mut sessions = state.agent_sessions.lock().unwrap();
+    let handle = sessions
+        .get_mut(&(run_uuid, node_uuid))
+        .ok_or_else(|| cmd_err("no live agent session for this node"))?;
+    let tx = handle
+        .complete_tx
+        .take()
+        .ok_or_else(|| cmd_err("agent session is not awaiting completion"))?;
+    tx.send(())
+        .map_err(|_| cmd_err("agent session ended before completion signal"))?;
+    Ok(())
+}
+
+/// Read the default model from `~/.codex/config.toml` (DEC-010).
+///
+/// Returns `None` when the file or the top-level `model = "..."` key is
+/// absent. Only the top-level section is scanned (keys under `[section]`
+/// headers are ignored).
+#[tauri::command]
+pub fn get_codex_default_model() -> CmdResult<Option<String>> {
+    let Some(home) = std::env::var_os("HOME") else {
+        return Ok(None);
+    };
+    let path = std::path::Path::new(&home).join(".codex").join("config.toml");
+    let Ok(raw) = std::fs::read_to_string(path) else {
+        return Ok(None);
+    };
+    for line in raw.lines() {
+        let trimmed = line.trim();
+        if trimmed.starts_with('[') {
+            break; // end of top-level section
+        }
+        if let Some(rest) = trimmed.strip_prefix("model") {
+            let rest = rest.trim_start();
+            if let Some(value) = rest.strip_prefix('=') {
+                let value = value.trim().trim_matches('"');
+                if !value.is_empty() {
+                    return Ok(Some(value.to_owned()));
+                }
+            }
+        }
+    }
+    Ok(None)
 }
 
 /// Convert a `CommandEventKind` to a `RunEvent` envelope for the event log.

@@ -39,10 +39,10 @@ pub struct AgentCliAdapter {
 ///
 /// Static data only — not part of the serialized schema (see DEC-006). Add new
 /// providers here and mirror the entry in `apps/desktop/src/types/providers.ts`.
+/// Gemini was removed per DEC-010; unknown hints degrade to raw-command fallback.
 const PROVIDER_REGISTRY: &[(&str, &str, &str)] = &[
     ("claude", "claude", "--model"),
     ("openai", "codex", "--model"),
-    ("gemini", "gemini", "--model"),
 ];
 
 /// Look up a known provider's (base_command, model_flag) by its `provider_hint` key.
@@ -64,6 +64,14 @@ impl AgentCliAdapter {
         Self {
             abort_tx: Arc::new(Mutex::new(None)),
         }
+    }
+
+    /// Register a fresh abort channel and return its receiver. Used by the
+    /// interactive execution path (agent_interactive.rs); `abort()` fires it.
+    pub(crate) async fn register_abort(&self) -> tokio::sync::oneshot::Receiver<()> {
+        let (tx, rx) = oneshot::channel();
+        *self.abort_tx.lock().await = Some(tx);
+        rx
     }
 
     /// Resolve the CLI command to run from the node's agent config.
@@ -240,6 +248,7 @@ impl AgentCliAdapter {
                 .send(AgentEventKind::Started(AgentStartedPayload {
                     provider: provider.clone(),
                     run_elapsed_ms: 0,
+                    session_id: None,
                 }))
                 .await;
 
@@ -452,6 +461,8 @@ mod tests {
                 provider_hint: Some("test-provider".into()),
                 model: None,
                 output_mode: AgentOutputMode::Raw,
+                completion_mode: Default::default(),
+                permission_mode: None,
             }),
             input_contract: serde_json::Value::Null,
             output_contract: serde_json::Value::Null,
@@ -782,13 +793,6 @@ mod tests {
     }
 
     #[test]
-    fn resolve_command_gemini_with_model_appends_model_flag() {
-        let node = agent_node_hint_model(Some("gemini"), Some("gemini-2.5-pro"));
-        let (cmd, _) = AgentCliAdapter::resolve_command(&node).unwrap();
-        assert_eq!(cmd, "gemini --model 'gemini-2.5-pro'");
-    }
-
-    #[test]
     fn resolve_command_unknown_provider_hint_falls_back_to_raw_command() {
         let node = agent_node_hint_model(Some("some-custom-cli"), Some("ignored-model"));
         let (cmd, _) = AgentCliAdapter::resolve_command(&node).unwrap();
@@ -822,7 +826,8 @@ mod tests {
     fn lookup_provider_known_and_unknown() {
         assert_eq!(lookup_provider("claude"), Some(("claude", "--model")));
         assert_eq!(lookup_provider("openai"), Some(("codex", "--model")));
-        assert_eq!(lookup_provider("gemini"), Some(("gemini", "--model")));
+        // gemini removed per DEC-010 — unknown hints fall back to raw command
+        assert_eq!(lookup_provider("gemini"), None);
         assert_eq!(lookup_provider("not-a-provider"), None);
     }
 }

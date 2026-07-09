@@ -153,6 +153,47 @@ export interface HumanReviewRequestedPayload {
 }
 
 // ---------------------------------------------------------------------------
+// Interactive agent sessions (DEC-009)
+// ---------------------------------------------------------------------------
+
+/** Args for `agent_terminal_input`. */
+export interface AgentTerminalInputArgs {
+  runId: string;
+  nodeId: string;
+  /** UTF-8 keystroke bytes (may include control chars, e.g. "\r"). */
+  data: string;
+}
+
+/** Args for `agent_terminal_resize`. */
+export interface AgentTerminalResizeArgs {
+  runId: string;
+  nodeId: string;
+  cols: number;
+  rows: number;
+}
+
+/** Args for `complete_agent_node`. */
+export interface CompleteAgentNodeArgs {
+  runId: string;
+  nodeId: string;
+}
+
+/** Payload for the `agent_terminal_output` backend event (raw PTY bytes). */
+export interface AgentTerminalOutputPayload {
+  run_id: string;
+  node_id: string;
+  data: string;
+}
+
+/** Payload for the `agent_session_state` backend event. */
+export interface AgentSessionStatePayload {
+  run_id: string;
+  node_id: string;
+  state: "started" | "awaiting_user" | "ended";
+  session_id: string;
+}
+
+// ---------------------------------------------------------------------------
 // Typed command helpers
 // ---------------------------------------------------------------------------
 // Convenience wrappers that bind arg types to return types.
@@ -203,4 +244,18 @@ export const ipc = {
   // Human review
   submitHumanReviewDecision: (args: SubmitHumanReviewDecisionArgs) =>
     invokeTyped<void>("submit_human_review_decision", args),
+
+  // Interactive agent sessions (DEC-009)
+  agentTerminalInput: (args: AgentTerminalInputArgs) =>
+    invokeTyped<void>("agent_terminal_input", args),
+
+  agentTerminalResize: (args: AgentTerminalResizeArgs) =>
+    invokeTyped<void>("agent_terminal_resize", args),
+
+  completeAgentNode: (args: CompleteAgentNodeArgs) =>
+    invokeTyped<void>("complete_agent_node", args),
+
+  // Provider registry (DEC-010)
+  getCodexDefaultModel: () =>
+    invokeTyped<string | null>("get_codex_default_model"),
 };

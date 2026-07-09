@@ -121,19 +121,22 @@ describe("NodeInspector — agent provider/model selector", () => {
     render(<NodeInspector node={makeNode("agent", { prompt: "", output_mode: "raw" })} {...callbacks} />);
     expect(screen.getByRole("option", { name: "Claude Code" })).toBeTruthy();
     expect(screen.getByRole("option", { name: "OpenAI Codex" })).toBeTruthy();
-    expect(screen.getByRole("option", { name: "Gemini CLI" })).toBeTruthy();
+    // Gemini removed per DEC-010
+    expect(screen.queryByRole("option", { name: "Gemini CLI" })).toBeNull();
     expect(screen.getByRole("option", { name: "Custom Command" })).toBeTruthy();
   });
 
-  it("populates the model dropdown with curated models for a known provider", () => {
+  it("populates the model dropdown with CLI aliases for the claude provider (DEC-010)", () => {
     render(
       <NodeInspector
         node={makeNode("agent", { prompt: "", output_mode: "raw", provider_hint: "claude" })}
         {...callbacks}
       />
     );
-    expect(screen.getByRole("option", { name: "Claude Sonnet 4.6" })).toBeTruthy();
-    expect(screen.getByRole("option", { name: "Claude Opus 4.6" })).toBeTruthy();
+    expect(screen.getByRole("option", { name: "Opus (latest)" })).toBeTruthy();
+    expect(screen.getByRole("option", { name: "Sonnet (latest)" })).toBeTruthy();
+    expect(screen.getByRole("option", { name: "Haiku (latest)" })).toBeTruthy();
+    expect(screen.getByRole("option", { name: "Fable (latest)" })).toBeTruthy();
     expect(screen.getByRole("option", { name: "Other..." })).toBeTruthy();
   });
 
@@ -146,7 +149,7 @@ describe("NodeInspector — agent provider/model selector", () => {
     );
     const modelSelect = getModelSelect();
     fireEvent.change(modelSelect, { target: { value: "__other__" } });
-    expect(screen.getByPlaceholderText("e.g. claude-sonnet-4-6")).toBeTruthy();
+    expect(screen.getByPlaceholderText("e.g. claude-opus-4-8 or gpt-5.5")).toBeTruthy();
   });
 
   it("shows a raw CLI command input and hides the model dropdown when provider is Custom", () => {
@@ -164,7 +167,7 @@ describe("NodeInspector — agent provider/model selector", () => {
     const onUpdateConfig = vi.fn();
     render(
       <NodeInspector
-        node={makeNode("agent", { prompt: "", output_mode: "raw", provider_hint: "claude", model: "claude-sonnet-4-6" })}
+        node={makeNode("agent", { prompt: "", output_mode: "raw", provider_hint: "claude", model: "sonnet" })}
         onUpdateLabel={vi.fn()}
         onUpdateConfig={onUpdateConfig}
         onUpdateRetryPolicy={vi.fn()}
@@ -181,16 +184,16 @@ describe("NodeInspector — agent provider/model selector", () => {
     const onUpdateConfig = vi.fn();
     render(
       <NodeInspector
-        node={makeNode("agent", { prompt: "", output_mode: "raw", provider_hint: "gemini" })}
+        node={makeNode("agent", { prompt: "", output_mode: "raw", provider_hint: "claude" })}
         onUpdateLabel={vi.fn()}
         onUpdateConfig={onUpdateConfig}
         onUpdateRetryPolicy={vi.fn()}
       />
     );
     const modelSelect = getModelSelect();
-    fireEvent.change(modelSelect, { target: { value: "gemini-2.5-pro" } });
+    fireEvent.change(modelSelect, { target: { value: "opus" } });
     expect(onUpdateConfig).toHaveBeenCalledWith(
-      expect.objectContaining({ model: "gemini-2.5-pro" })
+      expect.objectContaining({ model: "opus" })
     );
   });
 

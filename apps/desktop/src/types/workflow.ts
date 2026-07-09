@@ -36,13 +36,20 @@ export interface RetryPolicy {
 
 export type AgentOutputMode = "raw" | "json_stdout" | "json_last_line";
 
+/** Interactive-session turn semantics (DEC-009). */
+export type AgentCompletionMode = "auto" | "manual";
+
 export interface AgentNodeConfig {
   prompt: string;
   command?: string;
-  /** Known provider key, e.g. "claude" | "openai" | "gemini" | "custom". See providers.ts. */
+  /** Known provider key, e.g. "claude" | "openai" | "custom". See providers.ts. */
   provider_hint?: string;
   model?: string;
   output_mode?: AgentOutputMode;
+  /** Interactive claude sessions only (DEC-009). Defaults to "auto". */
+  completion_mode?: AgentCompletionMode;
+  /** --permission-mode for interactive claude sessions (DEC-009). Defaults to "acceptEdits". */
+  permission_mode?: string;
 }
 
 export interface NodeDefinition {

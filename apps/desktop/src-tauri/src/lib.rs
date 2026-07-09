@@ -43,6 +43,11 @@ pub fn run() {
             commands::get_settings,
             commands::set_setting,
             commands::open_workspace_picker,
+            // Interactive agent sessions (DEC-009) + provider registry (DEC-010)
+            commands::agent_terminal_input,
+            commands::agent_terminal_resize,
+            commands::complete_agent_node,
+            commands::get_codex_default_model,
         ])
         .run(tauri::generate_context!())
         .expect("error while running agent arcade");

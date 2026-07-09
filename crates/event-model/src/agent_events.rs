@@ -19,6 +19,22 @@ pub struct AgentStartedPayload {
     pub provider: String,
     /// Monotonic start timestamp offset from run start, in milliseconds.
     pub run_elapsed_ms: u64,
+    /// Interactive sessions only (DEC-009): the `--session-id` UUID pinned on
+    /// the CLI invocation. `None` for pipe-based executions.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub session_id: Option<String>,
+}
+
+/// Payload for `agent.awaiting_user` — an interactive session's turn ended in
+/// `completion_mode: manual`; the session is held open for user steering and
+/// the node is `Waiting` until explicitly completed (DEC-009).
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AgentAwaitingUserPayload {
+    pub provider: String,
+    /// The interactive session's `--session-id` UUID.
+    pub session_id: String,
+    /// Elapsed time of the completed turn, in milliseconds.
+    pub turn_elapsed_ms: u64,
 }
 
 /// Payload for `agent.output_received` — a chunk of agent output arrived
@@ -66,6 +82,8 @@ pub enum AgentEventKind {
     Started(AgentStartedPayload),
     #[serde(rename = "agent.output_received")]
     OutputReceived(AgentOutputReceivedPayload),
+    #[serde(rename = "agent.awaiting_user")]
+    AwaitingUser(AgentAwaitingUserPayload),
     #[serde(rename = "agent.completed")]
     Completed(AgentCompletedPayload),
     #[serde(rename = "agent.failed")]
@@ -94,10 +112,33 @@ mod tests {
         let p = AgentStartedPayload {
             provider: "claude-opus-4-6".into(),
             run_elapsed_ms: 250,
+            session_id: None,
         };
         let v: serde_json::Value = serde_json::to_value(&p).unwrap();
         assert_eq!(v["provider"], "claude-opus-4-6");
         assert_eq!(v["run_elapsed_ms"], 250);
+        // session_id omitted when None (backward-compatible wire shape)
+        assert!(v.get("session_id").is_none());
+    }
+
+    #[test]
+    fn agent_started_deserializes_without_session_id() {
+        // Pre-DEC-009 events have no session_id key — must still deserialize.
+        let p: AgentStartedPayload =
+            serde_json::from_str(r#"{"provider":"p","run_elapsed_ms":1}"#).unwrap();
+        assert!(p.session_id.is_none());
+    }
+
+    #[test]
+    fn agent_awaiting_user_round_trip() {
+        let e = AgentEventKind::AwaitingUser(AgentAwaitingUserPayload {
+            provider: "claude/opus".into(),
+            session_id: "6f9619ff-8b86-4d01-b42d-00cf4fc964ff".into(),
+            turn_elapsed_ms: 45210,
+        });
+        let v: serde_json::Value = serde_json::to_value(&e).unwrap();
+        assert_eq!(v["event_type"], "agent.awaiting_user");
+        assert_eq!(v["payload"]["turn_elapsed_ms"], 45210);
     }
 
     #[test]
@@ -157,7 +198,7 @@ mod tests {
     }
 
     #[test]
-    fn all_five_variants_serialize() {
+    fn all_variants_serialize() {
         let variants: Vec<AgentEventKind> = vec![
             AgentEventKind::RequestPrepared(AgentRequestPreparedPayload {
                 provider: "p".into(),
@@ -167,11 +208,17 @@ mod tests {
             AgentEventKind::Started(AgentStartedPayload {
                 provider: "p".into(),
                 run_elapsed_ms: 0,
+                session_id: None,
             }),
             AgentEventKind::OutputReceived(AgentOutputReceivedPayload {
                 chunk: "x".into(),
                 cumulative_chars: 1,
                 is_final: false,
+            }),
+            AgentEventKind::AwaitingUser(AgentAwaitingUserPayload {
+                provider: "p".into(),
+                session_id: "s".into(),
+                turn_elapsed_ms: 1,
             }),
             AgentEventKind::Completed(AgentCompletedPayload {
                 provider: "p".into(),
@@ -187,7 +234,7 @@ mod tests {
                 duration_ms: None,
             }),
         ];
-        assert_eq!(variants.len(), 5);
+        assert_eq!(variants.len(), 6);
         for v in &variants {
             serde_json::to_string(v).expect("variant should serialize");
         }

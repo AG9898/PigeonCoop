@@ -46,6 +46,8 @@ fn agent_node_definition() -> NodeDefinition {
             provider_hint: None,
             model: None,
             output_mode: Default::default(),
+                completion_mode: Default::default(),
+                permission_mode: None,
         }),
         input_contract: json!({"task": "string"}),
         output_contract: json!({"plan": "string"}),

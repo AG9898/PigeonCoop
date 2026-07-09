@@ -1652,3 +1652,35 @@ body {
     animation: none !important;
   }
 }
+
+/* ── Agent session terminal (DEC-009) ─────────────────────────────────── */
+.ast-panel {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 8px;
+}
+.ast-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.ast-session-id {
+  opacity: 0.6;
+  font-weight: normal;
+}
+.ast-hint {
+  padding: 4px 10px;
+  font-size: 11px;
+  color: var(--color-text-dim, #8b93a7);
+  border-bottom: 1px solid var(--color-border, #222a38);
+}
+.ast-terminal {
+  height: 320px;
+  min-height: 160px;
+  padding: 4px;
+  background: #0a0e14;
+}
+.ast-complete-btn {
+  font-size: 11px;
+}
