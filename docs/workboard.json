@@ -2479,7 +2479,7 @@
       "id": "TEST-006",
       "group_id": "TEST",
       "title": "E2E test: failure handling",
-      "status": "todo",
+      "status": "done",
       "priority": "medium",
       "type": "testing",
       "summary": "E2E test running a workflow where a Tool node fails and verifying Failed state is shown.",

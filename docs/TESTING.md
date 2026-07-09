@@ -315,7 +315,7 @@ export const config = {
 2. **Run flow** — load the demo workflow, start a run, observe node state transitions (**implemented: `tests/e2e/specs/run.spec.js`**)
 3. **Human review gate** — run reaches a Human Review node, user approves, run continues (**implemented: `tests/e2e/specs/review.spec.js`**)
 4. **Replay flow** — open a completed run, scrub the timeline, inspect events (**implemented: `tests/e2e/specs/replay.spec.js`**)
-5. **Failure handling** — run a workflow where a Tool node fails, verify Failed state is shown
+5. **Failure handling** — run a workflow where a Tool node fails, verify Failed state is shown (**implemented: `tests/e2e/specs/failure.spec.js`**)
 
 ### Implemented specs
 
@@ -326,6 +326,7 @@ export const config = {
 | `tests/e2e/specs/run.spec.js` | Run flow — Library view, create/start run via IPC, node state transitions via `list_events_for_run`, LiveRunView UI assertions |
 | `tests/e2e/specs/review.spec.js` | Human review gate — run pauses at HumanReview, panel visible, Approve clicked, run resumes to Succeeded, post-approval event log assertions |
 | `tests/e2e/specs/replay.spec.js` | Replay flow — complete a run via IPC, Library → Replay navigation, timeline scrubbing (first/last/next/prev), graph state panel updates, event inspector envelope/payload/node-context panes |
+| `tests/e2e/specs/failure.spec.js` | Failure handling — dedicated `start → tool → end` workflow with a Tool node that exits non-zero, run reaches Failed, `.wf-node--failed` renders on the Tool node, node/run event log assertions |
 
 ### IPC access pattern in E2E tests
 
@@ -351,6 +352,15 @@ E2E specs drive runs via `window.__TAURI_INTERNALS__.invoke()` inside `browser.e
 4. **Timeline scrubbing** — tests all scrubber controls (go-to-first, go-to-last, next, previous buttons via `aria-label`), verifies that node state count in `[data-testid="graph-state-panel"]` increases when scrubbing forward and decreases when scrubbing backward.
 5. **Event inspector** — verifies envelope pane (`ei-envelope`) shows event fields, payload pane (`ei-payload`) shows JSON content, clicking a `node.succeeded` event renders the node context pane (`ei-node-pane`), and scrubbing to a different event changes the envelope content.
 6. **Event data integrity** — verifies UI event count matches IPC `list_events_for_run` count, run lifecycle events (started/paused/succeeded) are present, and all demo workflow nodes have lifecycle events.
+
+### Failure handling spec (TEST-006)
+
+`tests/e2e/specs/failure.spec.js` covers the failure-handling flow. It does **not** reuse the canonical demo workflow — the demo's Tool node runs `echo 'tool executed'`, which always succeeds. Instead the spec creates a dedicated minimal workflow via IPC:
+
+- **Workflow creation** — `create_workflow` IPC with a fixed-ID `start → tool → end` graph (workflow_id `30000000-...-0001`). The Tool node's config is `{ "command": "exit 1" }` with `retry_policy.max_retries: 0`, so the node fails on its first attempt with no retry delay. The `tool → end` edge uses `condition_kind: "on_success"` and there is no `on_failure` edge, so `RouterEvaluator` returns `NoMatch` when the Tool node fails and the run coordinator fails the run (mirrors the `no_match_causes_run_failure` behavior in `crates/core-engine/src/execution/mod.rs`).
+- **Run creation and LiveRunView navigation** — creates a run via `create_run` IPC (not started), navigates Library → workflow card → run card → "Live Run" button to mount `LiveRunView` and register its event listeners *before* starting the run (same ordering rationale as `review.spec.js` / TEST-004).
+- **Run start and failure** — starts the run via IPC, polls `get_run` until `status === "failed"`, verifies the Tool node's event log contains `node.started` then `node.failed`, and verifies a `run.failed` event is recorded.
+- **Failed node visual state** — polls the DOM (via `browser.waitUntil`, not a single render pass) for `.react-flow__node-tool.wf-node--failed` in the live graph panel, asserts the node panel entry has `.lr-node-status--fail`, and asserts the run HUD `[data-testid="run-status"]` reads `failed`. Polling instead of a single assertion accounts for `node_status_changed` being a fire-and-forget Tauri push event (see WebKitWebDriver quirks below).
 
 ### WebKitWebDriver quirks
 
