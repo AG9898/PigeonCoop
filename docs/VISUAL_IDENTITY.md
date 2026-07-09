@@ -108,6 +108,8 @@ Rules:
 - `prefers-reduced-motion: reduce` freezes the tick; sprites hold their current pose
 - Canvas size = native grid × integer scale; never fractional scales
 
+**Implementation (SPRITE-002):** the shared tick lives in `apps/desktop/src/hooks/useAnimationTick.ts` as `useAnimationTick()`. It is a module-level singleton, not a React context: a single `setInterval(100ms)` starts on the first subscriber and stops when the last one unmounts, so any number of `PigeonSprite` instances share exactly one timer. `useAnimationTick` checks `window.matchMedia('(prefers-reduced-motion: reduce)')` before starting the interval — when reduced motion is requested, no interval is created and every sprite stays pinned to frame 0, which freezes each on its current pose. `PigeonSprite.tsx` (`apps/desktop/src/components/nodes/`) renders a `26×24` native-grid `<canvas>` at 3x integer scale (78×72 px display), calls `drawPigeon` in a `useEffect` keyed on `(state, frame, flipped)`, and guards `ctx === null` so it degrades safely in environments without 2D canvas support (e.g. jsdom in tests).
+
 *(The previous CSS `steps()` sprite-sheet system remains documented in git history and applies only to the legacy WebP assets in §2. Do not build new animation on it.)*
 
 ### Pixel rendering
@@ -239,7 +241,7 @@ The target is one unique character per node type. Design priority order reflects
 
 | Node type | Current state | Target character concept |
 |---|---|---|
-| Agent | procedural pigeon designed (integration in SPRITE-002) | pigeon — the primary actor |
+| Agent | procedural pigeon integrated (SPRITE-002) — `AgentNode` registered for the `agent` node type in `WorkflowCanvas` | pigeon — the primary actor |
 | Tool | text-based | wrench-bot or mechanical bird |
 | Router | text-based | signpost character / traffic controller |
 | Human Review | text-based | human silhouette / overseer |
@@ -280,6 +282,7 @@ Each new character is authored **procedurally in code** (DEC-008) — a hand-dra
 | City backdrop CSS | `apps/desktop/src/styles/cityBackdrop.css` |
 | PigeonSprite component | `apps/desktop/src/components/nodes/PigeonSprite.tsx` |
 | AgentNode component | `apps/desktop/src/components/nodes/AgentNode.tsx` |
+| Shared animation tick hook | `apps/desktop/src/hooks/useAnimationTick.ts` |
 | Sprite CSS | `apps/desktop/src/styles/global.css` (ag-node section) |
 | WorkflowCanvas registration | `apps/desktop/src/components/canvas/WorkflowCanvas.tsx` |
 | WorkflowNode (text-based) | `apps/desktop/src/components/nodes/WorkflowNode.tsx` |

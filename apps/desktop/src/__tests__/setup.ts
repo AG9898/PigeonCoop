@@ -18,6 +18,33 @@ vi.mock("@tauri-apps/api/event", () => ({
   emit: vi.fn(() => Promise.resolve()),
 }));
 
+// Stub HTMLCanvasElement.prototype.getContext("2d"): jsdom does not implement
+// a real 2D canvas context (would require the optional "canvas" npm
+// package) and otherwise logs a noisy "Not implemented" error. Procedural
+// sprite/backdrop components (pigeonDrawing.ts, cityDrawing.ts, DEC-008)
+// draw with a small set of primitive calls — stub just enough that draw
+// routines run to completion in tests without throwing.
+if (typeof HTMLCanvasElement !== "undefined") {
+  HTMLCanvasElement.prototype.getContext = vi.fn(() => ({
+    fillRect: vi.fn(),
+    clearRect: vi.fn(),
+    beginPath: vi.fn(),
+    closePath: vi.fn(),
+    arc: vi.fn(),
+    fill: vi.fn(),
+    save: vi.fn(),
+    restore: vi.fn(),
+    translate: vi.fn(),
+    scale: vi.fn(),
+    set fillStyle(_v: unknown) {},
+    get fillStyle() { return "#000"; },
+    set globalAlpha(_v: unknown) {},
+    get globalAlpha() { return 1; },
+    set imageSmoothingEnabled(_v: unknown) {},
+    get imageSmoothingEnabled() { return false; },
+  })) as unknown as typeof HTMLCanvasElement.prototype.getContext;
+}
+
 // Mock reactflow: jsdom lacks ResizeObserver and SVG APIs required by the
 // real library. Tests that exercise the canvas mount it as a plain div.
 vi.mock("reactflow", () => ({

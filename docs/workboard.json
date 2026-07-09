@@ -3038,7 +3038,7 @@
       "id": "SPRITE-002",
       "group_id": "SPRITE",
       "title": "AgentNode procedural pigeon sprite component",
-      "status": "todo",
+      "status": "done",
       "priority": "high",
       "type": "implementation",
       "summary": "Create a canvas-based PigeonSprite component driven by the procedural drawing module from the design handoff, wrap it in an AgentNode component, and register it in WorkflowCanvas for the agent node type.",

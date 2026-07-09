@@ -22,14 +22,16 @@ import ReactFlow, {
 } from "reactflow";
 import "reactflow/dist/style.css";
 import WorkflowNode, { WorkflowNodeData } from "../nodes/WorkflowNode";
+import AgentNode from "../nodes/AgentNode";
 import type { ConditionKind, NodeKind, WorkflowDefinition } from "../../types/workflow";
 import { useCanvasKeyboard } from "../../hooks/useCanvasKeyboard";
 
-// All 7 node types mapped to the single WorkflowNode component.
+// Agent nodes render the procedural pigeon sprite (AgentNode, DEC-008); all
+// other node types remain the text-based WorkflowNode.
 const NODE_TYPES: NodeTypes = {
   start:        WorkflowNode,
   end:          WorkflowNode,
-  agent:        WorkflowNode,
+  agent:        AgentNode,
   tool:         WorkflowNode,
   router:       WorkflowNode,
   memory:       WorkflowNode,

@@ -48,11 +48,11 @@ apps/
       __tests__/
       app/
       components/
-        canvas/            # WorkflowCanvas; procedural drawing modules planned: cityDrawing.ts, CityBackdrop.tsx (SPRITE-003), pigeonDrawing.ts (SPRITE-002)
-        nodes/             # WorkflowNode (text-based); PigeonSprite + AgentNode planned in SPRITE-002
+        canvas/            # WorkflowCanvas; pigeonDrawing.ts (procedural pigeon, SPRITE-002, integrated); cityDrawing.ts + CityBackdrop.tsx planned (SPRITE-003)
+        nodes/             # WorkflowNode (text-based, 6 node types); PigeonSprite + AgentNode (procedural pigeon for the agent node type, SPRITE-002)
         panels/
       data/               # Embedded static data (e.g. demo workflow for first-run seeding)
-      hooks/              # React hooks (useFirstRun for demo seeding, useCanvasKeyboard for keyboard-driven canvas navigation)
+      hooks/              # React hooks (useFirstRun for demo seeding, useCanvasKeyboard for keyboard-driven canvas navigation, useAnimationTick for the shared ~100ms sprite tick, SPRITE-002)
       main.tsx
       state/              # Pure state-derivation utilities (no React, no side effects)
         deriveNodeStates.ts  # Reconstruct node statuses from an event slice (used by ReplayView)
