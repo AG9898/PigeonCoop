@@ -2922,7 +2922,7 @@
       "id": "UI-BLD-008",
       "group_id": "UI-BLD",
       "title": "Provider and model selector in agent node inspector",
-      "status": "todo",
+      "status": "done",
       "priority": "medium",
       "type": "implementation",
       "summary": "Add provider and model dropdowns to the agent node section of the NodeInspector panel.",

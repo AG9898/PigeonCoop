@@ -32,6 +32,11 @@ const callbacks = {
   onUpdateRetryPolicy: vi.fn(),
 };
 
+/** The MODEL select is the only <select> containing an "Other..." option. */
+function getModelSelect(): HTMLSelectElement {
+  return screen.getByRole("option", { name: "Other..." }).closest("select") as HTMLSelectElement;
+}
+
 beforeEach(() => {
   vi.clearAllMocks();
 });
@@ -92,21 +97,112 @@ describe("NodeInspector — agent config", () => {
     expect(screen.getByPlaceholderText("Instruction text sent to the agent")).toBeTruthy();
   });
 
-  it("renders command and model inputs", () => {
-    render(<NodeInspector node={makeNode("agent", { prompt: "", output_mode: "raw" })} {...callbacks} />);
-    expect(screen.getByPlaceholderText("e.g. claude-code")).toBeTruthy();
-    expect(screen.getByPlaceholderText("e.g. claude-sonnet-4-6")).toBeTruthy();
-  });
-
-  it("renders provider input", () => {
-    render(<NodeInspector node={makeNode("agent", { prompt: "", output_mode: "raw" })} {...callbacks} />);
-    expect(screen.getByPlaceholderText("e.g. claude, openai")).toBeTruthy();
-  });
-
   it("renders output mode select defaulting to raw", () => {
     render(<NodeInspector node={makeNode("agent", { prompt: "", output_mode: "raw" })} {...callbacks} />);
     const sel = screen.getByDisplayValue("raw") as HTMLSelectElement;
     expect(sel.tagName).toBe("SELECT");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Agent config — provider / model selector (UI-BLD-008)
+// ---------------------------------------------------------------------------
+
+describe("NodeInspector — agent provider/model selector", () => {
+  it("does not show a raw COMMAND field or MODEL selector by default (no provider set)", () => {
+    render(<NodeInspector node={makeNode("agent", { prompt: "", output_mode: "raw" })} {...callbacks} />);
+    expect(screen.queryByPlaceholderText("e.g. claude-code")).toBeNull();
+    // MODEL select is shown when provider isn't "custom" — verify it's present and blank.
+    const modelSelect = getModelSelect();
+    expect(modelSelect.value).toBe("");
+  });
+
+  it("lists all KNOWN_PROVIDERS entries in the provider dropdown", () => {
+    render(<NodeInspector node={makeNode("agent", { prompt: "", output_mode: "raw" })} {...callbacks} />);
+    expect(screen.getByRole("option", { name: "Claude Code" })).toBeTruthy();
+    expect(screen.getByRole("option", { name: "OpenAI Codex" })).toBeTruthy();
+    expect(screen.getByRole("option", { name: "Gemini CLI" })).toBeTruthy();
+    expect(screen.getByRole("option", { name: "Custom Command" })).toBeTruthy();
+  });
+
+  it("populates the model dropdown with curated models for a known provider", () => {
+    render(
+      <NodeInspector
+        node={makeNode("agent", { prompt: "", output_mode: "raw", provider_hint: "claude" })}
+        {...callbacks}
+      />
+    );
+    expect(screen.getByRole("option", { name: "Claude Sonnet 4.6" })).toBeTruthy();
+    expect(screen.getByRole("option", { name: "Claude Opus 4.6" })).toBeTruthy();
+    expect(screen.getByRole("option", { name: "Other..." })).toBeTruthy();
+  });
+
+  it("shows a free-form model input when Other... is selected", () => {
+    render(
+      <NodeInspector
+        node={makeNode("agent", { prompt: "", output_mode: "raw", provider_hint: "claude" })}
+        {...callbacks}
+      />
+    );
+    const modelSelect = getModelSelect();
+    fireEvent.change(modelSelect, { target: { value: "__other__" } });
+    expect(screen.getByPlaceholderText("e.g. claude-sonnet-4-6")).toBeTruthy();
+  });
+
+  it("shows a raw CLI command input and hides the model dropdown when provider is Custom", () => {
+    render(
+      <NodeInspector
+        node={makeNode("agent", { prompt: "", output_mode: "raw", provider_hint: "custom" })}
+        {...callbacks}
+      />
+    );
+    expect(screen.getByPlaceholderText("e.g. claude-code")).toBeTruthy();
+    expect(screen.queryByRole("option", { name: "Other..." })).toBeNull();
+  });
+
+  it("resets model to undefined when provider changes", () => {
+    const onUpdateConfig = vi.fn();
+    render(
+      <NodeInspector
+        node={makeNode("agent", { prompt: "", output_mode: "raw", provider_hint: "claude", model: "claude-sonnet-4-6" })}
+        onUpdateLabel={vi.fn()}
+        onUpdateConfig={onUpdateConfig}
+        onUpdateRetryPolicy={vi.fn()}
+      />
+    );
+    const providerSelect = screen.getByDisplayValue("Claude Code");
+    fireEvent.change(providerSelect, { target: { value: "openai" } });
+    expect(onUpdateConfig).toHaveBeenCalledWith(
+      expect.objectContaining({ provider_hint: "openai", model: undefined })
+    );
+  });
+
+  it("updates config with a curated model selection", () => {
+    const onUpdateConfig = vi.fn();
+    render(
+      <NodeInspector
+        node={makeNode("agent", { prompt: "", output_mode: "raw", provider_hint: "gemini" })}
+        onUpdateLabel={vi.fn()}
+        onUpdateConfig={onUpdateConfig}
+        onUpdateRetryPolicy={vi.fn()}
+      />
+    );
+    const modelSelect = getModelSelect();
+    fireEvent.change(modelSelect, { target: { value: "gemini-2.5-pro" } });
+    expect(onUpdateConfig).toHaveBeenCalledWith(
+      expect.objectContaining({ model: "gemini-2.5-pro" })
+    );
+  });
+
+  it("loads an existing node without a model field with a blank model selector", () => {
+    render(
+      <NodeInspector
+        node={makeNode("agent", { prompt: "", output_mode: "raw", provider_hint: "claude" })}
+        {...callbacks}
+      />
+    );
+    const modelSelect = getModelSelect();
+    expect(modelSelect.value).toBe("");
   });
 });
 

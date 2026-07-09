@@ -5,20 +5,15 @@
 
 import { useState } from "react";
 import type { Node } from "reactflow";
-import type { NodeKind, RetryPolicy } from "../../types/workflow";
+import type { AgentNodeConfig, NodeKind, RetryPolicy } from "../../types/workflow";
+import { CUSTOM_PROVIDER_ID, KNOWN_PROVIDERS, OTHER_MODEL_OPTION } from "../../types/providers";
 import type { WorkflowNodeData } from "../nodes/WorkflowNode";
 
 // ---------------------------------------------------------------------------
 // Per-kind config types (mirrors Rust NodeConfig variants in node_config.rs)
 // ---------------------------------------------------------------------------
 
-interface AgentConfig {
-  prompt: string;
-  command?: string;
-  provider_hint?: string;
-  model?: string;
-  output_mode?: "raw" | "json_stdout" | "json_last_line";
-}
+type AgentConfig = AgentNodeConfig;
 
 interface ToolConfig {
   command: string;
@@ -86,6 +81,35 @@ interface AgentFormProps {
 }
 
 function AgentForm({ config, onChange }: AgentFormProps) {
+  const selectedProvider = KNOWN_PROVIDERS.find((p) => p.id === config.provider_hint);
+  const isCustomProvider = config.provider_hint === CUSTOM_PROVIDER_ID;
+  const curatedModelIds = selectedProvider?.models.map((m) => m.id) ?? [];
+
+  // Tracks whether the model dropdown is showing "Other..." (free-form input).
+  // Initialized once per mount from the incoming config; NodeInspector remounts
+  // (key={node.id}) whenever a different node is selected, so this naturally
+  // resets when the selection changes.
+  const [otherModelSelected, setOtherModelSelected] = useState(
+    () => config.model !== undefined && !curatedModelIds.includes(config.model)
+  );
+
+  const handleProviderChange = (providerId: string) => {
+    setOtherModelSelected(false);
+    onChange({ ...config, provider_hint: providerId || undefined, model: undefined });
+  };
+
+  const handleModelSelect = (value: string) => {
+    if (value === OTHER_MODEL_OPTION) {
+      setOtherModelSelected(true);
+      onChange({ ...config, model: undefined });
+    } else {
+      setOtherModelSelected(false);
+      onChange({ ...config, model: value || undefined });
+    }
+  };
+
+  const modelSelectValue = otherModelSelected ? OTHER_MODEL_OPTION : config.model ?? "";
+
   return (
     <>
       <Field label="PROMPT">
@@ -97,30 +121,57 @@ function AgentForm({ config, onChange }: AgentFormProps) {
           placeholder="Instruction text sent to the agent"
         />
       </Field>
-      <Field label="COMMAND">
-        <input
-          className="ni-input"
-          value={config.command ?? ""}
-          onChange={(e) => onChange({ ...config, command: e.target.value || undefined })}
-          placeholder="e.g. claude-code"
-        />
-      </Field>
       <Field label="PROVIDER">
-        <input
-          className="ni-input"
+        <select
+          className="ni-input ni-select"
           value={config.provider_hint ?? ""}
-          onChange={(e) => onChange({ ...config, provider_hint: e.target.value || undefined })}
-          placeholder="e.g. claude, openai"
-        />
+          onChange={(e) => handleProviderChange(e.target.value)}
+        >
+          <option value="">— none —</option>
+          {KNOWN_PROVIDERS.map((p) => (
+            <option key={p.id} value={p.id}>
+              {p.label}
+            </option>
+          ))}
+        </select>
       </Field>
-      <Field label="MODEL">
-        <input
-          className="ni-input"
-          value={config.model ?? ""}
-          onChange={(e) => onChange({ ...config, model: e.target.value || undefined })}
-          placeholder="e.g. claude-sonnet-4-6"
-        />
-      </Field>
+      {!isCustomProvider && (
+        <Field label="MODEL">
+          <select
+            className="ni-input ni-select"
+            value={modelSelectValue}
+            onChange={(e) => handleModelSelect(e.target.value)}
+          >
+            <option value="">— none —</option>
+            {selectedProvider?.models.map((m) => (
+              <option key={m.id} value={m.id}>
+                {m.label}
+              </option>
+            ))}
+            <option value={OTHER_MODEL_OPTION}>Other...</option>
+          </select>
+        </Field>
+      )}
+      {!isCustomProvider && otherModelSelected && (
+        <Field label="MODEL (OTHER)">
+          <input
+            className="ni-input"
+            value={config.model ?? ""}
+            onChange={(e) => onChange({ ...config, model: e.target.value || undefined })}
+            placeholder="e.g. claude-sonnet-4-6"
+          />
+        </Field>
+      )}
+      {isCustomProvider && (
+        <Field label="COMMAND">
+          <input
+            className="ni-input"
+            value={config.command ?? ""}
+            onChange={(e) => onChange({ ...config, command: e.target.value || undefined })}
+            placeholder="e.g. claude-code"
+          />
+        </Field>
+      )}
       <Field label="OUTPUT MODE">
         <select
           className="ni-input ni-select"

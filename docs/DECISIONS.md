@@ -299,7 +299,9 @@ This is production code, not a test workaround. The polling fallback also handle
 
 **Tradeoffs:** Both the Rust adapter constant and the TypeScript constants file must be updated together when a new provider is added. Accepted: the coupling is explicit and co-located.
 
-**Blocks:** MODEL-008, ADAPT-005 (done — `PROVIDER_REGISTRY` implemented in `crates/runtime-adapters/src/agent.rs`; see ARCHITECTURE.md §8), UI-BLD-008.
+**Blocks:** MODEL-008 (done), ADAPT-005 (done — `PROVIDER_REGISTRY` implemented in `crates/runtime-adapters/src/agent.rs`; see ARCHITECTURE.md §8), UI-BLD-008 (done — `KNOWN_PROVIDERS` implemented in `apps/desktop/src/types/providers.ts`, wired into the Agent config form in `NodeInspector.tsx`).
+
+**UI-BLD-008 implementation note:** The TypeScript mirror (`providers.ts`) additionally carries curated `models: ModelSpec[]` per provider for the dropdown UI — the Rust `PROVIDER_REGISTRY` only needs `(base_command, model_flag)` to resolve the CLI invocation and does not need a curated model list. The `Custom Command` provider (`id: "custom"`) has an empty `models` array; selecting it hides the model dropdown entirely and reveals a raw `command` text input instead, per the NodeInspector agent form behavior documented in DESIGN_SPEC.md §4.1.
 
 ---
 

@@ -66,7 +66,7 @@ Behavior:
 
 - **Label** — editable text field; edits propagate to the canvas node immediately
 - **Config section** — per-kind form fields matching the Rust `NodeConfig` variants:
-  - *Agent*: `prompt` (textarea), `command`, `provider_hint`, `model`, `output_mode` (select: raw / json_stdout / json_last_line)
+  - *Agent*: `prompt` (textarea), `provider_hint` (select, populated from `KNOWN_PROVIDERS` in `types/providers.ts`), `model` (select of the provider's curated models plus an `Other...` option that reveals a free-form text input), `command` (text input, shown only when provider is `Custom Command`), `output_mode` (select: raw / json_stdout / json_last_line). Switching provider resets `model` to `undefined`. See DEC-006 in `DECISIONS.md`.
   - *Tool*: `command`, `shell`, `timeout_ms`
   - *Router*: ordered `rules` list with `condition` and `target_key` per row; add/remove rows
   - *Memory*: `key`, `scope` (run_shared / node_local), `operation` (read / write)

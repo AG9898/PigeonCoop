@@ -30,6 +30,21 @@ export interface RetryPolicy {
   max_runtime_ms?: number;
 }
 
+// ---------------------------------------------------------------------------
+// Agent node config (mirrors Rust AgentNodeConfig in node_config.rs)
+// ---------------------------------------------------------------------------
+
+export type AgentOutputMode = "raw" | "json_stdout" | "json_last_line";
+
+export interface AgentNodeConfig {
+  prompt: string;
+  command?: string;
+  /** Known provider key, e.g. "claude" | "openai" | "gemini" | "custom". See providers.ts. */
+  provider_hint?: string;
+  model?: string;
+  output_mode?: AgentOutputMode;
+}
+
 export interface NodeDefinition {
   node_id: string;
   node_type: NodeKind;
