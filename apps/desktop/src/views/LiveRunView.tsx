@@ -6,8 +6,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 import ReactFlow, {
-  Background,
-  BackgroundVariant,
   MiniMap,
   type Node,
   type Edge,
@@ -17,6 +15,7 @@ import "reactflow/dist/style.css";
 import WorkflowNode, {
   type WorkflowNodeData,
 } from "../components/nodes/WorkflowNode";
+import AgentNode from "../components/nodes/AgentNode";
 import type {
   NodeStatus,
   NodeState as VisualNodeState,
@@ -33,12 +32,14 @@ import type {
 } from "../types/ipc";
 import { ipc } from "../types/ipc";
 import { HumanReviewPanel } from "../components/panels/HumanReviewPanel";
+import { CommandOutputPanel } from "../components/panels/CommandOutputPanel";
+import { CityBackdropViewportSynced } from "../components/canvas/CityBackdrop";
 
-// All 7 node types share the WorkflowNode component.
+// Agent nodes render the procedural pigeon and runtime token health bar.
 const NODE_TYPES: NodeTypes = {
   start: WorkflowNode,
   end: WorkflowNode,
-  agent: WorkflowNode,
+  agent: AgentNode,
   tool: WorkflowNode,
   router: WorkflowNode,
   memory: WorkflowNode,
@@ -76,6 +77,8 @@ interface NodeState {
   attempt: number;
 }
 
+type TokenPctByNode = Map<string, number>;
+
 export function LiveRunView({ runId }: LiveRunViewProps) {
   const [runStatus, setRunStatus] = useState<RunStatus | null>(null);
   const [workflowName, setWorkflowName] = useState<string>("");
@@ -95,6 +98,15 @@ export function LiveRunView({ runId }: LiveRunViewProps) {
 
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const eventFeedRef = useRef<HTMLUListElement>(null);
+
+  const commandEvents = useMemo(
+    () => events.filter((ev) => ev.event_type.startsWith("command.")),
+    [events]
+  );
+  const showCommandOutput =
+    commandEvents.length > 0 &&
+    (!selectedEvent || selectedEvent.event_type.startsWith("command."));
+  const tokenPcts = useMemo(() => deriveAgentTokenPcts(events), [events]);
 
   async function handleReviewDecision(decision: HumanReviewDecision) {
     if (!reviewRequest) return;
@@ -419,7 +431,11 @@ export function LiveRunView({ runId }: LiveRunViewProps) {
           {/* Live workflow graph */}
           <div className="lr-panel lr-graph-panel" data-testid="live-graph">
             <div className="panel-header">GRAPH</div>
-            <LiveGraph workflow={workflow} nodeStatuses={nodeStatuses} />
+            <LiveGraph
+              workflow={workflow}
+              nodeStatuses={nodeStatuses}
+              tokenPcts={tokenPcts}
+            />
           </div>
 
           {/* Node status panel */}
@@ -485,7 +501,9 @@ export function LiveRunView({ runId }: LiveRunViewProps) {
           {/* Event detail / command output panel */}
           <div className="lr-panel lr-detail-panel">
             <div className="panel-header">DETAIL</div>
-            {selectedEvent ? (
+            {showCommandOutput ? (
+              <CommandOutputPanel events={commandEvents} />
+            ) : selectedEvent ? (
               <div className="lr-detail-content">
                 <div className="lr-detail-row">
                   <span className="lr-detail-label">event_id</span>
@@ -548,9 +566,10 @@ const ACTIVE_STATUSES = new Set<NodeStatus>(["running", "waiting"]);
 interface LiveGraphProps {
   workflow: WorkflowDefinition | null;
   nodeStatuses: Map<string, NodeState>;
+  tokenPcts: TokenPctByNode;
 }
 
-function LiveGraph({ workflow, nodeStatuses }: LiveGraphProps) {
+function LiveGraph({ workflow, nodeStatuses, tokenPcts }: LiveGraphProps) {
   const flowNodes: Node<WorkflowNodeData>[] = useMemo(() => {
     if (!workflow) return [];
     return workflow.nodes.map((n) => {
@@ -562,12 +581,18 @@ function LiveGraph({ workflow, nodeStatuses }: LiveGraphProps) {
         id: n.node_id,
         type: n.node_type,
         position: { x: n.display.x, y: n.display.y },
-        data: { kind: n.node_type, label: n.label, state: visualState },
+        data: {
+          kind: n.node_type,
+          label: n.label,
+          state: visualState,
+          tokenPct:
+            n.node_type === "agent" ? tokenPcts.get(n.node_id) : undefined,
+        },
         draggable: false,
         selectable: false,
       };
     });
-  }, [workflow, nodeStatuses]);
+  }, [workflow, nodeStatuses, tokenPcts]);
 
   const flowEdges: Edge[] = useMemo(() => {
     if (!workflow) return [];
@@ -605,12 +630,8 @@ function LiveGraph({ workflow, nodeStatuses }: LiveGraphProps) {
         zoomOnScroll
         proOptions={{ hideAttribution: true }}
       >
-        <Background
-          variant={BackgroundVariant.Dots}
-          gap={20}
-          size={1}
-          color="var(--color-border)"
-        />
+        <CityBackdropViewportSynced />
+        <div className="wf-canvas-grid" aria-hidden="true" />
         <MiniMap
           nodeColor="var(--color-surface)"
           maskColor="rgba(13,15,20,0.75)"
@@ -698,6 +719,71 @@ const KNOWN_FAMILIES = new Set([
 function eventFamilyClass(eventType: string): string {
   const family = eventFamily(eventType);
   return KNOWN_FAMILIES.has(family) ? `lr-event-item--${family}` : "";
+}
+
+function deriveAgentTokenPcts(events: RunEvent[]): TokenPctByNode {
+  const tokenPcts: TokenPctByNode = new Map();
+  for (const event of events) {
+    if (!event.node_id) continue;
+    if (
+      event.event_type !== "agent.completed" &&
+      event.event_type !== "agent.response"
+    ) {
+      continue;
+    }
+
+    const pct = tokenPctFromPayload(event.payload);
+    if (pct !== null) {
+      tokenPcts.set(event.node_id, pct);
+    }
+  }
+  return tokenPcts;
+}
+
+function tokenPctFromPayload(payload: unknown): number | null {
+  const record = asRecord(payload);
+  if (!record) return null;
+
+  const usage = asRecord(record.usage);
+  const tokensUsed =
+    readNumber(record.tokens_used) ??
+    readNumber(record.tokensUsed) ??
+    readNumber(usage?.tokens_used) ??
+    readNumber(usage?.tokensUsed);
+  const contextLimit =
+    readNumber(record.context_limit) ??
+    readNumber(record.contextLimit) ??
+    readNumber(usage?.context_limit) ??
+    readNumber(usage?.contextLimit);
+  const inputTokens =
+    readNumber(record.input_tokens) ??
+    readNumber(record.inputTokens) ??
+    readNumber(usage?.input_tokens) ??
+    readNumber(usage?.inputTokens);
+  const outputTokens =
+    readNumber(record.output_tokens) ??
+    readNumber(record.outputTokens) ??
+    readNumber(usage?.output_tokens) ??
+    readNumber(usage?.outputTokens);
+  const derivedUsed =
+    inputTokens !== null || outputTokens !== null
+      ? (inputTokens ?? 0) + (outputTokens ?? 0)
+      : null;
+  const used = tokensUsed ?? derivedUsed;
+
+  if (used === null || contextLimit === null || contextLimit <= 0) return null;
+  return Math.min(100, Math.max(0, (used / contextLimit) * 100));
+}
+
+function asRecord(value: unknown): Record<string, unknown> | null {
+  return typeof value === "object" && value !== null
+    ? (value as Record<string, unknown>)
+    : null;
+}
+
+function readNumber(value: unknown): number | null {
+  if (typeof value !== "number" || !Number.isFinite(value)) return null;
+  return value;
 }
 
 /** Format an ISO timestamp to a short HH:MM:SS.mmm display. */

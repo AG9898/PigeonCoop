@@ -2,7 +2,12 @@ import { render, screen, fireEvent, act } from "@testing-library/react";
 import { listen } from "@tauri-apps/api/event";
 import { invoke } from "@tauri-apps/api/core";
 import { LiveRunView } from "../views/LiveRunView";
+import WorkflowNode, {
+  type WorkflowNodeData,
+} from "../components/nodes/WorkflowNode";
 import { vi, type Mock } from "vitest";
+import type { ComponentType } from "react";
+import type { NodeState as VisualNodeState } from "../types/workflow";
 
 // Type the mocks for convenience
 const mockInvoke = invoke as Mock;
@@ -270,6 +275,63 @@ describe("LiveRunView", () => {
     expect(screen.getAllByText("node-abc").length).toBeGreaterThanOrEqual(2);
   });
 
+  it("shows command output while preserving generic detail for non-command events", async () => {
+    let eventCallback: ((ev: unknown) => void) | undefined;
+    mockListen.mockImplementation(
+      (event: string, cb: (ev: unknown) => void) => {
+        if (event === "run_event_appended") eventCallback = cb;
+        return Promise.resolve(() => {});
+      }
+    );
+
+    await act(async () => {
+      render(<LiveRunView runId="aaaa-1111" />);
+    });
+
+    await act(async () => {
+      eventCallback?.({
+        payload: {
+          event: {
+            event_id: "ev-cmd-001",
+            run_id: "aaaa-1111",
+            workflow_id: "wf-0001",
+            event_type: "command.stdout",
+            timestamp: "2026-03-09T10:00:02Z",
+            payload: { chunk: "build ok\n", byte_offset: 0 },
+            sequence: 1,
+            node_id: "node-tool",
+          },
+        },
+      });
+    });
+
+    expect(screen.getByTestId("command-output-panel")).toBeTruthy();
+    expect(screen.getByText("build ok")).toBeTruthy();
+
+    await act(async () => {
+      eventCallback?.({
+        payload: {
+          event: {
+            event_id: "ev-node-001",
+            run_id: "aaaa-1111",
+            workflow_id: "wf-0001",
+            event_type: "node.started",
+            timestamp: "2026-03-09T10:00:03Z",
+            payload: { phase: "plan" },
+            sequence: 2,
+            node_id: "node-agent",
+          },
+        },
+      });
+    });
+
+    fireEvent.click(screen.getByText("node.started"));
+
+    expect(screen.queryByTestId("command-output-panel")).toBeNull();
+    expect(screen.getByText("ev-node-001")).toBeTruthy();
+    expect(screen.getByText(/"phase": "plan"/)).toBeTruthy();
+  });
+
   it("renders GRAPH panel header when runId is set", async () => {
     await act(async () => {
       render(<LiveRunView runId="aaaa-1111" />);
@@ -313,6 +375,49 @@ describe("LiveRunView", () => {
     );
     expect(nodeBadge).toBeTruthy();
     expect(nodeBadge!.classList.contains("lr-node-status--running")).toBe(true);
+  });
+
+  it("renders all workflow node visual state styles", () => {
+    const NodeComponent = WorkflowNode as unknown as ComponentType<{
+      data: WorkflowNodeData;
+      selected: boolean;
+    }>;
+    const visualStates: VisualNodeState[] = [
+      "idle",
+      "queued",
+      "running",
+      "waiting",
+      "succeeded",
+      "failed",
+      "skipped",
+      "paused",
+    ];
+
+    const { container, rerender } = render(
+      <NodeComponent
+        selected={false}
+        data={{ kind: "agent", label: "State probe", state: "idle" }}
+      />
+    );
+
+    for (const state of visualStates) {
+      rerender(
+        <NodeComponent
+          selected={false}
+          data={{ kind: "agent", label: "State probe", state }}
+        />
+      );
+
+      const node = container.querySelector(".wf-node");
+      const stateBadge = container.querySelector(".wf-node-state");
+      expect(node).toBeTruthy();
+      expect(stateBadge?.textContent).toBe(state);
+      if (state === "idle") {
+        expect(node?.classList.contains("wf-node--idle")).toBe(false);
+      } else {
+        expect(node?.classList.contains(`wf-node--${state}`)).toBe(true);
+      }
+    }
   });
 
   it("subscribes to human_review_requested events", async () => {
@@ -494,6 +599,51 @@ describe("LiveRunView", () => {
     );
     expect((reviewCall as unknown[])[1]).toMatchObject({
       decision: { type: "rejected" },
+    });
+    expect(screen.queryByTestId("human-review-panel")).toBeNull();
+  });
+
+  it("closes panel when Retry is clicked and sends retry_requested decision", async () => {
+    let reviewCallback: ((ev: unknown) => void) | undefined;
+    mockListen.mockImplementation(
+      (event: string, cb: (ev: unknown) => void) => {
+        if (event === "human_review_requested") reviewCallback = cb;
+        return Promise.resolve(() => {});
+      }
+    );
+    mockInvoke.mockImplementation((cmd: string) => {
+      if (cmd === "get_run") return Promise.resolve(mockRun());
+      if (cmd === "get_workflow") return Promise.resolve(mockWorkflow());
+      if (cmd === "submit_human_review_decision") return Promise.resolve();
+      return Promise.resolve(null);
+    });
+
+    await act(async () => {
+      render(<LiveRunView runId="aaaa-1111" />);
+    });
+
+    await act(async () => {
+      reviewCallback?.({
+        payload: {
+          run_id: "aaaa-1111",
+          node_id: "node-review",
+          node_label: "Human Review",
+          reason: "Retry test",
+          available_actions: ["approve", "reject", "retry"],
+          timestamp: "2026-03-09T10:01:00Z",
+        },
+      });
+    });
+
+    await act(async () => {
+      fireEvent.click(screen.getByTestId("hr-btn-retry"));
+    });
+
+    const reviewCall = mockInvoke.mock.calls.find(
+      (c: unknown[]) => c[0] === "submit_human_review_decision"
+    );
+    expect((reviewCall as unknown[])[1]).toMatchObject({
+      decision: { type: "retry_requested" },
     });
     expect(screen.queryByTestId("human-review-panel")).toBeNull();
   });

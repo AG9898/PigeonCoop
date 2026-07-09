@@ -87,10 +87,12 @@ Implemented in `crates/event-model/src/command_events.rs` as typed payload struc
 - `agent.request_prepared`
 - `agent.started`
 - `agent.output_received`
+- `agent.response`
 - `agent.completed`
 - `agent.failed`
 
 Implemented in `crates/event-model/src/agent_events.rs` as typed payload structs and `AgentEventKind` enum.
+`agent.response` is reserved for provider-normalized response summaries and may carry the same optional token fields as `agent.completed`; the current Rust adapter emits `agent.output_received` chunks plus `agent.completed`.
 
 ### 3.7 Memory events
 - `memory.read`
@@ -422,10 +424,12 @@ Both fields are nullable.
   "duration_ms": 3500,
   "input_tokens": 1200,
   "output_tokens": 400,
+  "tokens_used": 1600,
+  "context_limit": 200000,
   "output_memory_key": "plan_output"
 }
 ```
-`input_tokens`, `output_tokens`, and `output_memory_key` are nullable.
+`input_tokens`, `output_tokens`, `tokens_used`, `context_limit`, and `output_memory_key` are nullable. Runtime and replay UIs derive AgentNode context health as `tokens_used / context_limit`; when `tokens_used` is absent but `input_tokens`, `output_tokens`, and `context_limit` are present, consumers may derive `tokens_used` as `input_tokens + output_tokens`. Provider-normalized `agent.response` events use the same token fields when present.
 
 #### `agent.failed`
 ```json

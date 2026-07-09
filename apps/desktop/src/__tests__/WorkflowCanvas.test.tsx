@@ -40,6 +40,7 @@ vi.mock("reactflow", () => ({
   MiniMap: () => null,
   Handle: () => null,
   Position: { Top: "top", Bottom: "bottom", Left: "left", Right: "right" },
+  useViewport: () => ({ x: 0, y: 0, zoom: 1 }),
   useNodesState: (init: unknown[]) => {
     hooks.nodes = init;
     return [init, hooks.setNodes, vi.fn()];

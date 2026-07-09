@@ -436,6 +436,54 @@ describe("ReplayView — scrubber drives node states", () => {
       expect(detail.textContent).toContain("exit code 1");
     });
   });
+
+  it("updates agent token health at the scrubbed event position", async () => {
+    const eventsWithTokens: RunEvent[] = [
+      MULTI_NODE_EVENTS[0],
+      MULTI_NODE_EVENTS[1],
+      {
+        event_id: "evt-token-01",
+        run_id: "run-abc",
+        workflow_id: "wf-001",
+        node_id: "node-plan",
+        event_type: "agent.completed",
+        timestamp: "2026-03-08T10:00:02.500Z",
+        payload: { tokens_used: 400, context_limit: 1000 },
+        sequence: 3,
+      },
+      {
+        event_id: "evt-token-02",
+        run_id: "run-abc",
+        workflow_id: "wf-001",
+        node_id: "node-plan",
+        event_type: "agent.response",
+        timestamp: "2026-03-08T10:00:03.500Z",
+        payload: { tokens_used: 900, context_limit: 1000 },
+        sequence: 4,
+      },
+    ];
+    mockInvoke.mockResolvedValueOnce(eventsWithTokens);
+    render(<ReplayView runId="run-abc" />);
+    await waitFor(() => expect(screen.getAllByRole("option").length).toBe(4));
+
+    expect(screen.queryByTestId("replay-token-health-node-plan")).toBeNull();
+
+    fireEvent.change(screen.getByRole("slider"), { target: { value: "2" } });
+    await waitFor(() => {
+      expect(
+        screen
+          .getByTestId("replay-token-health-node-plan")
+          .style.getPropertyValue("--fill")
+      ).toBe("40");
+    });
+
+    fireEvent.change(screen.getByRole("slider"), { target: { value: "3" } });
+    await waitFor(() => {
+      const bar = screen.getByTestId("replay-token-health-node-plan");
+      expect(bar.style.getPropertyValue("--fill")).toBe("90");
+      expect(bar.style.getPropertyValue("--health-color")).toBe("#ef4444");
+    });
+  });
 });
 
 describe("App — Library to Replay navigation", () => {

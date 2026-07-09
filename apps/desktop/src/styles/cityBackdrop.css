@@ -1,0 +1,53 @@
+/* cityBackdrop.css
+ * -----------------------------------------------------------------------------
+ * Styles for the pixel-art city backdrop. Append to apps/desktop/src/styles/
+ * global.css or import as a standalone file.
+ * ---------------------------------------------------------------------------*/
+
+.city-backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background-repeat: repeat;
+  /* Critical: keep the pixel art crisp at any zoom. */
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  /* Fallback color while the tile is decoding (matches the asphalt base). */
+  background-color: #0e1015;
+  pointer-events: none;
+}
+
+.city-backdrop--synced {
+  /* When mounted inside <ReactFlow>, react-flow positions us absolutely
+   * within the .react-flow container. Make sure we sit beneath nodes/edges. */
+  z-index: 0;
+}
+
+.city-backdrop-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  pointer-events: none;
+}
+
+/* Optional: a very subtle vignette so the center of the canvas reads cleaner
+ * for the eye when the user is reading nodes. Layered on top of the backdrop. */
+.city-backdrop-vignette {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background: radial-gradient(
+    ellipse at center,
+    transparent 40%,
+    rgba(13, 15, 20, 0.45) 100%
+  );
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* The static tile has no motion; nothing to disable here. Reserved for
+   * future animated overlays (window flicker, pigeon dots). */
+}
