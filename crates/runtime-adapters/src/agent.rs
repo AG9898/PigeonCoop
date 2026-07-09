@@ -35,6 +35,30 @@ pub struct AgentCliAdapter {
     abort_tx: Arc<Mutex<Option<oneshot::Sender<()>>>>,
 }
 
+/// Known provider registry: `provider_hint` key -> (base CLI command, model flag).
+///
+/// Static data only — not part of the serialized schema (see DEC-006). Add new
+/// providers here and mirror the entry in `apps/desktop/src/types/providers.ts`.
+const PROVIDER_REGISTRY: &[(&str, &str, &str)] = &[
+    ("claude", "claude", "--model"),
+    ("openai", "codex", "--model"),
+    ("gemini", "gemini", "--model"),
+];
+
+/// Look up a known provider's (base_command, model_flag) by its `provider_hint` key.
+fn lookup_provider(provider_hint: &str) -> Option<(&'static str, &'static str)> {
+    PROVIDER_REGISTRY
+        .iter()
+        .find(|(hint, _, _)| *hint == provider_hint)
+        .map(|(_, base_command, model_flag)| (*base_command, *model_flag))
+}
+
+/// Single-quote a shell argument, escaping any embedded single quotes, so it is
+/// safe to interpolate into a command string passed to `sh -c`.
+fn shell_quote(arg: &str) -> String {
+    format!("'{}'", arg.replace('\'', r"'\''"))
+}
+
 impl AgentCliAdapter {
     pub fn new() -> Self {
         Self {
@@ -44,21 +68,37 @@ impl AgentCliAdapter {
 
     /// Resolve the CLI command to run from the node's agent config.
     ///
-    /// Priority: `config.command` > `config.provider_hint` > error.
+    /// Priority:
+    /// 1. `config.command` — used verbatim.
+    /// 2. `config.provider_hint` matching a known [`PROVIDER_REGISTRY`] entry —
+    ///    the registry's base command, with `<model_flag> <model>` appended if
+    ///    `config.model` is set.
+    /// 3. `config.provider_hint` as a raw command (unknown provider fallback).
+    /// 4. error if neither `command` nor `provider_hint` is set.
     fn resolve_command(node: &NodeDefinition) -> Result<(String, String), AdapterError> {
         match &node.config {
             NodeConfig::Agent(cfg) => {
-                let cmd = cfg
-                    .command
-                    .as_deref()
-                    .or(cfg.provider_hint.as_deref())
-                    .ok_or_else(|| {
-                        AdapterError::PreparationFailed(
-                            "AgentNodeConfig must have either `command` or `provider_hint` set"
-                                .into(),
-                        )
-                    })?
-                    .to_owned();
+                if let Some(explicit) = cfg.command.as_deref() {
+                    return Ok((explicit.to_owned(), cfg.prompt.clone()));
+                }
+
+                let provider_hint = cfg.provider_hint.as_deref().ok_or_else(|| {
+                    AdapterError::PreparationFailed(
+                        "AgentNodeConfig must have either `command` or `provider_hint` set"
+                            .into(),
+                    )
+                })?;
+
+                let cmd = match lookup_provider(provider_hint) {
+                    Some((base_command, model_flag)) => match cfg.model.as_deref() {
+                        Some(model) => {
+                            format!("{} {} {}", base_command, model_flag, shell_quote(model))
+                        }
+                        None => base_command.to_owned(),
+                    },
+                    None => provider_hint.to_owned(),
+                };
+
                 Ok((cmd, cfg.prompt.clone()))
             }
             _ => Err(AdapterError::NodeTypeNotSupported(
@@ -76,13 +116,17 @@ impl AgentCliAdapter {
     }
 
     /// Extract the provider string for event payloads.
+    ///
+    /// Returns `"<provider_hint>/<model>"` when both are set, `"<provider_hint>"`
+    /// when only the hint is set, else falls back to `config.command`, else
+    /// `"unknown"`.
     fn provider(node: &NodeDefinition) -> String {
         match &node.config {
-            NodeConfig::Agent(cfg) => cfg
-                .provider_hint
-                .clone()
-                .or_else(|| cfg.command.clone())
-                .unwrap_or_else(|| "unknown".into()),
+            NodeConfig::Agent(cfg) => match (cfg.provider_hint.as_deref(), cfg.model.as_deref()) {
+                (Some(hint), Some(model)) => format!("{}/{}", hint, model),
+                (Some(hint), None) => hint.to_owned(),
+                (None, _) => cfg.command.clone().unwrap_or_else(|| "unknown".into()),
+            },
             _ => "unknown".into(),
         }
     }
@@ -711,5 +755,74 @@ mod tests {
         let result =
             AgentCliAdapter::parse_output("no json here\n", &AgentOutputMode::JsonLastLine);
         assert!(result.is_err());
+    }
+
+    fn agent_node_hint_model(provider_hint: Option<&str>, model: Option<&str>) -> NodeDefinition {
+        let mut node = agent_node("unused", "prompt text");
+        if let NodeConfig::Agent(ref mut cfg) = node.config {
+            cfg.command = None;
+            cfg.provider_hint = provider_hint.map(str::to_owned);
+            cfg.model = model.map(str::to_owned);
+        }
+        node
+    }
+
+    #[test]
+    fn resolve_command_known_provider_with_model_appends_model_flag() {
+        let node = agent_node_hint_model(Some("claude"), Some("claude-sonnet-4-6"));
+        let (cmd, _) = AgentCliAdapter::resolve_command(&node).unwrap();
+        assert_eq!(cmd, "claude --model 'claude-sonnet-4-6'");
+    }
+
+    #[test]
+    fn resolve_command_known_provider_without_model_uses_base_command() {
+        let node = agent_node_hint_model(Some("openai"), None);
+        let (cmd, _) = AgentCliAdapter::resolve_command(&node).unwrap();
+        assert_eq!(cmd, "codex");
+    }
+
+    #[test]
+    fn resolve_command_gemini_with_model_appends_model_flag() {
+        let node = agent_node_hint_model(Some("gemini"), Some("gemini-2.5-pro"));
+        let (cmd, _) = AgentCliAdapter::resolve_command(&node).unwrap();
+        assert_eq!(cmd, "gemini --model 'gemini-2.5-pro'");
+    }
+
+    #[test]
+    fn resolve_command_unknown_provider_hint_falls_back_to_raw_command() {
+        let node = agent_node_hint_model(Some("some-custom-cli"), Some("ignored-model"));
+        let (cmd, _) = AgentCliAdapter::resolve_command(&node).unwrap();
+        // Unknown provider_hint: raw fallback ignores `model` entirely (existing behaviour).
+        assert_eq!(cmd, "some-custom-cli");
+    }
+
+    #[test]
+    fn resolve_command_explicit_command_overrides_provider_and_model() {
+        let mut node = agent_node_hint_model(Some("claude"), Some("claude-sonnet-4-6"));
+        if let NodeConfig::Agent(ref mut cfg) = node.config {
+            cfg.command = Some("my-custom-agent-cli --flag".into());
+        }
+        let (cmd, _) = AgentCliAdapter::resolve_command(&node).unwrap();
+        assert_eq!(cmd, "my-custom-agent-cli --flag");
+    }
+
+    #[test]
+    fn provider_returns_hint_slash_model_when_both_set() {
+        let node = agent_node_hint_model(Some("claude"), Some("claude-sonnet-4-6"));
+        assert_eq!(AgentCliAdapter::provider(&node), "claude/claude-sonnet-4-6");
+    }
+
+    #[test]
+    fn provider_returns_hint_only_when_model_unset() {
+        let node = agent_node_hint_model(Some("openai"), None);
+        assert_eq!(AgentCliAdapter::provider(&node), "openai");
+    }
+
+    #[test]
+    fn lookup_provider_known_and_unknown() {
+        assert_eq!(lookup_provider("claude"), Some(("claude", "--model")));
+        assert_eq!(lookup_provider("openai"), Some(("codex", "--model")));
+        assert_eq!(lookup_provider("gemini"), Some(("gemini", "--model")));
+        assert_eq!(lookup_provider("not-a-provider"), None);
     }
 }

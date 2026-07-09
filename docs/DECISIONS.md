@@ -299,7 +299,7 @@ This is production code, not a test workaround. The polling fallback also handle
 
 **Tradeoffs:** Both the Rust adapter constant and the TypeScript constants file must be updated together when a new provider is added. Accepted: the coupling is explicit and co-located.
 
-**Blocks:** MODEL-008, ADAPT-005, UI-BLD-008.
+**Blocks:** MODEL-008, ADAPT-005 (done — `PROVIDER_REGISTRY` implemented in `crates/runtime-adapters/src/agent.rs`; see ARCHITECTURE.md §8), UI-BLD-008.
 
 ---
 

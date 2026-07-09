@@ -337,6 +337,12 @@ Each adapter should expose a consistent interface such as:
 - Non-zero exit code emits `AgentEventKind::Failed` with the exit code in `error_code`
 - Abort/timeout support identical to `CliAdapter` pattern (oneshot channel + `tokio::select!`)
 
+### Implementation notes (ADAPT-005)
+- `PROVIDER_REGISTRY` — a private `&[(&str, &str, &str)]` constant in `crates/runtime-adapters/src/agent.rs` mapping known `provider_hint` keys to `(base_command, model_flag)`: `"claude"` → (`"claude"`, `"--model"`), `"openai"` → (`"codex"`, `"--model"`), `"gemini"` → (`"gemini"`, `"--model"`). Per DEC-006, this registry is adapter-layer static data, not part of the serialized schema.
+- `resolve_command()` priority, updated: (1) `config.command` verbatim, always wins; (2) `config.provider_hint` matched against `PROVIDER_REGISTRY` — if `config.model` is set, the resolved command is `"<base_command> <model_flag> '<model>'"` (model value single-quote shell-escaped via a local `shell_quote` helper), otherwise just `<base_command>`; (3) unknown `provider_hint` falls back to using it as the raw command verbatim (pre-existing behaviour, model is ignored in this fallback since there is no known model flag to attach it to).
+- `provider()` — event metadata string, updated: returns `"<provider_hint>/<model>"` when both are set, `"<provider_hint>"` when only the hint is set, else falls back to `config.command`, else `"unknown"`. Enriches `AgentRequestPreparedPayload.provider` and `AgentStartedPayload.provider`.
+- TypeScript mirror of the registry belongs in `apps/desktop/src/types/providers.ts` (not yet created as of ADAPT-005; tracked by UI-BLD-008) — the Rust and TS tables must be kept in sync when a provider is added.
+
 ### Execution assumptions approved for v1
 - commands execute within a chosen workspace root
 - arbitrary shell commands are allowed

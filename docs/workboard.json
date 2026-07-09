@@ -2883,7 +2883,7 @@
       "id": "ADAPT-005",
       "group_id": "ADAPT",
       "title": "Provider-aware CLI command construction in AgentCliAdapter",
-      "status": "todo",
+      "status": "done",
       "priority": "medium",
       "type": "implementation",
       "summary": "Update AgentCliAdapter to construct provider-specific CLI commands using the new model field and a built-in provider registry.",
