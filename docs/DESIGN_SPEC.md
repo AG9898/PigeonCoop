@@ -2,7 +2,9 @@
 
 ## 1. Design intent
 
-The interface should feel like a **2D mission control / systems simulation / strategy HUD** rather than a generic web dashboard.
+The interface should feel like a **dark RPG campaign command interface built
+with the precision of a modern creative tool** rather than a generic web
+dashboard or a themed node-editor demo.
 
 The design goal is not novelty for its own sake. The visual style must improve a developer's ability to:
 - parse workflow structure quickly
@@ -20,8 +22,9 @@ The app must be useful for running real tasks against a repository.
 ### Pillar 2 — Legible
 A user should understand current state at a glance.
 
-### Pillar 3 — Alive
-The canvas should feel dynamic and active during execution.
+### Pillar 3 — Game-forward
+Role identity, execution state, and run progression should feel central and
+consequential without replacing technical language with fantasy copy.
 
 ### Pillar 4 — Controlled
 The user should always feel they are driving the system, not chasing it.
@@ -43,23 +46,41 @@ If a visual flourish conflicts with clarity, clarity wins.
 
 ---
 
-## 4. The unified workspace (DEC-011)
+## 4. The continuous command workspace (DEC-011, DEC-013)
 
-The app is a single screen — there is no view routing. Three regions:
+The app is a single screen with no view routing. Five stable regions preserve
+spatial context across design, live execution, and replay:
 
-1. **Workflow sidebar** (§4.1) — the always-visible library.
-2. **Top bar** (§4.2) — workflow identity and the shared action row.
-3. **Stage** — one main area showing either the **design surface** (§4.3)
-   or the **run surface** (§4.4). Live monitoring and replay are the same
-   surface: a run streams live at the tail of its event log and is
-   scrubbable back through the same timeline at any point.
+1. **Top command bar** (§4.1) — product identity, workflow identity, workspace,
+   validation, save, and run controls.
+2. **Library rail** (§4.2) — workflows and nested run history.
+3. **Command canvas** (§4.3) — the workflow graph remains the visual anchor in
+   design, live execution, and replay.
+4. **Context panel** (§4.4) — node configuration, run context, selected event,
+   output, terminal, or human review based on selection and run state.
+5. **Activity deck** (§4.5) — a collapsible bottom region for run timeline and
+   event activity. It expands during execution without replacing the canvas.
 
-Navigation is selection, not routing: selecting a workflow in the sidebar
-loads it onto the canvas; selecting a run opens the run surface for that
-run; the top bar's "Edit workflow" button returns to the design surface.
-See ARCHITECTURE.md §10 for the component/data-flow topology.
+Navigation is selection, not routing. Selecting a workflow loads its editable
+definition. Selecting a run keeps the graph in place, makes it read-only, derives
+its state from the event log, and opens the activity deck. Leaving a run restores
+editing on the same command canvas.
 
-### 4.1 Workflow sidebar
+### 4.1 Top command bar
+
+The command bar uses icon-led controls with tooltips, a compact editable workflow
+identity, persistent workspace-root control, and a visually dominant Run action.
+Save/validation feedback is concise and does not resize the bar. Run mode exposes
+a clear return-to-design control without implying page navigation.
+
+Its contents depend on workspace state:
+
+- **Design:** editable workflow name, Save (`Ctrl+S`), and Validate
+- **Run selected:** a return-to-design action plus compact run identity
+- **Always:** workspace root and the primary Run action; Run saves the live canvas
+  when needed, creates the run, starts it, and reveals the activity deck
+
+### 4.2 Library rail
 
 `WorkflowSidebar` (`components/sidebar/WorkflowSidebar.tsx`). Purpose:
 browse workflows and their run history without leaving the workspace.
@@ -80,25 +101,16 @@ Behavior:
 - run status chips stay live via an app-wide `run_status_changed`
   subscription — they update even when the run is not open on the stage
 
-### 4.2 Top bar
+The rail may collapse to an icon-width state at constrained desktop widths. Its
+selected workflow expands to reveal run history, while workflow actions live in
+a contextual menu or stable action row that cannot intercept selection.
 
-Rendered by the App shell (`app/App.tsx`). Contents depend on the stage
-mode:
+### 4.3 Command canvas and design behavior
 
-- **Design mode:** editable workflow name, Save (Ctrl+S), Validate, and a
-  status area for save/validate results.
-- **Run mode:** an "✎ Edit workflow" button returning to the design
-  surface.
-- **Always:** the workspace-root input (persisted in
-  `localStorage: agent-arcade.workspaceRoot` so Run stays one click across
-  sessions) and the **Run** button — saves the canvas (design mode),
-  creates a run in the workspace root, starts it, and opens the run
-  surface.
-
-### 4.3 Design surface
-
-`DesignSurface` (`views/DesignSurface.tsx`). Purpose: create and configure
-workflows.
+`DesignSurface` (`views/DesignSurface.tsx`) owns the editable command canvas,
+role palette, selection, and validation overlays. The palette is an integrated
+tool shelf rather than a wide permanent panel. Selecting exactly one node opens
+its configuration in the shared context panel.
 
 Required elements:
 - graph canvas
@@ -138,10 +150,24 @@ All edits are reflected in the React Flow node data and serialized to `WorkflowD
 - validation overlay shows human-readable error list; dismissable
 - preserves layout and workflow metadata
 
-### 4.4 Run surface
+### 4.4 Context panel
 
-`RunPanel` (`views/RunPanel.tsx`). Purpose: monitor an active run and
-inspect any run after the fact — the same surface serves both.
+The right context panel is persistent in geometry and contextual in content:
+
+- design with node selected: `NodeInspector`
+- design without selection: workflow overview and concise canvas state
+- run with event selected: `EventInspector` or `CommandOutputPanel`
+- interactive agent: `AgentSessionTerminal`
+- waiting review: `HumanReviewPanel`, visually prioritized above other details
+
+Tabs are used only between sibling detail views. Raw payloads remain available
+without dominating the default pane.
+
+### 4.5 Run activity deck
+
+`RunPanel` (`views/RunPanel.tsx`) supplies the read-only event-derived graph,
+compact run HUD, timeline, event feed, and detail content. Live monitoring and
+replay remain the same event-indexed surface.
 
 Everything renders from the event log at an index (`deriveNodeStates`,
 `deriveTokenPcts`). Following the live tail (index at the end) shows a
@@ -230,27 +256,30 @@ Run-level events (e.g. `run.started`) show only the envelope and payload panes �
 ## 5. Visual language
 
 ### Overall theme
-- mission control
-- tactical map
-- systems console
-- devtool with game-grade motion polish
+- RPG campaign command table
+- coordinated party roles expressed through workflow nodes
+- modern creative-tool spacing, controls, and panel behavior
+- developer-grade inspection with game-grade identity and state motion
 
 ### Avoid
-- cartoonish metaphors
+- faux-medieval terminology or cartoonish metaphors
 - over-saturated arcade aesthetic
 - visual noise that obscures text or state
 - faux-terminal-only presentation
+- generic cyberpunk neon and purple/blue monochrome palettes
+- ornamental frames around every surface
 
 ### Visual motifs to use
-- grids
-- radar-like overlays
+- generated campaign-map atmosphere
+- stable role portraits and code-native insignias
 - route/path illumination
-- state glows/rings
-- layered panel depth
+- resource meters and state rings
+- disciplined layered panel depth
 - restrained motion
-- pixel-art character sprites (see [`docs/VISUAL_IDENTITY.md`](VISUAL_IDENTITY.md))
+- see [`docs/VISUAL_IDENTITY.md`](VISUAL_IDENTITY.md) for the authoritative
+  generated-asset, palette, typography, and role system
 
-### Implemented design system (`styles/global.css`)
+### Design system (`styles/global.css`)
 
 The mission-control visual theme is implemented via CSS custom properties and consistent layering:
 
@@ -260,8 +289,9 @@ The mission-control visual theme is implemented via CSS custom properties and co
 - Nav bar, view headers, and HUD bars use `linear-gradient` from `--color-surface-raised` to `--color-surface` for top-lit layering
 - The `--glow-accent` variable provides a subtle blue glow for selected/focused elements
 
-**Grid overlay:**
-- The `.app` root renders a 48px CSS grid via `linear-gradient` lines at `--grid-color` (rgba(42,47,61,0.35)), giving the background a tactical-map texture
+**Canvas layering:**
+- generated environment artwork sits below a code-native grid, vignette, graph
+  edges, and graph nodes; it never contains functional labels or state
 
 **State glows and rings:**
 - Running nodes: `node-pulse` animation (2s, cubic-bezier) oscillates a blue glow ring from 4px to 12px spread
@@ -306,7 +336,9 @@ The canvas is the product centerpiece.
 
 Each node should balance identity and readability.
 
-The full visual identity system — including the character sprite system, animation state mapping, health/resource bars, and game backdrop — is specified in [`docs/VISUAL_IDENTITY.md`](VISUAL_IDENTITY.md). Agents working on visual implementation must read that document first.
+The role portrait, resource, state, and canvas asset system is specified in
+[`docs/VISUAL_IDENTITY.md`](VISUAL_IDENTITY.md). Generated portraits establish
+identity; deterministic HTML/CSS and event-derived data establish state.
 
 ### Shared node structure (text-based nodes)
 - icon/type marker

@@ -577,6 +577,47 @@ Neither new config field bumps `schema_version` — both are additive optional f
 
 ---
 
+### DEC-013 — RPG command workspace visual overhaul (2026-07-10)
+
+**Status:** accepted; implementation in progress.
+
+**Context:** The procedural pigeon, wrench-bot, and pixel-city direction made the
+workflow canvas visually distinctive but did not reach the polish of a modern
+creative tool. Design and run also replaced the central stage wholesale, which
+preserved a single-window shell but still interrupted spatial context. The user
+requested a complete dark-only overhaul with game identity as a central concern,
+permission to leave the pigeon/city identity behind, and generated imagery where
+it materially improves the product.
+
+**Decision:** Agent Arcade adopts a dark RPG/MMO command-interface identity with
+modern creative-tool structure. The workspace remains one screen and is organized
+as a top command bar, workflow library rail, persistent command canvas, contextual
+right panel, and collapsible run activity deck. Selecting a run makes the graph
+read-only and event-derived without navigating away from the workspace. Generated
+art supplies atmosphere and stable role identity; all status, controls, labels,
+meters, focus, and accessibility cues remain deterministic code-native UI.
+
+The procedural city and character renderers from DEC-008 are retired from active
+use. Existing files may remain temporarily while imports and tests migrate, but
+new visual work must follow `VISUAL_IDENTITY.md`.
+
+**Alternatives considered:** polishing the existing pixel-city system was rejected
+because it preserves the identity the overhaul is intended to replace; separate
+design/run pages were rejected because they recreate the navigation problem that
+DEC-011 solved; fully illustrated fantasy UI chrome was rejected because bitmap
+controls age poorly, scale poorly, and obscure technical state.
+
+**Tradeoffs:** generated assets add application weight and require explicit fallback
+behavior; a persistent context panel and activity deck increase shell coordination;
+the visual change invalidates some snapshot assumptions and requires headed visual
+verification. Backend state ownership, event replay semantics, IPC contracts, and
+workflow schemas are unchanged.
+
+**Follow-up implications:** update the design and visual identity docs, store runtime
+art under `apps/desktop/public/assets/command-deck/`, verify fallback icons and image
+loading, and capture the workspace at the desktop sizes listed in
+`VISUAL_IDENTITY.md`.
+
 ## Open decisions
 
 *(No open decisions at this time.)*

@@ -558,9 +558,28 @@ agent-arcade/
 
 ---
 
-## 8. What is not tested here
+## 8. Visual overhaul verification (DEC-013)
+
+The game-forward workspace requires visual verification in addition to component
+assertions. For substantial frontend changes:
+
+- capture design mode at 1280x720, 1440x900, and 1920x1080
+- capture a live or fixture-backed run at the tail and at a scrubbed event
+- check the waiting-review, failed, empty-library, and missing-art fallback states
+  when the available fixture supports them
+- confirm that the canvas, context panel, and activity deck do not overlap and
+  that controls remain usable at the smallest supported size
+- verify keyboard focus and `prefers-reduced-motion`
+- confirm every runtime image request returns successfully and that intrinsic
+  dimensions prevent layout shift
+
+The final gate remains the frontend unit suite, production build, and headed E2E
+suite. Screenshots are inspection artifacts and do not replace behavioral tests.
+
+## 9. What is not tested here
 
 - **Simulation crate** — deferred to v1.1
 - **Plugin adapters** — out of scope for v1
 - **Cloud/sync behavior** — out of scope for v1
-- **Visual regression** — not a v1 priority; focus on functional correctness
+- **Automated pixel-diff regression** — manual headed screenshot inspection is the
+  current visual gate

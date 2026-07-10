@@ -43,6 +43,8 @@ apps/
     public/
       sprites/             # Legacy WebP sprite sheets served by Vite at /sprites/<filename> (fallback only; procedural rendering is primary per DEC-008)
       backdrops/           # Superseded by procedural city backdrop (DEC-008); kept for legacy tiles if any
+      assets/
+        command-deck/      # Runtime generated RPG command-interface artwork (DEC-013)
     src/
       __mocks__/
       __tests__/
@@ -110,6 +112,8 @@ schemas/
   run-event.schema.json
 
 assets/
+  generated/
+    command-deck/          # Retained source-quality generated art and prompt manifest (DEC-013)
   character-sprites/
     assets_2026-03-27/    # Legacy pigeon sprite sheets (WebP + PNG); superseded by procedural rendering (DEC-008)
   backdrops/              # Legacy source backdrop tiles; superseded by procedural city backdrop (DEC-008)
