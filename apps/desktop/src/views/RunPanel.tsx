@@ -10,6 +10,15 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
+import {
+  ChevronDown,
+  ChevronUp,
+  Clock3,
+  FastForward,
+  Play,
+  Radio,
+  Square,
+} from "lucide-react";
 import ReactFlow, {
   MiniMap,
   type Node,
@@ -92,6 +101,7 @@ export function RunPanel({ runId, onRunStatusChange }: RunPanelProps) {
   // null = follow the live tail; a number = user scrubbed to that index.
   const [scrubIndex, setScrubIndex] = useState<number | null>(null);
   const [detailTab, setDetailTab] = useState<DetailTab>("event");
+  const [activityOpen, setActivityOpen] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [workflow, setWorkflow] = useState<WorkflowDefinition | null>(null);
   const [reviewRequest, setReviewRequest] =
@@ -386,15 +396,7 @@ export function RunPanel({ runId, onRunStatusChange }: RunPanelProps) {
   return (
     <div className="run-panel" data-testid="run-panel">
       {error && <div className="lr-error">{error}</div>}
-      {reviewRequest && (
-        <HumanReviewPanel
-          request={reviewRequest}
-          onDecision={handleReviewDecision}
-          submitting={reviewSubmitting}
-        />
-      )}
 
-      {/* ── Run header strip ── */}
       <div className="run-strip" data-testid="run-hud">
         <span
           className={`run-status ${statusClass(runStatus)}`}
@@ -403,15 +405,13 @@ export function RunPanel({ runId, onRunStatusChange }: RunPanelProps) {
           {runStatus ?? "--"}
         </span>
         <span className="run-strip-name">{workflowName || "--"}</span>
-        <span className="run-strip-sep">·</span>
         <span className="run-strip-id" title={runId}>
           {runId.slice(0, 8)}
         </span>
-        <span className="run-strip-sep">·</span>
         <span className="run-strip-workspace" title={workspaceRoot}>
           {workspaceRoot || "--"}
         </span>
-        <span className="run-strip-elapsed">{elapsed}</span>
+        <span className="run-strip-elapsed"><Clock3 size={12} />{elapsed}</span>
         <div className="run-strip-controls">
           {canStart && (
             <button
@@ -420,6 +420,7 @@ export function RunPanel({ runId, onRunStatusChange }: RunPanelProps) {
               title="Start run (Ctrl+Enter)"
               data-testid="run-start-btn"
             >
+              <Play size={13} fill="currentColor" />
               Start <kbd>Ctrl+Enter</kbd>
             </button>
           )}
@@ -430,24 +431,84 @@ export function RunPanel({ runId, onRunStatusChange }: RunPanelProps) {
             title="Cancel run (Ctrl+.)"
             data-testid="run-cancel-btn"
           >
+            <Square size={12} fill="currentColor" />
             Cancel <kbd>Ctrl+.</kbd>
           </button>
         </div>
       </div>
 
-      {/* ── Graph (the same canvas the workflow was designed on) ── */}
-      <div className="run-graph" data-testid="live-graph">
-        <RunGraph
-          workflow={workflow}
-          nodeStates={nodeStates}
-          tokenPcts={tokenPcts}
-        />
-        <AgentSessionTerminal runId={runId} />
+      <div className="run-main">
+        <div className="run-graph" data-testid="live-graph">
+          <RunGraph
+            workflow={workflow}
+            nodeStates={nodeStates}
+            tokenPcts={tokenPcts}
+          />
+        </div>
+
+        <aside className="run-context" aria-label="Run context">
+          <div className="run-context-heading">
+            <div>
+              <span className="run-context-eyebrow">Run context</span>
+              <strong>{currentEvent ? currentEvent.event_type : "Awaiting activity"}</strong>
+            </div>
+            <span className="run-context-sequence">
+              {currentEvent ? `#${currentEvent.sequence}` : "--"}
+            </span>
+          </div>
+
+          {reviewRequest && (
+            <HumanReviewPanel
+              request={reviewRequest}
+              onDecision={handleReviewDecision}
+              submitting={reviewSubmitting}
+            />
+          )}
+
+          <AgentSessionTerminal runId={runId} />
+
+          <div className="run-detail-panel" data-testid="event-detail">
+            <div className="run-detail-tabs" role="tablist" aria-label="Run detail">
+              <button
+                className={`run-detail-tab${detailTab === "event" ? " run-detail-tab--active" : ""}`}
+                data-testid="detail-tab-event"
+                onClick={() => setDetailTab("event")}
+                role="tab"
+                aria-selected={detailTab === "event"}
+              >
+                Event
+              </button>
+              <button
+                className={`run-detail-tab${detailTab === "output" ? " run-detail-tab--active" : ""}`}
+                data-testid="detail-tab-output"
+                onClick={() => setDetailTab("output")}
+                role="tab"
+                aria-selected={detailTab === "output"}
+              >
+                Output
+                {commandEvents.length > 0 && (
+                  <span className="panel-header-sub">{commandEvents.length}</span>
+                )}
+              </button>
+            </div>
+            <div className="run-detail-content">
+              {detailTab === "event" ? (
+                <EventInspector event={currentEvent} />
+              ) : (
+                <CommandOutputPanel events={commandEvents} />
+              )}
+            </div>
+          </div>
+        </aside>
       </div>
 
-      {/* ── Timeline dock ── */}
-      <div className="run-dock">
+      <div className={`run-dock${activityOpen ? " run-dock--open" : ""}`}>
         <div className="run-dock-scrub">
+          <div className="activity-deck-label">
+            <Radio size={13} />
+            <span>Activity</span>
+            <strong>{events.length}</strong>
+          </div>
           <TimelineScrubber
             index={Math.max(0, effectiveIndex)}
             total={events.length}
@@ -460,29 +521,35 @@ export function RunPanel({ runId, onRunStatusChange }: RunPanelProps) {
               onClick={() => setScrubIndex(null)}
               title="Jump to the latest event"
             >
-              ⏭ Latest
+              <FastForward size={13} />
+              Latest
             </button>
           )}
           {following && !isTerminal(runStatus) && (
             <span className="run-live-badge" data-testid="live-badge">
-              ● LIVE
+              <i aria-hidden="true" /> Live
             </span>
           )}
+          <button
+            className="activity-toggle"
+            onClick={() => setActivityOpen((open) => !open)}
+            aria-label={activityOpen ? "Collapse activity" : "Expand activity"}
+            title={activityOpen ? "Collapse activity" : "Expand activity"}
+          >
+            {activityOpen ? <ChevronDown size={15} /> : <ChevronUp size={15} />}
+          </button>
         </div>
 
-        <div className="run-dock-panels">
-          {/* Event feed */}
-          <div className="run-dock-panel run-events-panel">
-            <div className="panel-header">
-              EVENTS <span className="panel-header-sub">({events.length})</span>
-            </div>
+        {activityOpen && (
+          <div className="run-dock-panels">
+          <div className="run-events-panel">
             <ul
               className="lr-event-list"
               ref={eventFeedRef}
               data-testid="event-list"
             >
               {events.length === 0 && (
-                <li className="lr-empty">waiting for events...</li>
+                <li className="lr-empty">Waiting for events...</li>
               )}
               {events.map((ev, idx) => (
                 <li
@@ -506,35 +573,8 @@ export function RunPanel({ runId, onRunStatusChange }: RunPanelProps) {
               ))}
             </ul>
           </div>
-
-          {/* Detail: selected event or command output */}
-          <div className="run-dock-panel run-detail-panel" data-testid="event-detail">
-            <div className="panel-header run-detail-tabs">
-              <button
-                className={`run-detail-tab${detailTab === "event" ? " run-detail-tab--active" : ""}`}
-                data-testid="detail-tab-event"
-                onClick={() => setDetailTab("event")}
-              >
-                EVENT
-              </button>
-              <button
-                className={`run-detail-tab${detailTab === "output" ? " run-detail-tab--active" : ""}`}
-                data-testid="detail-tab-output"
-                onClick={() => setDetailTab("output")}
-              >
-                OUTPUT
-                {commandEvents.length > 0 && (
-                  <span className="panel-header-sub"> ({commandEvents.length})</span>
-                )}
-              </button>
-            </div>
-            {detailTab === "event" ? (
-              <EventInspector event={currentEvent} />
-            ) : (
-              <CommandOutputPanel events={commandEvents} />
-            )}
           </div>
-        </div>
+        )}
       </div>
     </div>
   );

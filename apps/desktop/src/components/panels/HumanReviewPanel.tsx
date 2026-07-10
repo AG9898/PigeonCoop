@@ -3,6 +3,7 @@
 // See DESIGN_SPEC.md §10, §13 (keyboard-first).
 
 import { useEffect, useCallback } from "react";
+import { AlertTriangle, Check, RotateCcw, X } from "lucide-react";
 import type {
   HumanReviewDecision,
   HumanReviewRequestedPayload,
@@ -19,7 +20,7 @@ export interface HumanReviewPanelProps {
 }
 
 /**
- * Full-screen modal that blocks the UI while the run waits for human input.
+ * Context-panel decision surface shown while the run waits for human input.
  * Keyboard shortcuts: A = Approve, R = Reject, T = Retry.
  */
 export function HumanReviewPanel({
@@ -64,20 +65,17 @@ export function HumanReviewPanel({
     <div
       className="hr-overlay"
       role="dialog"
-      aria-modal="true"
       aria-label="Human review required"
       data-testid="human-review-panel"
     >
       <div className="hr-panel">
-        {/* Header */}
         <div className="hr-header">
-          <span className="hr-badge">[ REVIEW REQUIRED ]</span>
+          <span className="hr-badge"><AlertTriangle size={13} /> Review required</span>
           <span className="hr-node-label" data-testid="hr-node-label">
             {request.node_label}
           </span>
         </div>
 
-        {/* Reason */}
         <div className="hr-section">
           <div className="hr-section-label">REASON</div>
           <div className="hr-reason" data-testid="hr-reason">
@@ -85,7 +83,6 @@ export function HumanReviewPanel({
           </div>
         </div>
 
-        {/* Context */}
         <div className="hr-section">
           <div className="hr-section-label">CONTEXT</div>
           <div className="hr-meta-row">
@@ -102,7 +99,6 @@ export function HumanReviewPanel({
           </div>
         </div>
 
-        {/* Actions */}
         <div className="hr-actions" data-testid="hr-actions">
           {canApprove && (
             <button
@@ -112,6 +108,7 @@ export function HumanReviewPanel({
               data-testid="hr-btn-approve"
               title="Approve [A]"
             >
+              <Check size={13} />
               Approve <kbd>A</kbd>
             </button>
           )}
@@ -123,6 +120,7 @@ export function HumanReviewPanel({
               data-testid="hr-btn-reject"
               title="Reject [R]"
             >
+              <X size={13} />
               Reject <kbd>R</kbd>
             </button>
           )}
@@ -134,6 +132,7 @@ export function HumanReviewPanel({
               data-testid="hr-btn-retry"
               title="Retry [T]"
             >
+              <RotateCcw size={13} />
               Retry <kbd>T</kbd>
             </button>
           )}

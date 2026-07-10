@@ -4,6 +4,7 @@
 // See DESIGN_SPEC.md §4.3 and §13.
 
 import { useCallback } from "react";
+import { ChevronLeft, ChevronRight, SkipBack, SkipForward } from "lucide-react";
 
 interface TimelineScrubberProps {
   /** Current event index (0-based). */
@@ -83,7 +84,7 @@ export function TimelineScrubber({
           aria-label="go to first event"
           title="First (Home)"
         >
-          ⏮
+          <SkipBack size={13} />
         </button>
         <button
           className="scrubber-btn"
@@ -92,7 +93,7 @@ export function TimelineScrubber({
           aria-label="previous event"
           title="Previous (←)"
         >
-          ◀
+          <ChevronLeft size={14} />
         </button>
 
         <span className="scrubber-position" aria-live="polite">
@@ -111,7 +112,7 @@ export function TimelineScrubber({
           aria-label="next event"
           title="Next (→)"
         >
-          ▶
+          <ChevronRight size={14} />
         </button>
         <button
           className="scrubber-btn"
@@ -120,7 +121,7 @@ export function TimelineScrubber({
           aria-label="go to last event"
           title="Last (End)"
         >
-          ⏭
+          <SkipForward size={13} />
         </button>
       </div>
     </div>

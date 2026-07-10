@@ -57,7 +57,7 @@ describe("NodeInspector — kind header", () => {
   ] as [NodeKind, string][])("renders %s kind label", (kind, expected) => {
     render(<NodeInspector node={makeNode(kind)} {...callbacks} />);
     expect(screen.getByText(expected)).toBeTruthy();
-    expect(screen.getByText("INSPECTOR")).toBeTruthy();
+    expect(screen.getByText("Node inspector")).toBeTruthy();
   });
 });
 
@@ -242,19 +242,19 @@ describe("NodeInspector — router config", () => {
   it("renders ROUTING RULES section and add button", () => {
     render(<NodeInspector node={makeNode("router", { rules: [] })} {...callbacks} />);
     expect(screen.getByText("ROUTING RULES")).toBeTruthy();
-    expect(screen.getByText("+ Add Rule")).toBeTruthy();
+    expect(screen.getByRole("button", { name: /add rule/i })).toBeTruthy();
   });
 
   it("adds a rule row when Add Rule is clicked", () => {
     render(<NodeInspector node={makeNode("router", { rules: [] })} {...callbacks} />);
-    fireEvent.click(screen.getByText("+ Add Rule"));
+    fireEvent.click(screen.getByRole("button", { name: /add rule/i }));
     expect(screen.getByPlaceholderText("condition expression")).toBeTruthy();
     expect(screen.getByPlaceholderText("target_key")).toBeTruthy();
   });
 
   it("calls onUpdateConfig with the new rule on Add Rule click", () => {
     render(<NodeInspector node={makeNode("router", { rules: [] })} {...callbacks} />);
-    fireEvent.click(screen.getByText("+ Add Rule"));
+    fireEvent.click(screen.getByRole("button", { name: /add rule/i }));
     expect(callbacks.onUpdateConfig).toHaveBeenCalledWith(
       expect.objectContaining({ rules: [{ condition: "", target_key: "" }] })
     );

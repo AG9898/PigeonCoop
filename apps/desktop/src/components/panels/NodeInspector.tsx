@@ -5,10 +5,12 @@
 
 import { useEffect, useState } from "react";
 import type { Node } from "reactflow";
+import { Plus, X } from "lucide-react";
 import { ipc } from "../../types/ipc";
 import type { AgentNodeConfig, NodeKind, RetryPolicy } from "../../types/workflow";
 import { CUSTOM_PROVIDER_ID, KNOWN_PROVIDERS, OTHER_MODEL_OPTION } from "../../types/providers";
 import type { WorkflowNodeData } from "../nodes/WorkflowNode";
+import { ROLE_META } from "../nodes/RoleNode";
 
 // ---------------------------------------------------------------------------
 // Per-kind config types (mirrors Rust NodeConfig variants in node_config.rs)
@@ -330,11 +332,18 @@ function RouterForm({ config, onChange }: RouterFormProps) {
               onChange={(e) => updateRule(i, "target_key", e.target.value)}
               placeholder="target_key"
             />
-            <button className="ni-rule-remove" onClick={() => removeRule(i)}>×</button>
+            <button
+              className="ni-rule-remove"
+              onClick={() => removeRule(i)}
+              aria-label={`Remove rule ${i + 1}`}
+              title="Remove rule"
+            >
+              <X size={12} />
+            </button>
           </div>
         </div>
       ))}
-      <button className="ni-add-btn" onClick={addRule}>+ Add Rule</button>
+      <button className="ni-add-btn" onClick={addRule}><Plus size={13} /> Add rule</button>
     </>
   );
 }
@@ -499,6 +508,8 @@ const KIND_LABEL: Record<NodeKind, string> = {
 
 export function NodeInspector({ node, onUpdateLabel, onUpdateConfig, onUpdateRetryPolicy }: NodeInspectorProps) {
   const { kind, label, config, retry_policy } = node.data;
+  const role = ROLE_META[kind];
+  const RoleIcon = role.icon;
 
   const [localLabel, setLocalLabel] = useState(label);
   const [localConfig, setLocalConfig] = useState<Record<string, unknown>>(
@@ -528,8 +539,26 @@ export function NodeInspector({ node, onUpdateLabel, onUpdateConfig, onUpdateRet
   return (
     <div className="node-inspector">
       <div className="ni-header">
-        <span className="ni-kind">{KIND_LABEL[kind]}</span>
-        <span className="ni-title">INSPECTOR</span>
+        <div className="ni-role-lockup">
+          <span className="ni-role-image">
+            <RoleIcon size={16} className="ni-role-fallback" aria-hidden="true" />
+            <img
+              src={role.image}
+              alt=""
+              aria-hidden="true"
+              width="384"
+              height="384"
+              onError={(event) => {
+                event.currentTarget.hidden = true;
+              }}
+            />
+          </span>
+          <span>
+            <span className="ni-kind">{KIND_LABEL[kind]}</span>
+            <span className="ni-role-label">Node inspector</span>
+          </span>
+        </div>
+        <span className="ni-title">CONFIGURE</span>
       </div>
 
       <div className="ni-body">
