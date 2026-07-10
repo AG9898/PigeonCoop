@@ -2569,21 +2569,59 @@ select:focus-visible,
   pointer-events: none;
 }
 
-.role-node-portrait img {
+.role-node-portrait > .role-node-static {
+  position: absolute;
+  inset: 0;
   width: 100%;
   height: 100%;
   display: block;
   object-fit: cover;
   object-position: center 28%;
-  filter: saturate(0.72) brightness(0.78) contrast(1.03);
+  opacity: 0.2;
+  filter: saturate(0.5) brightness(0.48) blur(1px);
   transition: filter 150ms ease, transform 180ms ease;
 }
 
-.role-node:hover .role-node-portrait img,
-.wf-node--selected .role-node-portrait img,
-.wf-node--running .role-node-portrait img {
-  filter: saturate(0.95) brightness(0.93) contrast(1.04);
+.role-node:hover .role-node-portrait > .role-node-static,
+.wf-node--selected .role-node-portrait > .role-node-static,
+.wf-node--running .role-node-portrait > .role-node-static {
+  filter: saturate(0.65) brightness(0.58) blur(1px);
   transform: scale(1.025);
+}
+
+.role-node-sprite {
+  position: absolute;
+  left: 50%;
+  bottom: -1px;
+  z-index: 1;
+  width: 102px;
+  height: 92px;
+  display: block;
+  overflow: hidden;
+  transform: translateX(-50%);
+  filter: drop-shadow(0 8px 8px rgba(0, 0, 0, 0.5));
+}
+
+.role-node-sprite[hidden] {
+  display: none;
+}
+
+.role-node-sprite img {
+  width: 400%;
+  height: 100%;
+  display: block;
+  max-width: none;
+  object-fit: fill;
+  transform-origin: left center;
+}
+
+.wf-node--skipped .role-node-sprite {
+  opacity: 0.38;
+  filter: grayscale(1);
+}
+
+.wf-node--failed .role-node-sprite {
+  filter: grayscale(0.4) sepia(0.25) hue-rotate(310deg) drop-shadow(0 8px 8px rgba(0, 0, 0, 0.5));
 }
 
 .role-node-fallback {
@@ -3230,7 +3268,7 @@ select:focus-visible,
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .role-node-portrait img,
+  .role-node-portrait > .role-node-static,
   .role-node-meter span {
     transition: none;
   }

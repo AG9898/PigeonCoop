@@ -29,6 +29,7 @@ describe("RoleNode", () => {
       expect(container.querySelector("img")?.getAttribute("src")).toBe(
         ROLE_META[kind].image
       );
+      expect(screen.getByTestId("animated-role-sprite")).toBeTruthy();
       expect(screen.getByText("Role label")).toBeTruthy();
       expect(screen.getByText("running")).toBeTruthy();
     }

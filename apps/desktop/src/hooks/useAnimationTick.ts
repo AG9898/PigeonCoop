@@ -1,4 +1,4 @@
-// Shared animation tick for procedural canvas sprites (DEC-008).
+// Shared animation tick for every canvas sprite (DEC-008, DEC-013).
 //
 // A single ~100ms interval feeds a frame counter to every subscribed sprite —
 // per docs/VISUAL_IDENTITY.md §4, sprites must never create one timer per

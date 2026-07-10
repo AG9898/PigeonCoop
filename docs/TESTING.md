@@ -572,6 +572,8 @@ assertions. For substantial frontend changes:
 - verify keyboard focus and `prefers-reduced-motion`
 - confirm every runtime image request returns successfully and that intrinsic
   dimensions prevent layout shift
+- assert animated nodes share the singleton clock, advance through valid frame
+  indices, and hold deterministic frames for paused and terminal states
 
 The final gate remains the frontend unit suite, production build, and headed E2E
 suite. Screenshots are inspection artifacts and do not replace behavioral tests.

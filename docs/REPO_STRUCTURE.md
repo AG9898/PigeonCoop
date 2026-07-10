@@ -45,6 +45,7 @@ apps/
       backdrops/           # Superseded by procedural city backdrop (DEC-008); kept for legacy tiles if any
       assets/
         command-deck/      # Runtime generated RPG command-interface artwork (DEC-013)
+          sprites/         # Transparent 4-frame role strips, 512x128 WebP
     src/
       __mocks__/
       __tests__/

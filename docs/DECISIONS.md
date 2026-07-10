@@ -616,7 +616,9 @@ workflow schemas are unchanged.
 **Follow-up implications:** update the design and visual identity docs, store runtime
 art under `apps/desktop/public/assets/command-deck/`, verify fallback icons and image
 loading, and capture the workspace at the desktop sizes listed in
-`VISUAL_IDENTITY.md`.
+`VISUAL_IDENTITY.md`. The accepted implementation uses generated four-frame
+transparent sprite strips for every role, driven by the existing singleton
+animation tick; the initial square role art remains as fallback identity.
 
 ## Open decisions
 

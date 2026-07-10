@@ -271,7 +271,7 @@ Run-level events (e.g. `run.started`) show only the envelope and payload panes â
 
 ### Visual motifs to use
 - generated campaign-map atmosphere
-- stable role portraits and code-native insignias
+- animated role sprites, portrait fallbacks, and code-native insignias
 - route/path illumination
 - resource meters and state rings
 - disciplined layered panel depth
@@ -336,9 +336,10 @@ The canvas is the product centerpiece.
 
 Each node should balance identity and readability.
 
-The role portrait, resource, state, and canvas asset system is specified in
-[`docs/VISUAL_IDENTITY.md`](VISUAL_IDENTITY.md). Generated portraits establish
-identity; deterministic HTML/CSS and event-derived data establish state.
+The animated role, portrait fallback, resource, state, and canvas asset system is
+specified in [`docs/VISUAL_IDENTITY.md`](VISUAL_IDENTITY.md). Generated sprite
+frames establish identity and pose; deterministic HTML/CSS and event-derived data
+establish state and animation cadence.
 
 ### Shared node structure (text-based nodes)
 - icon/type marker

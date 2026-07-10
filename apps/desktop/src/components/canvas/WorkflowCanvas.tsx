@@ -200,14 +200,19 @@ const CanvasInner = forwardRef<WorkflowCanvasHandle, WorkflowCanvasProps>(
 
     const addNodeImpl = useCallback(
       (kind: NodeKind, position?: { x: number; y: number }) => {
-        const pos = position ?? { x: 200, y: 200 };
-        const newNode: Node<WorkflowNodeData> = {
-          id: crypto.randomUUID(),
-          type: kind,
-          position: pos,
-          data: { kind, label: DEFAULT_LABELS[kind] },
-        };
-        setNodes((nds) => [...nds, newNode]);
+        setNodes((nds) => {
+          const pos = position ?? {
+            x: 140 + (nds.length % 3) * 220,
+            y: 120 + Math.floor(nds.length / 3) * 180,
+          };
+          const newNode: Node<WorkflowNodeData> = {
+            id: crypto.randomUUID(),
+            type: kind,
+            position: pos,
+            data: { kind, label: DEFAULT_LABELS[kind] },
+          };
+          return [...nds, newNode];
+        });
       },
       [setNodes]
     );

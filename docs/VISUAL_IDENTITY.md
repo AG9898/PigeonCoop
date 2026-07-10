@@ -83,9 +83,12 @@ faint cartographic markings, route traces, and subtle table illumination. It mus
 tile or cover without exposing a focal subject behind nodes. A dark overlay and
 code-native grid sit above it.
 
-### 5.2 Role portraits
+### 5.2 Animated role sprites and portrait fallbacks
 
-Node roles use consistent square portrait medallions or role illustrations:
+Every role has a four-frame animated character or landmark sprite. Humanoid roles
+use full-body character loops; Start and End use animated landmarks. Square
+portrait art remains behind each sprite as atmosphere and as a fallback if a
+sprite request fails.
 
 | Node | Identity |
 |---|---|
@@ -97,8 +100,19 @@ Node roles use consistent square portrait medallions or role illustrations:
 | Human Review | commanding adjudicator |
 | End | secured destination or completed seal |
 
-Portraits are identity, not status. Runtime state remains code-native through
-borders, badges, meters, and motion so replay stays deterministic and accessible.
+Generated frames are identity and pose, not execution truth. Runtime state remains
+code-native through borders, badges, meters, tint, and cadence so replay stays
+deterministic and accessible.
+
+Runtime sprite sheets live under
+`apps/desktop/public/assets/command-deck/sprites/`. Each strip contains four
+128x128 frames in a single 512x128 transparent WebP. The source generation layout
+is a 2x2 chroma-key sheet; local post-processing removes the key, extracts the
+four cells in reading order, and composes the runtime strip.
+
+All node instances subscribe to the singleton `useAnimationTick()` clock. Never
+create a timer per node. Cadence is state-dependent: running is fast, idle is
+deliberate, waiting is slow, and paused/terminal states hold a deterministic frame.
 
 ### 5.3 Empty states
 
@@ -109,7 +123,7 @@ replace the visible action required to create or import a workflow.
 
 All node types share a stable card footprint and anatomy:
 
-1. role portrait or insignia
+1. animated role sprite over its portrait fallback
 2. technical node-kind label
 3. user-defined label
 4. state badge
@@ -141,8 +155,8 @@ text or icon shape.
   useful.
 - `prefers-reduced-motion` disables nonessential animation while retaining state.
 
-No portrait animation is required. Avoid continuous ambient movement across the
-entire interface.
+Short sprite loops are the primary ambient motion on the canvas. Avoid adding
+independent portrait, backdrop, or panel motion around them.
 
 ## 9. Accessibility and asset fallbacks
 
@@ -151,6 +165,8 @@ entire interface.
 - Every important state meets contrast requirements and is not color-only.
 - Missing images fall back to code-native role icons without changing layout.
 - Artwork loading must not shift panels or node dimensions.
+- `prefers-reduced-motion` prevents the shared tick from starting and holds frame
+  zero.
 - At 1280x720 and larger, labels, controls, inspector fields, timeline, and output
   remain usable without incoherent overlap.
 
@@ -162,5 +178,6 @@ Before visual work is considered complete:
 - inspect design, live-tail, scrubbed replay, waiting review, failed run, and empty
   states where fixtures allow
 - verify generated asset requests succeed and fallback icons preserve layout
+- verify at least one idle sprite advances frames and reduced motion freezes it
 - verify reduced motion and keyboard focus indicators
 - run frontend unit tests, production build, and the headed E2E suite

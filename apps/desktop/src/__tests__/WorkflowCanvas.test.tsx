@@ -187,6 +187,25 @@ describe("WorkflowCanvas — addNode", () => {
     expect((result[1] as { type: string }).type).toBe("tool");
   });
 
+  it("stagger-places click-added nodes after existing nodes", () => {
+    const ref = createRef<WorkflowCanvasHandle>();
+    render(<WorkflowCanvas ref={ref} />);
+    hooks.setNodes.mockClear();
+
+    ref.current?.addNode("agent");
+
+    const updater = hooks.setNodes.mock.calls[0][0] as (nds: unknown[]) => unknown[];
+    const result = updater([
+      { id: "n1" },
+      { id: "n2" },
+      { id: "n3" },
+    ]);
+    expect((result[3] as { position: { x: number; y: number } }).position).toEqual({
+      x: 140,
+      y: 300,
+    });
+  });
+
   it("uses provided position when given", () => {
     const ref = createRef<WorkflowCanvasHandle>();
     render(<WorkflowCanvas ref={ref} />);

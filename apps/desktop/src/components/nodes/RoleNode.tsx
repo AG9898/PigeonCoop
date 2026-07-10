@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import type { NodeKind, NodeState } from "../../types/workflow";
 import type { WorkflowNodeData } from "./WorkflowNode";
+import { AnimatedRoleSprite } from "./AnimatedRoleSprite";
 
 interface RoleMeta {
   label: string;
@@ -91,6 +92,7 @@ function RoleNode({ data, selected }: NodeProps<WorkflowNodeData>) {
           <Icon size={26} strokeWidth={1.5} />
         </span>
         <img
+          className="role-node-static"
           src={meta.image}
           alt=""
           aria-hidden="true"
@@ -101,6 +103,7 @@ function RoleNode({ data, selected }: NodeProps<WorkflowNodeData>) {
             event.currentTarget.hidden = true;
           }}
         />
+        <AnimatedRoleSprite kind={data.kind} state={state} />
         <span className="role-node-kind">
           <Icon size={11} aria-hidden="true" />
           {meta.label}
