@@ -8,6 +8,14 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
+import {
+  ArrowLeft,
+  CheckCircle2,
+  FolderOpen,
+  Play,
+  Save,
+  Shield,
+} from "lucide-react";
 import { WorkflowSidebar } from "../components/sidebar/WorkflowSidebar";
 import { DesignSurface, type DesignSurfaceHandle } from "../views/DesignSurface";
 import { RunPanel } from "../views/RunPanel";
@@ -346,9 +354,16 @@ export function App() {
 
   return (
     <div className="app">
-      {/* ── Top bar: identity + actions, shared across modes ── */}
       <nav className="app-topbar">
-        <span className="app-nav-brand">AGENT ARCADE</span>
+        <div className="app-brand-lockup" aria-label="Agent Arcade">
+          <span className="app-brand-mark" aria-hidden="true">
+            <Shield size={18} strokeWidth={1.7} />
+          </span>
+          <span className="app-nav-brand">Agent Arcade</span>
+          <span className="app-brand-edition">Command Deck</span>
+        </div>
+
+        <span className="topbar-divider" aria-hidden="true" />
 
         {runOpen ? (
           <button
@@ -357,10 +372,11 @@ export function App() {
             onClick={handleBackToEditor}
             title="Back to the workflow editor"
           >
-            ✎ Edit workflow
+            <ArrowLeft size={15} />
+            Edit workflow
           </button>
         ) : (
-          <>
+          <div className="topbar-workflow-tools">
             <input
               className="topbar-name-input"
               data-testid="workflow-name-input"
@@ -375,6 +391,7 @@ export function App() {
               onClick={saveCurrent}
               title="Save workflow (Ctrl+S)"
             >
+              <Save size={14} />
               Save
             </button>
             <button
@@ -382,9 +399,10 @@ export function App() {
               data-testid="validate-btn"
               onClick={handleValidate}
             >
+              <CheckCircle2 size={14} />
               Validate
             </button>
-          </>
+          </div>
         )}
 
         {status && (
@@ -397,27 +415,29 @@ export function App() {
         )}
 
         <div className="topbar-run-controls">
-          <input
-            className="topbar-workspace-input"
-            data-testid="workspace-input"
-            value={workspaceRoot}
-            onChange={(e) => setWorkspaceRoot(e.target.value)}
-            placeholder="workspace folder (where commands run)"
-            aria-label="Workspace folder"
-            title="Runs execute commands inside this folder"
-          />
+          <label className="workspace-field" title="Runs execute commands inside this folder">
+            <FolderOpen size={14} aria-hidden="true" />
+            <input
+              className="topbar-workspace-input"
+              data-testid="workspace-input"
+              value={workspaceRoot}
+              onChange={(e) => setWorkspaceRoot(e.target.value)}
+              placeholder="Choose workspace root"
+              aria-label="Workspace folder"
+            />
+          </label>
           <button
             className="toolbar-btn toolbar-btn--start topbar-run-btn"
             data-testid="run-btn"
             onClick={handleRun}
             disabled={runStarting || (runOpen ? !selectedWorkflowId : false)}
           >
-            {runStarting ? "Starting…" : "▶ Run"}
+            <Play size={15} fill="currentColor" />
+            {runStarting ? "Starting..." : "Run"}
           </button>
         </div>
       </nav>
 
-      {/* ── Workspace: sidebar + stage ── */}
       <div className="app-workspace">
         <WorkflowSidebar
           workflows={workflows}

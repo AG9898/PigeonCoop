@@ -4,7 +4,16 @@
 // run surface on the same canvas. Presentational: the App shell owns data.
 // See DESIGN_SPEC.md §4.
 
-import { useRef } from "react";
+import { useMemo, useRef, useState } from "react";
+import {
+  Download,
+  FilePlus2,
+  History,
+  Search,
+  Trash2,
+  Upload,
+  Workflow,
+} from "lucide-react";
 import type { RunInstance, WorkflowDefinition } from "../../types/workflow";
 
 export interface WorkflowSidebarProps {
@@ -62,6 +71,14 @@ export function WorkflowSidebar({
   error,
 }: WorkflowSidebarProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [query, setQuery] = useState("");
+  const visibleWorkflows = useMemo(() => {
+    const normalized = query.trim().toLocaleLowerCase();
+    if (!normalized) return workflows;
+    return workflows.filter((workflow) =>
+      workflow.name.toLocaleLowerCase().includes(normalized)
+    );
+  }, [query, workflows]);
 
   async function onFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -74,23 +91,33 @@ export function WorkflowSidebar({
   return (
     <aside className="workflow-sidebar" data-testid="workflow-sidebar">
       <div className="sidebar-header">
-        <span className="sidebar-title">WORKFLOWS</span>
+        <div className="sidebar-heading">
+          <span className="sidebar-heading-icon" aria-hidden="true">
+            <Workflow size={16} />
+          </span>
+          <div>
+            <span className="sidebar-title">Workflow Library</span>
+            <span className="sidebar-count">{workflows.length} saved</span>
+          </div>
+        </div>
         <div className="sidebar-actions">
           <button
-            className="lib-btn lib-btn--sm"
+            className="icon-btn"
             data-testid="new-workflow-btn"
             onClick={onNewWorkflow}
             title="New empty workflow"
+            aria-label="New workflow"
           >
-            + New
+            <FilePlus2 size={15} />
           </button>
           <button
-            className="lib-btn lib-btn--sm"
+            className="icon-btn"
             data-testid="import-btn"
             onClick={() => fileInputRef.current?.click()}
             title="Import a workflow JSON file"
+            aria-label="Import workflow"
           >
-            Import
+            <Upload size={15} />
           </button>
           <input
             ref={fileInputRef}
@@ -103,6 +130,16 @@ export function WorkflowSidebar({
         </div>
       </div>
 
+      <label className="sidebar-search">
+        <Search size={14} aria-hidden="true" />
+        <input
+          value={query}
+          onChange={(event) => setQuery(event.target.value)}
+          placeholder="Search workflows"
+          aria-label="Search workflows"
+        />
+      </label>
+
       {error && (
         <div className="lib-error" data-testid="lib-error">
           {error}
@@ -111,11 +148,19 @@ export function WorkflowSidebar({
 
       {workflows.length === 0 ? (
         <div className="lib-empty" data-testid="empty-workflows">
-          no workflows yet — create or import one
+          <Workflow size={24} aria-hidden="true" />
+          <strong>No workflows yet</strong>
+          <span>Create a workflow or import a JSON definition.</span>
+        </div>
+      ) : visibleWorkflows.length === 0 ? (
+        <div className="lib-empty">
+          <Search size={22} aria-hidden="true" />
+          <strong>No matches</strong>
+          <span>Try another workflow name.</span>
         </div>
       ) : (
         <ul className="sidebar-list" data-testid="workflow-list">
-          {workflows.map((wf) => {
+          {visibleWorkflows.map((wf) => {
             const isSelected = selectedWorkflowId === wf.workflow_id;
             return (
               <li key={wf.workflow_id}>
@@ -131,24 +176,33 @@ export function WorkflowSidebar({
                     }
                   }}
                 >
-                  <span className="sidebar-card-name">{wf.name}</span>
-                  <span className="sidebar-card-meta">
-                    v{wf.version} · {formatDate(wf.updated_at)}
-                  </span>
+                  <div className="sidebar-card-main">
+                    <span className="sidebar-card-glyph" aria-hidden="true">
+                      <Workflow size={15} />
+                    </span>
+                    <span className="sidebar-card-copy">
+                      <span className="sidebar-card-name">{wf.name}</span>
+                      <span className="sidebar-card-meta">
+                        Version {wf.version} · {formatDate(wf.updated_at)}
+                      </span>
+                    </span>
+                  </div>
                   {isSelected && (
                     <div className="sidebar-card-actions">
                       <button
-                        className="lib-btn lib-btn--sm sidebar-export-btn"
+                        className="sidebar-action-btn sidebar-export-btn"
                         data-testid={`export-btn-${wf.workflow_id}`}
                         onClick={(e) => {
                           e.stopPropagation();
                           onExport(wf.workflow_id);
                         }}
+                        title="Export workflow"
                       >
+                        <Download size={13} />
                         Export
                       </button>
                       <button
-                        className="lib-btn lib-btn--sm lib-btn--danger"
+                        className="sidebar-action-btn lib-btn--danger"
                         data-testid={`delete-btn-${wf.workflow_id}`}
                         title="Delete this workflow"
                         onClick={(e) => {
@@ -156,6 +210,7 @@ export function WorkflowSidebar({
                           onDelete(wf.workflow_id);
                         }}
                       >
+                        <Trash2 size={13} />
                         Delete
                       </button>
                     </div>
@@ -165,12 +220,15 @@ export function WorkflowSidebar({
                 {/* Runs for the expanded workflow */}
                 {isSelected && (
                   <div className="sidebar-runs">
-                    <div className="sidebar-runs-header">RUNS</div>
+                    <div className="sidebar-runs-header">
+                      <History size={12} />
+                      Run history
+                    </div>
                     {runs === null ? (
                       <div className="lib-empty">loading…</div>
                     ) : runs.length === 0 ? (
                       <div className="lib-empty" data-testid="empty-runs">
-                        no runs yet — press Run to start one
+                        No runs yet
                       </div>
                     ) : (
                       <ul className="sidebar-run-list" data-testid="run-list">

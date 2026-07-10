@@ -24,6 +24,7 @@ import type {
   WorkflowDefinition,
 } from "../types/workflow";
 import type { WorkflowNodeData } from "../components/nodes/WorkflowNode";
+import { MousePointer2, SlidersHorizontal } from "lucide-react";
 
 /** Convert React Flow canvas data into a WorkflowDefinition for the backend. */
 export function flowToWorkflow(
@@ -190,7 +191,7 @@ export const DesignSurface = forwardRef<DesignSurfaceHandle, DesignSurfaceProps>
           invalidEdgeIds={invalidEdgeIds}
           onNodeSelect={handleNodeSelect}
         />
-        {selectedNode && (
+        {selectedNode ? (
           <NodeInspector
             key={selectedNode.id}
             node={selectedNode}
@@ -198,6 +199,18 @@ export const DesignSurface = forwardRef<DesignSurfaceHandle, DesignSurfaceProps>
             onUpdateConfig={(config) => canvasRef.current?.updateNodeConfig(selectedNode.id, config)}
             onUpdateRetryPolicy={(rp) => canvasRef.current?.updateNodeRetryPolicy(selectedNode.id, rp)}
           />
+        ) : (
+          <aside className="node-inspector node-inspector--empty" aria-label="Context panel">
+            <div className="ni-header">
+              <span className="ni-kind"><SlidersHorizontal size={15} /> Context</span>
+              <span className="ni-title">DESIGN</span>
+            </div>
+            <div className="context-empty">
+              <span className="context-empty-icon"><MousePointer2 size={22} /></span>
+              <strong>Select a node</strong>
+              <span>Configure its role, inputs, retry policy, and execution behavior.</span>
+            </div>
+          </aside>
         )}
       </div>
     );

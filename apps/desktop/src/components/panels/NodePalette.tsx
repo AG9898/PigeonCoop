@@ -2,22 +2,32 @@
 // Items can be dragged onto the WorkflowCanvas or clicked to add at a default position.
 
 import type { NodeKind } from "../../types/workflow";
+import {
+  Archive,
+  Bot,
+  Flag,
+  GitBranch,
+  Hammer,
+  ShieldCheck,
+  Trophy,
+  type LucideIcon,
+} from "lucide-react";
 
 interface PaletteItem {
   kind: NodeKind;
-  icon: string;
+  icon: LucideIcon;
   label: string;
   colorVar: string;
 }
 
 const PALETTE_ITEMS: PaletteItem[] = [
-  { kind: "start",        icon: "▶", label: "Start",  colorVar: "var(--node-start)" },
-  { kind: "end",          icon: "■", label: "End",    colorVar: "var(--node-end)" },
-  { kind: "agent",        icon: "◈", label: "Agent",  colorVar: "var(--node-agent)" },
-  { kind: "tool",         icon: "⚙", label: "Tool",   colorVar: "var(--node-tool)" },
-  { kind: "router",       icon: "⑂", label: "Router", colorVar: "var(--node-router)" },
-  { kind: "memory",       icon: "⊟", label: "Memory", colorVar: "var(--node-memory)" },
-  { kind: "human_review", icon: "⏸", label: "Review", colorVar: "var(--node-review)" },
+  { kind: "start",        icon: Flag,        label: "Start",  colorVar: "var(--node-start)" },
+  { kind: "agent",        icon: Bot,         label: "Agent",  colorVar: "var(--node-agent)" },
+  { kind: "tool",         icon: Hammer,      label: "Tool",   colorVar: "var(--node-tool)" },
+  { kind: "router",       icon: GitBranch,   label: "Router", colorVar: "var(--node-router)" },
+  { kind: "memory",       icon: Archive,     label: "Memory", colorVar: "var(--node-memory)" },
+  { kind: "human_review", icon: ShieldCheck, label: "Review", colorVar: "var(--node-review)" },
+  { kind: "end",          icon: Trophy,      label: "End",    colorVar: "var(--node-end)" },
 ];
 
 interface NodePaletteProps {
@@ -32,8 +42,8 @@ export function NodePalette({ onAddNode }: NodePaletteProps) {
 
   return (
     <aside className="node-palette">
-      <div className="node-palette-header">NODES</div>
-      {PALETTE_ITEMS.map(({ kind, icon, label, colorVar }) => (
+      <div className="node-palette-header">Role shelf</div>
+      {PALETTE_ITEMS.map(({ kind, icon: Icon, label, colorVar }) => (
         <div
           key={kind}
           className="palette-item"
@@ -45,7 +55,7 @@ export function NodePalette({ onAddNode }: NodePaletteProps) {
           tabIndex={0}
           onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") onAddNode(kind); }}
         >
-          <span className="palette-item-icon" style={{ color: colorVar }}>{icon}</span>
+          <span className="palette-item-icon" style={{ color: colorVar }}><Icon size={18} /></span>
           <span className="palette-item-label">{label}</span>
         </div>
       ))}

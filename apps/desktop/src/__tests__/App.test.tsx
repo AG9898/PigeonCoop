@@ -90,7 +90,7 @@ describe("App — unified workspace shell", () => {
     await act(async () => {
       render(<App />);
     });
-    expect(screen.getByText("AGENT ARCADE")).toBeTruthy();
+    expect(screen.getByText("Agent Arcade")).toBeTruthy();
     expect(screen.getByTestId("workflow-sidebar")).toBeTruthy();
     expect(screen.getByTestId("design-surface")).toBeTruthy();
     expect(screen.getByTestId("run-btn")).toBeTruthy();
