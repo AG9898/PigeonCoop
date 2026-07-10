@@ -245,6 +245,10 @@ export const ipc = {
   listRunsForWorkflow: (args: ListRunsForWorkflowArgs) =>
     invokeTyped<RunInstance[]>("list_runs_for_workflow", args),
 
+  // Settings and workspace
+  openWorkspacePicker: () =>
+    invokeTyped<string | null>("open_workspace_picker"),
+
   // Event log
   listEventsForRun: (args: ListEventsForRunArgs) =>
     invokeTyped<RunEvent[]>("list_events_for_run", args),

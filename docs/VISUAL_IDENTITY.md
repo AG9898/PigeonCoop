@@ -55,9 +55,12 @@ active systems. Neither color should flood entire panels.
 
 ## 4. Typography and iconography
 
-- Use a highly legible sans-serif for controls, labels, and dense information.
-- Use a restrained display face only for the product mark and major run identity.
-- Use a monospace face for ids, timestamps, commands, payloads, and terminal data.
+- Use bundled **Manrope Variable** for controls, labels, node content, and dense
+  information. Do not depend on platform font availability.
+- Use bundled **Marcellus** only for the Agent Arcade product mark and similarly
+  rare identity moments.
+- Use bundled **IBM Plex Mono** for ids, paths, timestamps, commands, payloads,
+  keyboard hints, and terminal-adjacent data.
 - Letter spacing is `0`; hierarchy comes from weight, size, case, and contrast.
 - Use Lucide icons for familiar actions. Do not use Unicode symbols as toolbar
   icons when a standard icon exists.

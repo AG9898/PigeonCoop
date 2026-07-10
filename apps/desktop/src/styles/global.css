@@ -5,6 +5,9 @@
 }
 
 :root {
+  --font-ui: "Manrope Variable", "Segoe UI", sans-serif;
+  --font-display: "Marcellus", Georgia, serif;
+  --font-mono: "IBM Plex Mono", "SFMono-Regular", Consolas, monospace;
   --color-bg: #0d0f14;
   --color-surface: #141720;
   --color-surface-raised: #181c28;
@@ -13,7 +16,7 @@
   --color-accent: #3b82f6;
   --color-text: #e2e8f0;
   --color-text-muted: #64748b;
-  font-family: "JetBrains Mono", "Fira Code", monospace;
+  font-family: var(--font-ui);
 
   /* Depth / glow */
   --shadow-panel: 0 1px 3px rgba(0, 0, 0, 0.4), 0 0 1px rgba(59, 130, 246, 0.05);
@@ -1614,7 +1617,7 @@ body {
   --ev-routing: #d6a657;
   --ev-review: #d98787;
   --ev-memory: #82b5aa;
-  font-family: Inter, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-family: var(--font-ui);
 }
 
 body {
@@ -1681,9 +1684,9 @@ select:focus-visible,
 
 .app-nav-brand {
   color: var(--color-text);
-  font-family: Georgia, "Times New Roman", serif;
-  font-size: 15px;
-  font-weight: 600;
+  font-family: var(--font-display);
+  font-size: 16px;
+  font-weight: 400;
   letter-spacing: 0;
   margin: 0;
   text-transform: none;
@@ -1824,9 +1827,49 @@ select:focus-visible,
   background: transparent;
   border: 0;
   color: var(--color-text-soft);
-  font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  font-family: var(--font-mono);
   font-size: 11px;
   outline: 0;
+}
+
+.workspace-picker-btn {
+  width: 24px;
+  height: 24px;
+  display: grid;
+  place-items: center;
+  flex: none;
+  margin-left: -5px;
+  color: var(--color-text-muted);
+  background: transparent;
+  border: 0;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.workspace-picker-btn:hover:not(:disabled) {
+  color: var(--color-focus);
+  background: #1b1d1c;
+}
+
+.workspace-picker-btn:disabled {
+  cursor: wait;
+  opacity: 0.55;
+}
+
+code,
+pre,
+kbd,
+.run-strip-id,
+.run-strip-workspace,
+.run-strip-elapsed,
+.run-context-sequence,
+.lr-event-node,
+.scrubber-position,
+.ei-value--mono,
+.ei-pre,
+.cop-pre,
+.hr-meta-val {
+  font-family: var(--font-mono);
 }
 
 .app-workspace {

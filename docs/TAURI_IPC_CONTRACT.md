@@ -478,6 +478,30 @@ Read the default model from `~/.codex/config.toml` (`model = "..."`). Used by th
 
 ---
 
+### Settings and workspace (TAURI-005)
+
+#### `open_workspace_picker`
+
+Open the operating system's native folder picker. When a directory is selected,
+the backend stores it under the `workspace_root` setting and returns its path. The
+frontend mirrors the selected value into its persisted workspace control so the
+next Run action uses it immediately.
+
+**Args:** none
+
+**Return type:** `string | null` — selected directory path, or `null` when the
+user cancels. Canceling does not clear or replace the existing workspace root.
+
+**Error type:** `CmdError` — dialog or settings-persistence failure
+
+**TypeScript helper:**
+
+```ts
+ipc.openWorkspacePicker(): Promise<string | null>
+```
+
+---
+
 ## Events (listen)
 
 These events are emitted by the Rust backend and received via `listen()` on the frontend.

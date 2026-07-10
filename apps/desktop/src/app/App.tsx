@@ -12,6 +12,7 @@ import {
   ArrowLeft,
   CheckCircle2,
   FolderOpen,
+  FolderSearch2,
   Play,
   Save,
   Shield,
@@ -53,6 +54,7 @@ export function App() {
     () => localStorage.getItem(WORKSPACE_ROOT_KEY) ?? ""
   );
   const [runStarting, setRunStarting] = useState(false);
+  const [workspacePicking, setWorkspacePicking] = useState(false);
   const [status, setStatus] = useState<string>("");
   const [statusIsError, setStatusIsError] = useState(false);
 
@@ -243,6 +245,22 @@ export function App() {
     }
   }
 
+  async function handleChooseWorkspace() {
+    if (workspacePicking) return;
+    setWorkspacePicking(true);
+    try {
+      const selected = await ipc.openWorkspacePicker();
+      if (selected) {
+        setWorkspaceRoot(selected);
+        report("");
+      }
+    } catch (e) {
+      report(`Folder picker failed: ${e}`, true);
+    } finally {
+      setWorkspacePicking(false);
+    }
+  }
+
   /**
    * One-click run: save the canvas (design mode), create a run in the
    * configured workspace, start it, and open the run surface.
@@ -415,8 +433,17 @@ export function App() {
         )}
 
         <div className="topbar-run-controls">
-          <label className="workspace-field" title="Runs execute commands inside this folder">
-            <FolderOpen size={14} aria-hidden="true" />
+          <div className="workspace-field" title="Runs execute commands inside this folder">
+            <button
+              className="workspace-picker-btn"
+              data-testid="workspace-picker-btn"
+              onClick={handleChooseWorkspace}
+              disabled={workspacePicking}
+              title="Choose workspace folder"
+              aria-label="Choose workspace folder"
+            >
+              {workspacePicking ? <FolderOpen size={14} /> : <FolderSearch2 size={14} />}
+            </button>
             <input
               className="topbar-workspace-input"
               data-testid="workspace-input"
@@ -425,7 +452,7 @@ export function App() {
               placeholder="Choose workspace root"
               aria-label="Workspace folder"
             />
-          </label>
+          </div>
           <button
             className="toolbar-btn toolbar-btn--start topbar-run-btn"
             data-testid="run-btn"

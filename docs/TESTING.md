@@ -197,7 +197,7 @@ The four routed-view suites (`BuilderView`/`LiveRunView`/`ReplayView`/`LibraryVi
 
 **Layout and library** — top bar, sidebar and design surface render; workflows load on start and the first one opens onto the canvas; sidebar selection loads another workflow; New starts an empty untitled canvas.
 
-**Top-bar actions** — Save calls `create_workflow` for a new canvas and `update_workflow` for a loaded one; Validate reports success in the status area and surfaces errors in the validation overlay; Delete asks for confirmation, calls `delete_workflow` and opens the next workflow (declined confirmation is a no-op).
+**Top-bar actions** — Save calls `create_workflow` for a new canvas and `update_workflow` for a loaded one; Validate reports success in the status area and surfaces errors in the validation overlay; the native workspace picker applies a selected directory; Delete asks for confirmation, calls `delete_workflow` and opens the next workflow (declined confirmation is a no-op).
 
 **Run flow** — Run without a workspace folder shows an inline error and creates nothing; Run saves, creates and starts the run, then opens the run surface; "Edit workflow" returns to the design surface; the workspace folder persists via `localStorage`.
 
@@ -229,7 +229,7 @@ All 7 palette items render; clicking each item calls `onAddNode` with the correc
 
 **getFlowData** — loads nodes and edges from a `WorkflowDefinition` prop; returns empty arrays when no workflow given.
 
-**addNode (imperative handle)** — `setNodes` called with an updater that appends a correctly-typed node; uses provided position; appends to existing nodes.
+**addNode (imperative handle)** — `setNodes` called with an updater that appends a correctly-typed node; uses provided position; stagger-places click-added nodes; appends to existing nodes.
 
 **updateNodeLabel (imperative handle)** — `setNodes` called with an updater that replaces the label for the target node id.
 

@@ -111,6 +111,22 @@ describe("App — unified workspace shell", () => {
     ).toBe(true);
   });
 
+  it("opens the native workspace picker and applies the selected folder", async () => {
+    setupInvoke({ open_workspace_picker: "/tmp/selected-workspace" });
+    await act(async () => {
+      render(<App />);
+    });
+
+    await act(async () => {
+      fireEvent.click(screen.getByTestId("workspace-picker-btn"));
+    });
+
+    expect(mockInvoke.mock.calls.some((call) => call[0] === "open_workspace_picker")).toBe(true);
+    expect((screen.getByTestId("workspace-input") as HTMLInputElement).value).toBe(
+      "/tmp/selected-workspace"
+    );
+  });
+
   it("selecting another workflow in the sidebar loads it onto the canvas", async () => {
     await act(async () => {
       render(<App />);

@@ -77,8 +77,9 @@ Its contents depend on workspace state:
 
 - **Design:** editable workflow name, Save (`Ctrl+S`), and Validate
 - **Run selected:** a return-to-design action plus compact run identity
-- **Always:** workspace root and the primary Run action; Run saves the live canvas
-  when needed, creates the run, starts it, and reveals the activity deck
+- **Always:** editable workspace root with a native directory-picker action and
+  the primary Run action; Run saves the live canvas when needed, creates the run,
+  starts it, and reveals the activity deck
 
 ### 4.2 Library rail
 
