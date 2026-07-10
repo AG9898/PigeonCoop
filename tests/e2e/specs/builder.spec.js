@@ -16,6 +16,8 @@
 // elements (~10px handles) is insufficient for CI stability. The edge-creation
 // UI (handle drag + condition dialog) is covered by frontend component tests.
 
+import { randomUUID } from 'node:crypto';
+
 // Canonical demo workflow seeded on first launch — used to identify "our" workflow.
 const DEMO_WORKFLOW_ID = '00000000-0000-0000-0000-000000000001';
 
@@ -134,7 +136,8 @@ describe('Agent Arcade — builder flow', () => {
       const edges = [];
       for (let i = 0; i < order.length - 1; i++) {
         edges.push({
-          edge_id: `edge-${i}-${Date.now()}`,
+          // Rust EdgeDefinition.edge_id is a Uuid — non-UUID strings are rejected.
+          edge_id: randomUUID(),
           source_node_id: byKind[order[i]],
           target_node_id: byKind[order[i + 1]],
           condition_kind: 'always',

@@ -108,6 +108,9 @@ const FAILURE_WORKFLOW = {
     max_retries: 0,
     max_runtime_ms: 60000,
   },
+  // Required by the Rust WorkflowDefinition (no serde default for these).
+  created_at: new Date().toISOString(),
+  updated_at: new Date().toISOString(),
 };
 
 // Helper: call a Tauri command via window.__TAURI_INTERNALS__.invoke.
@@ -142,7 +145,13 @@ describe('Agent Arcade — failure handling', () => {
 
   describe('Workflow + run creation (IPC)', () => {
     it('creates the failure workflow', async () => {
-      await tauriInvoke('create_workflow', { workflow: FAILURE_WORKFLOW });
+      // Fixed workflow_id: fall back to update when a previous local run
+      // already seeded it (CI always starts from a clean database).
+      try {
+        await tauriInvoke('create_workflow', { workflow: FAILURE_WORKFLOW });
+      } catch {
+        await tauriInvoke('update_workflow', { workflow: FAILURE_WORKFLOW });
+      }
 
       const fetched = await tauriInvoke('get_workflow', { id: WORKFLOW_ID });
       expect(fetched).toBeTruthy();
@@ -276,9 +285,12 @@ describe('Agent Arcade — failure handling', () => {
       // TESTING.md §"WebKitWebDriver quirks" it is not always reliably
       // delivered to a WebKitWebDriver-automated webview. Poll the DOM
       // rather than asserting on a single render pass.
+      // .react-flow__node-tool is ReactFlow's wrapper; the wf-node--* state
+      // classes are on the inner div rendered by WorkflowNode — descendant
+      // selector, not compound.
       await browser.waitUntil(
         async () => {
-          const failedNode = await $('.react-flow__node-tool.wf-node--failed');
+          const failedNode = await $('.react-flow__node-tool .wf-node--failed');
           return await failedNode.isExisting();
         },
         {
@@ -288,7 +300,7 @@ describe('Agent Arcade — failure handling', () => {
         }
       );
 
-      const failedNode = await $('.react-flow__node-tool.wf-node--failed');
+      const failedNode = await $('.react-flow__node-tool .wf-node--failed');
       await expect(failedNode).toExist();
     });
 

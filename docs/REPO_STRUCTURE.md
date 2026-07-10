@@ -51,14 +51,16 @@ apps/
         canvas/            # WorkflowCanvas; pigeonDrawing.ts (procedural pigeon, SPRITE-002, integrated); cityDrawing.ts + CityBackdrop.tsx planned (SPRITE-003)
         nodes/             # WorkflowNode (text-based, 6 node types); PigeonSprite + AgentNode (procedural pigeon for the agent node type, SPRITE-002)
         panels/
+        sidebar/           # WorkflowSidebar — always-visible library pane (DEC-011)
       data/               # Embedded static data (e.g. demo workflow for first-run seeding)
       hooks/              # React hooks (useFirstRun for demo seeding, useCanvasKeyboard for keyboard-driven canvas navigation, useAnimationTick for the shared ~100ms sprite tick, SPRITE-002)
       main.tsx
       state/              # Pure state-derivation utilities (no React, no side effects)
-        deriveNodeStates.ts  # Reconstruct node statuses from an event slice (used by ReplayView)
+        deriveNodeStates.ts  # Reconstruct node statuses from an event slice (used by RunPanel)
+        deriveTokenPcts.ts   # Derive per-node token-usage percentages from agent events (shared, DEC-011)
       styles/
       types/
-      views/
+      views/               # DesignSurface (edit stage) + RunPanel (run stage, live + replay unified — DEC-011)
     src-tauri/
       build.rs               # Required: calls tauri_build::build() for generate_context!()
       Cargo.toml

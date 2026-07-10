@@ -1,14 +1,24 @@
 // App — unified workspace shell (DEC-011).
 // Covers: initial library load, sidebar → canvas selection, save/validate
-// from the top bar, and the one-click Run flow into the run surface.
+// from the top bar, the one-click Run flow into the run surface, workflow
+// deletion, and the app-wide run_status_changed subscription.
 
 import { render, screen, fireEvent, act, waitFor } from "@testing-library/react";
 import { invoke } from "@tauri-apps/api/core";
+import { listen } from "@tauri-apps/api/event";
 import { App } from "../app/App";
 import { vi, type Mock } from "vitest";
 import { DEMO_WORKFLOW_ID } from "../data/demo-workflow";
 
 const mockInvoke = invoke as Mock;
+const mockListen = listen as Mock;
+
+/** Find the captured listener callback for a given Tauri event name. */
+function listenerFor(eventName: string): (ev: { payload: unknown }) => void {
+  const call = mockListen.mock.calls.find((c: unknown[]) => c[0] === eventName);
+  if (!call) throw new Error(`no listener registered for ${eventName}`);
+  return call[1] as (ev: { payload: unknown }) => void;
+}
 
 function wf(id: string, name: string) {
   return {
@@ -34,8 +44,13 @@ function setupInvoke(overrides: Record<string, unknown> = {}) {
       const v = overrides[cmd];
       return typeof v === "function" ? (v as (a?: unknown) => unknown)(args) : Promise.resolve(v);
     }
-    // Demo workflow already present → first-run seeding skips.
-    if (cmd === "get_workflow") return Promise.resolve(wf(DEMO_WORKFLOW_ID, "Demo"));
+    // Resolve stored workflows by id; the demo id resolves so first-run
+    // seeding skips.
+    if (cmd === "get_workflow") {
+      const id = (args as { id?: string } | undefined)?.id;
+      const found = [WF_A, WF_B].find((w) => w.workflow_id === id);
+      return Promise.resolve(found ?? wf(DEMO_WORKFLOW_ID, "Demo"));
+    }
     if (cmd === "list_workflows") return Promise.resolve([WF_A, WF_B]);
     if (cmd === "list_runs_for_workflow") return Promise.resolve([]);
     if (cmd === "validate_workflow")
@@ -213,6 +228,80 @@ describe("App — unified workspace shell", () => {
       fireEvent.click(screen.getByTestId("back-to-editor-btn"));
     });
     expect(screen.getByTestId("design-surface")).toBeTruthy();
+  });
+
+  it("Delete removes the workflow after confirmation and opens the next one", async () => {
+    vi.spyOn(window, "confirm").mockReturnValue(true);
+    let deleted = false;
+    setupInvoke({
+      delete_workflow: () => {
+        deleted = true;
+        return Promise.resolve(null);
+      },
+      list_workflows: () => Promise.resolve(deleted ? [WF_B] : [WF_A, WF_B]),
+    });
+    await act(async () => {
+      render(<App />);
+    });
+    await act(async () => {
+      fireEvent.click(screen.getByTestId("delete-btn-wf-aaaa"));
+    });
+
+    const deleteCall = mockInvoke.mock.calls.find((c) => c[0] === "delete_workflow");
+    expect(deleteCall?.[1]).toEqual({ id: "wf-aaaa" });
+    const nameInput = screen.getByTestId("workflow-name-input") as HTMLInputElement;
+    expect(nameInput.value).toBe("Beta Flow");
+  });
+
+  it("Delete does nothing when the confirmation is declined", async () => {
+    vi.spyOn(window, "confirm").mockReturnValue(false);
+    await act(async () => {
+      render(<App />);
+    });
+    await act(async () => {
+      fireEvent.click(screen.getByTestId("delete-btn-wf-aaaa"));
+    });
+    expect(mockInvoke.mock.calls.some((c) => c[0] === "delete_workflow")).toBe(false);
+  });
+
+  it("run_status_changed updates sidebar run chips without the run open", async () => {
+    const sidebarRun = {
+      run_id: "run-1234",
+      workflow_id: "wf-aaaa",
+      workflow_version: 1,
+      status: "running",
+      workspace_root: "/tmp/proj",
+      created_at: "2026-03-09T10:00:00Z",
+      started_at: "2026-03-09T10:00:01Z",
+    };
+    setupInvoke({
+      list_runs_for_workflow: [sidebarRun],
+      get_run: {
+        ...sidebarRun,
+        status: "succeeded",
+        ended_at: "2026-03-09T10:05:00Z",
+      },
+    });
+    await act(async () => {
+      render(<App />);
+    });
+    await waitFor(() => {
+      expect(screen.getByTestId("run-card-run-1234").textContent).toContain("running");
+    });
+
+    await act(async () => {
+      listenerFor("run_status_changed")({
+        payload: {
+          run_id: "run-1234",
+          old_status: "running",
+          new_status: "succeeded",
+          timestamp: "2026-03-09T10:05:00Z",
+        },
+      });
+    });
+    await waitFor(() => {
+      expect(screen.getByTestId("run-card-run-1234").textContent).toContain("succeeded");
+    });
   });
 
   it("persists the workspace folder across sessions", async () => {

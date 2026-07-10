@@ -83,7 +83,9 @@ export interface WorkflowDefinition {
   metadata: unknown;
   nodes: NodeDefinition[];
   edges: EdgeDefinition[];
-  default_constraints: unknown;
+  /** Absent = backend applies RunConstraints::default(). Never send null:
+      the Rust field is `#[serde(default)]` on a non-Option struct. */
+  default_constraints?: unknown;
   created_at: string;
   updated_at: string;
 }

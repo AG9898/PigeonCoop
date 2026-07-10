@@ -547,14 +547,33 @@ Neither new config field bumps `schema_version` — both are additive optional f
 
 **Implemented in this change:** deleted `views/{BuilderView,LibraryView,LiveRunView,ReplayView}.tsx`; added `WorkflowSidebar`, `DesignSurface`, `RunPanel`, `state/deriveTokenPcts.ts`; rewrote `app/App.tsx`; top-bar/sidebar/run-panel/scrubber CSS in `styles/global.css` (incl. previously missing `.toolbar-btn` and `.timeline-scrubber` styles); replaced the four view test suites with `App/WorkflowSidebar/DesignSurface/RunPanel` suites (174 frontend tests green, `tsc` clean); ported all six E2E specs in `tests/e2e/specs/` to the new selectors/flows (`node --check` clean; **not executed** — see repo Discoveries about sandbox E2E).
 
-**Follow-up implications (remaining work):**
-1. **Visual verification** — `npm run tauri dev` and click through: sidebar select → edit → Run → live run → scrub → human review approve. Not yet done after the restructure.
-2. **DESIGN_SPEC.md §4** still describes the old views in detail; a banner note marks it superseded — rewrite the section (and §13 keyboard-shortcut list: 1–4 nav removed, Ctrl+S added).
-3. **E2E specs** ported but unverified; run in CI or with the extracted-WebKitWebDriver workaround. `failure.spec.js`/`review.spec.js` UI sections assume the sidebar shows runs created via IPC after clicking the workflow card — App reloads runs on select, so this should hold, but verify.
-4. Sidebar has no delete-workflow affordance (`ipc.deleteWorkflow` exists, unused). Consider adding.
-5. Dead CSS from the removed views (`.lib-card*`, `.lr-hud*`, `.replay-*`, `.library-*`, `.view*`, picker styles) can be pruned.
-6. Non-selected runs' sidebar chips only refresh on workflow re-select; consider a global `run_status_changed` subscription in App.
-7. TESTING.md and workboard entries referencing the four views should be reconciled.
+**Follow-up implications (remaining work):** *(all resolved 2026-07-10 — see DEC-012)*
+1. ~~Visual verification~~ — done via the full headed E2E suite (all 6 specs green in the sandbox; see DEC-012 for the bugs it surfaced).
+2. ~~DESIGN_SPEC.md §4/§13 rewrite~~ — done; §4 now describes the unified workspace, §13 shortcut map updated (1–4 nav removed, Ctrl+S added), duplicate §13 heading renumbered to §14.
+3. ~~E2E specs unverified~~ — executed and green after fixing spec drift (non-UUID edge ids in `builder.spec.js`, wrong `HumanReviewDecision` shape in `replay.spec.js`, missing `created_at` in `failure.spec.js`, compound vs descendant `.wf-node--failed` selector).
+4. ~~Delete-workflow affordance~~ — added to the sidebar (confirmation → `delete_workflow` → open next workflow or empty canvas).
+5. ~~Dead CSS~~ — pruned (`.lib-card*`, `.lr-hud*`, `.lr-node-*`, `.lr-detail-*`, `.replay-*` panels, `.library-*`, `.view*`, `.lib-welcome*`).
+6. ~~Global `run_status_changed` subscription~~ — added in App; chips update for non-open runs, terminal transitions refetch the run for `ended_at`.
+7. ~~TESTING.md / workboard reconciliation~~ — TESTING.md rewritten for the new suites and ported spec flows; workboard references are all in `done` tasks (historical record, intentionally untouched).
+
+---
+
+### DEC-012 — Fixes and semantics locked in by the first full E2E pass (2026-07-10)
+
+**Status:** accepted, implemented.
+
+**Context:** Executing the DEC-011-ported E2E suite for the first time (headed, in the WSL2 sandbox) surfaced that several "ported but unverified" flows had never actually worked against the real backend, plus one production bug that only manifests outside mocked unit tests.
+
+**Decisions / fixes:**
+1. **Canvas save must satisfy the Rust serde contract.** `WorkflowDefinition.default_constraints` is `#[serde(default)]` on a **non-Option** struct: absent is fine, explicit `null` is rejected. `flowToWorkflow` now omits the field (TS type made optional), and never-configured palette nodes serialize the same per-kind config skeleton the inspector uses (`defaultConfig`, now exported) because `NodeConfig::from_value` rejects `null`. This bug predated DEC-011 (old BuilderView had it too) — UI save had *never* succeeded against the real backend.
+2. **Sidebar selection always loads the persisted definition.** `App.handleSelectWorkflow` fetches via `get_workflow` instead of trusting the cached `list_workflows` entry (stale after IPC updates), and re-clicking the open workflow reloads it (canvasKey gets a per-open nonce so the canvas remounts). Tradeoff: re-clicking discards unsaved canvas edits — accepted because selecting a *different* workflow already did, and "click card = load persisted state" is one consistent rule.
+3. **Run-surface polling refetches the event log and stops at terminal.** The 2s fallback poll (needed where Tauri push events are dropped, e.g. WebKitWebDriver) previously refetched events only while `paused`, so a live run's graph/feed froze without push delivery. It now appends the log (deduped by `event_id`) every poll and stops polling after one final fetch once the run is terminal. This makes the code match what TESTING.md already claimed.
+4. **State updaters must be StrictMode-pure.** `RunPanel.appendEvents` marked event ids seen *inside* the `setEvents` updater; StrictMode's double-invocation made the second call see everything as duplicate and return the old state — **every run opened mid-flight or finished showed an empty feed/timeline in dev builds**. Dedupe now happens before `setState`. Rule for future code: never mutate refs inside a state updater.
+5. **Sidebar card actions live in normal flow.** The selected card's Export/Delete buttons were absolutely positioned over the name row; with two buttons the card's center point landed on Export (which `stopPropagation`s), silently eating selection clicks — for WebDriver *and* real users. Actions are now a flow row under the card meta.
+
+**Alternatives considered:** teaching specs to click card edges instead of fixing the overlay (rejected: real-user misclick surface); making `default_constraints` `Option` in Rust (rejected: `RunConstraints::default()` semantics are correct, the frontend just violated the contract); keeping the paused-only poll and requiring push events (rejected: contradicts TESTING.md and fails in automation environments).
+
+**Follow-up implications:** none open. E2E runbook for this sandbox recorded in TESTING.md §3 and AGENTS.md Discoveries.
 
 ---
 

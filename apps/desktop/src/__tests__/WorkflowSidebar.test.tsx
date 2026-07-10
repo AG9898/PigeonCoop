@@ -44,6 +44,7 @@ function renderSidebar(overrides: Partial<WorkflowSidebarProps> = {}) {
     onNewWorkflow: vi.fn(),
     onImport: vi.fn(),
     onExport: vi.fn(),
+    onDelete: vi.fn(),
     ...overrides,
   };
   render(<WorkflowSidebar {...props} />);
@@ -97,6 +98,18 @@ describe("WorkflowSidebar", () => {
     fireEvent.click(screen.getByTestId("export-btn-wf-aaaa"));
     expect(props.onExport).toHaveBeenCalledWith("wf-aaaa");
     expect(props.onSelectWorkflow).not.toHaveBeenCalled();
+  });
+
+  it("Delete button on the selected card fires onDelete without selecting", () => {
+    const props = renderSidebar({ selectedWorkflowId: "wf-aaaa", runs: [] });
+    fireEvent.click(screen.getByTestId("delete-btn-wf-aaaa"));
+    expect(props.onDelete).toHaveBeenCalledWith("wf-aaaa");
+    expect(props.onSelectWorkflow).not.toHaveBeenCalled();
+  });
+
+  it("does not show a Delete button on unselected cards", () => {
+    renderSidebar({ selectedWorkflowId: "wf-aaaa", runs: [] });
+    expect(screen.queryByTestId("delete-btn-wf-bbbb")).toBeNull();
   });
 
   it("importing a file passes its JSON text to onImport", async () => {

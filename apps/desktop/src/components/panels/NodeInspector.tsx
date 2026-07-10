@@ -472,7 +472,7 @@ function RetryPolicyForm({ policy, onChange }: RetryPolicyFormProps) {
 // Default configs per kind
 // ---------------------------------------------------------------------------
 
-function defaultConfig(kind: NodeKind): Record<string, unknown> {
+export function defaultConfig(kind: NodeKind): Record<string, unknown> {
   switch (kind) {
     case "agent":        return { prompt: "", output_mode: "raw" } as Record<string, unknown>;
     case "tool":         return { command: "" } as Record<string, unknown>;

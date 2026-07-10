@@ -7,11 +7,12 @@
 // a run is selected. See ARCHITECTURE.md §10 and DESIGN_SPEC.md §4.
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 import { WorkflowSidebar } from "../components/sidebar/WorkflowSidebar";
 import { DesignSurface, type DesignSurfaceHandle } from "../views/DesignSurface";
 import { RunPanel } from "../views/RunPanel";
 import { useFirstRun } from "../hooks/useFirstRun";
-import { ipc } from "../types/ipc";
+import { ipc, type RunStatusChangedPayload } from "../types/ipc";
 import type {
   RunInstance,
   RunStatus,
@@ -70,7 +71,8 @@ export function App() {
     try {
       const r = await ipc.listRunsForWorkflow({ workflowId });
       setRuns(r ?? []);
-    } catch {
+    } catch (e) {
+      setSidebarError(`Failed to load runs: ${e}`);
       setRuns([]);
     }
   }, []);
@@ -80,7 +82,9 @@ export function App() {
       setSelectedWorkflowId(wf.workflow_id);
       setSelectedRunId(null);
       setLoadedWorkflow(wf);
-      setCanvasKey(wf.workflow_id);
+      // Unique per open so re-opening the same workflow remounts the canvas
+      // with the freshly loaded definition.
+      setCanvasKey(`${wf.workflow_id}:${Date.now()}`);
       setWorkflowName(wf.name);
       setValidationResult(null);
       setRuns(null);
@@ -108,11 +112,19 @@ export function App() {
     localStorage.setItem(WORKSPACE_ROOT_KEY, workspaceRoot);
   }, [workspaceRoot]);
 
-  function handleSelectWorkflow(id: string) {
-    const wf = workflows.find((w) => w.workflow_id === id);
-    if (!wf) return;
-    if (id === selectedWorkflowId && selectedRunId === null) return;
-    openWorkflow(wf);
+  async function handleSelectWorkflow(id: string) {
+    const cached = workflows.find((w) => w.workflow_id === id);
+    if (!cached) return;
+    // Selecting a card always loads the *persisted* definition — the cached
+    // list entry may be stale (e.g. the workflow was updated over IPC).
+    // Re-clicking the open workflow reloads it the same way, which also
+    // refreshes its run history.
+    try {
+      const fresh = await ipc.getWorkflow({ id });
+      openWorkflow(fresh ?? cached);
+    } catch {
+      openWorkflow(cached);
+    }
   }
 
   function handleSelectRun(runId: string) {
@@ -140,6 +152,29 @@ export function App() {
       await loadWorkflows();
       openWorkflow(wf);
       report("Imported");
+    } catch (e) {
+      setSidebarError(String(e));
+    }
+  }
+
+  async function handleDelete(workflowId: string) {
+    const wf = workflows.find((w) => w.workflow_id === workflowId);
+    const ok = window.confirm(
+      `Delete "${wf?.name ?? workflowId}" and its run history? This cannot be undone.`
+    );
+    if (!ok) return;
+
+    try {
+      await ipc.deleteWorkflow({ id: workflowId });
+      const wfs = await loadWorkflows();
+      if (selectedWorkflowId === workflowId) {
+        if (wfs.length > 0) {
+          openWorkflow(wfs[0]);
+        } else {
+          handleNewWorkflow();
+        }
+      }
+      report("Deleted");
     } catch (e) {
       setSidebarError(String(e));
     }
@@ -252,6 +287,49 @@ export function App() {
     []
   );
 
+  // Keep every sidebar run chip live, not just the open run's (RunPanel
+  // reports the open run too; handleRunStatusChange is idempotent, so the
+  // two sources may overlap safely).
+  useEffect(() => {
+    let disposed = false;
+    let unlisten: UnlistenFn | undefined;
+
+    (async () => {
+      unlisten = await listen<RunStatusChangedPayload>(
+        "run_status_changed",
+        (ev) => {
+          const { run_id, new_status } = ev.payload;
+          handleRunStatusChange(run_id, new_status);
+          // Terminal transitions also set ended_at — refetch the run so the
+          // chip's duration stops ticking at the real end time.
+          if (
+            new_status === "succeeded" ||
+            new_status === "failed" ||
+            new_status === "cancelled"
+          ) {
+            ipc
+              .getRun({ runId: run_id })
+              .then((run) => {
+                if (!run || disposed) return;
+                setRuns((prev) =>
+                  prev
+                    ? prev.map((r) => (r.run_id === run.run_id ? run : r))
+                    : prev
+                );
+              })
+              .catch(() => {});
+          }
+        }
+      );
+      if (disposed) unlisten();
+    })();
+
+    return () => {
+      disposed = true;
+      unlisten?.();
+    };
+  }, [handleRunStatusChange]);
+
   // Ctrl+S saves the canvas in design mode.
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
@@ -351,6 +429,7 @@ export function App() {
           onNewWorkflow={handleNewWorkflow}
           onImport={handleImport}
           onExport={handleExport}
+          onDelete={handleDelete}
           error={sidebarError}
         />
 

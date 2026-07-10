@@ -314,7 +314,7 @@ workflow_id: String,  // UUID
 
 #### `list_events_for_run`
 
-Paginated event log for a run, ordered by `sequence ASC`. Used by ReplayView and LiveRunView (polling fallback).
+Paginated event log for a run, ordered by `sequence ASC`. Used by `RunPanel` for the on-open backfill and the polling fallback.
 
 **Rust arg struct:**
 ```rust
@@ -490,7 +490,7 @@ Emitted whenever a run's status transitions.
 
 **Emitter:** `crates/core-engine` run state machine, bridged via TAURI-002 event handler
 
-**Subscriber:** `LiveRunView` — updates run status badge and graph overlay
+**Subscriber:** `RunPanel` — updates the open run's status strip and graph overlay; `App` shell — keeps sidebar run chips live for runs not open on the stage (refetches the run via `get_run` on terminal transitions to pick up `ended_at`)
 
 **Payload interface:**
 ```ts
@@ -520,7 +520,7 @@ Emitted whenever a node's status transitions within an active run.
 
 **Emitter:** `crates/core-engine` node state machine, bridged via TAURI-002 event handler
 
-**Subscriber:** `LiveRunView` — updates per-node visual state on the graph canvas
+**Subscriber:** none currently — `RunPanel` derives per-node visual state from the event log (`node.*` events) rather than this push event
 
 **Payload interface:**
 ```ts
@@ -550,11 +550,11 @@ interface NodeStatusChangedPayload {
 
 ### `run_event_appended`
 
-Emitted whenever a new `RunEvent` is appended to the log. Used by Live Run View to stream the event feed.
+Emitted whenever a new `RunEvent` is appended to the log. Streams the run surface's event feed.
 
 **Emitter:** event persistence layer, called from TAURI-002/003 bridge after `append_event`
 
-**Subscriber:** `LiveRunView` event feed panel, optionally `ReplayView` if watching a live run
+**Subscriber:** `RunPanel` — appends to the in-memory event log (deduped by `event_id` against the on-open backfill)
 
 **Payload interface:**
 ```ts
@@ -589,7 +589,7 @@ Emitted when a human-review node suspends execution and requires operator input.
 
 **Emitter:** `crates/core-engine` when a `HumanReview` node transitions to `Waiting`, bridged via TAURI-002 handler
 
-**Subscriber:** `LiveRunView` — shows review panel; optionally triggers a system notification
+**Subscriber:** `RunPanel` — shows review panel; optionally triggers a system notification
 
 **Payload interface:**
 ```ts
@@ -623,7 +623,7 @@ Raw PTY output bytes from a live interactive agent session (DEC-009). High-frequ
 
 **Emitter:** interactive-session bridge task in `apps/desktop/src-tauri/src/commands/mod.rs`
 
-**Subscriber:** `AgentSessionTerminal` (xterm.js) in `LiveRunView` — writes `data` to the terminal when `run_id`/`node_id` match
+**Subscriber:** `AgentSessionTerminal` (xterm.js) in `RunPanel` — writes `data` to the terminal when `run_id`/`node_id` match
 
 **Payload interface:**
 ```ts
@@ -642,7 +642,7 @@ Lifecycle of a live interactive agent session, for terminal-panel chrome (distin
 
 **Emitter:** interactive-session bridge task in `apps/desktop/src-tauri/src/commands/mod.rs`
 
-**Subscriber:** `AgentSessionTerminal` in `LiveRunView` — shows/hides the panel and the *Complete node* button
+**Subscriber:** `AgentSessionTerminal` in `RunPanel` — shows/hides the panel and the *Complete node* button
 
 **Payload interface:**
 ```ts

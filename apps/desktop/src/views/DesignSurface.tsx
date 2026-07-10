@@ -16,7 +16,7 @@ import {
   WorkflowCanvasHandle,
 } from "../components/canvas/WorkflowCanvas";
 import { NodePalette } from "../components/panels/NodePalette";
-import { NodeInspector } from "../components/panels/NodeInspector";
+import { NodeInspector, defaultConfig } from "../components/panels/NodeInspector";
 import type {
   ConditionKind,
   NodeKind,
@@ -42,7 +42,11 @@ export function flowToWorkflow(
       node_id: n.id,
       node_type: (n.type ?? "agent") as NodeKind,
       label: (n.data as WorkflowNodeData).label,
-      config: (n.data as WorkflowNodeData).config ?? null,
+      // Never-configured nodes get the same per-kind skeleton the inspector
+      // starts from — the backend's NodeConfig variants reject null.
+      config:
+        (n.data as WorkflowNodeData).config ??
+        defaultConfig((n.type ?? "agent") as NodeKind),
       input_contract: null,
       output_contract: null,
       memory_access: null,
@@ -57,7 +61,7 @@ export function flowToWorkflow(
       condition_kind: ((e.data as { condition_kind?: ConditionKind } | undefined)?.condition_kind ?? "always"),
       label: typeof e.label === "string" ? e.label : undefined,
     })),
-    default_constraints: null,
+    // default_constraints intentionally omitted — see WorkflowDefinition.
     created_at: now,
     updated_at: now,
   };

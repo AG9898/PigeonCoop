@@ -184,21 +184,28 @@ For typed IPC interactions, use the interfaces from `apps/desktop/src/types/ipc.
 
 ### Guidelines
 - Components must not contain execution logic — test rendering and interaction only
-- Builder view tests: graph manipulation, node palette, edge creation
-- Live run view tests: correct rendering of node states from mocked events
-- Replay view tests: timeline scrubbing state, event inspector display
+- Design-surface tests: graph manipulation, node palette, edge creation, validation display
+- Run-surface tests: correct rendering of node states derived from mocked events, timeline scrubbing, event inspector display
 - Do not test Tauri bridge behavior in component tests
 - All new components using `listen()` must have at least one test asserting correct unlisten cleanup
 
-### Builder component test suite (UI-BLD-007)
+### Workspace shell test suite (DEC-011)
 
-**`apps/desktop/src/__tests__/BuilderView.test.tsx`** covers:
+The four routed-view suites (`BuilderView`/`LiveRunView`/`ReplayView`/`LibraryView`) were replaced by the unified-workspace suites below when DEC-011 landed.
 
-**Save/load flows** — `create_workflow` on first save, `update_workflow` after load, workflow picker list, empty-picker state, picker close, save/load error states.
+**`apps/desktop/src/__tests__/App.test.tsx`** covers the shell:
 
-**Node palette integration** — palette renders all 7 node type labels in the BuilderView context; clicking any palette item does not throw.
+**Layout and library** — top bar, sidebar and design surface render; workflows load on start and the first one opens onto the canvas; sidebar selection loads another workflow; New starts an empty untitled canvas.
 
-**Validation** — `validate_workflow` IPC call, valid/error status badges, error panel with human-readable messages per `ValidationResult` kind, error count in status, dismiss panel via ×, backend error fallback.
+**Top-bar actions** — Save calls `create_workflow` for a new canvas and `update_workflow` for a loaded one; Validate reports success in the status area and surfaces errors in the validation overlay; Delete asks for confirmation, calls `delete_workflow` and opens the next workflow (declined confirmation is a no-op).
+
+**Run flow** — Run without a workspace folder shows an inline error and creates nothing; Run saves, creates and starts the run, then opens the run surface; "Edit workflow" returns to the design surface; the workspace folder persists via `localStorage`.
+
+**Global subscriptions** — an app-wide `run_status_changed` listener updates sidebar run chips even when the run is not open on the stage.
+
+**`apps/desktop/src/__tests__/WorkflowSidebar.test.tsx`** covers the presentational sidebar: workflow list and empty state, selection callbacks for workflows and runs, run sublist with status chips, New/Import/Export/Delete affordances (Export/Delete only on the selected card), file import piping JSON to `onImport`, and the error banner.
+
+**`apps/desktop/src/__tests__/DesignSurface.test.tsx`** covers the design stage: palette renders all 7 node types, validation overlay show/hide/dismiss, and the `buildWorkflow()` handle serializing canvas nodes/edges into a `WorkflowDefinition`.
 
 **`apps/desktop/src/__tests__/NodePalette.test.tsx`** covers:
 
@@ -232,33 +239,17 @@ All 7 palette items render; clicking each item calls `onAddNode` with the correc
 
 **Reactflow callback capture pattern:** `WorkflowCanvas.test.tsx` uses `vi.hoisted()` to create a `hooks` object that the local `vi.mock("reactflow", ...)` factory writes into. This lets tests invoke `onConnect` and `onSelectionChange` directly without a real browser drag gesture.
 
-### Live run view test suite (UI-RUN-006)
+### Run surface test suite (DEC-011)
 
-`apps/desktop/src/__tests__/LiveRunView.test.tsx` covers:
+`apps/desktop/src/__tests__/RunPanel.test.tsx` covers:
 
-**Run shell and subscriptions** — placeholder state, app-shell reachability, run HUD loading from mocked IPC, event subscription registration, listener cleanup, start/cancel keyboard shortcuts, and no real Tauri bridge calls.
+**Subscriptions and backfill** — registration of `run_status_changed`, `run_event_appended` and `human_review_requested` listeners; persisted-log backfill via `list_events_for_run` on open; dedupe of events arriving from both backfill and the stream; filtering out events for other runs; listener cleanup on unmount; status transitions notified to the shell via `onRunStatusChange`.
 
-**Live events and graph state** — run status events, event-feed population and filtering by run ID, event-detail selection, event family color classes, timestamps, graph panel mounting, node status badges, and all 8 shared workflow node visual states (`idle`, `queued`, `running`, `waiting`, `succeeded`, `failed`, `skipped`, `paused`).
+**Live tail and scrubbing** — events render in sequence order; the panel defaults to the latest event (live tail) and shows a LIVE badge for active runs; clicking an earlier event or scrubbing the range slider rewinds the detail/graph to that point; jump-to-latest returns to the tail; the OUTPUT tab shows command output only up to the scrub position; event feed items are color-coded by family.
 
-**Command output and human review** — command stdout rendering through `CommandOutputPanel` while preserving generic detail for non-command events; human review request filtering, modal rendering, and approve/reject/retry decision submission through mocked `invoke()`.
+**Run controls** — Start shown only for created/ready runs and calls `start_run` (also via Ctrl+Enter); Cancel calls `cancel_run` for active runs and is disabled for terminal ones (Ctrl+. respected accordingly).
 
-### Replay view test suite (UI-RPL-004)
-
-`apps/desktop/src/__tests__/ReplayView.test.tsx` covers:
-
-**ReplayView core** — event loading via `list_events_for_run`, chronological event list, scrubber initialization, event-detail selection, error state on invoke rejection.
-
-**Graph state panel** — `deriveNodeStates` integration: empty state when no node events are in range, node state appears when scrubbing to a node event, state updates as scrubber advances.
-
-**Scrubber drives node states** — verifies that all scrubber controls (range slider, next/prev buttons) update the graph state panel and event inspector:
-- Range slider changes update `node-state-*` items in the graph panel
-- Scrubbing backward reverts graph state (later-node entries disappear)
-- Next/prev buttons increment node states step-by-step
-- Event inspector payload reflects the event at the current scrubber position
-
-**EventInspector typed panes** — envelope fields for all events, node context pane (node_id, node_type, input_refs, output), routing pane (router_node_id, selected edges, reason), command pane (command, exit_code, duration, stdout/stderr), no family pane for run-level events, select prompt when no event selected.
-
-**Library → Replay navigation** — library view shows replay button for completed runs, clicking it navigates to ReplayView. App-level integration test covers the full Library → Replay navigation flow.
+**Human review** — panel appears when `human_review_requested` fires for this run, ignores other runs, and submits decisions through mocked `invoke()`.
 
 **Testing pattern note:** Use `getAllByRole("option")` to wait for the event list to render rather than `getByText` on event type names, because the same event type string often appears in both the event list and the event inspector simultaneously.
 
@@ -384,34 +375,36 @@ export const config = {
 | Spec | Covers |
 |---|---|
 | `tests/e2e/specs/app.spec.js` | Smoke test — app launches, window title, root DOM element |
-| `tests/e2e/specs/builder.spec.js` | Builder flow — palette node creation, workflow save/load, edge persistence, Library view verification |
-| `tests/e2e/specs/run.spec.js` | Run flow — Library view, create/start run via IPC, node state transitions via `list_events_for_run`, LiveRunView UI assertions |
-| `tests/e2e/specs/review.spec.js` | Human review gate — run pauses at HumanReview, panel visible, Approve clicked, run resumes to Succeeded, post-approval event log assertions |
-| `tests/e2e/specs/replay.spec.js` | Replay flow — complete a run via IPC, Library → Replay navigation, timeline scrubbing (first/last/next/prev), graph state panel updates, event inspector envelope/payload/node-context panes |
+| `tests/e2e/specs/builder.spec.js` | Builder flow — palette node creation on the design surface, top-bar save, edge persistence, sidebar reload and card verification |
+| `tests/e2e/specs/run.spec.js` | Run flow — sidebar workflow card, create/start run via IPC, node state transitions via `list_events_for_run`, run-surface assertions (run strip, event-feed backfill, HumanReviewPanel) |
+| `tests/e2e/specs/review.spec.js` | Human review gate — run opened via sidebar, run pauses at HumanReview, panel visible, Approve clicked, run resumes to Succeeded, post-approval event log assertions |
+| `tests/e2e/specs/replay.spec.js` | Replay flow — complete a run via IPC, sidebar → run surface navigation, timeline scrubbing (first/last/next/prev), node-state overlays, event inspector envelope/payload/node-context panes |
 | `tests/e2e/specs/failure.spec.js` | Failure handling — dedicated `start → tool → end` workflow with a Tool node that exits non-zero, run reaches Failed, `.wf-node--failed` renders on the Tool node, node/run event log assertions |
+
+All six specs were ported to the unified-workspace selectors (DEC-011): navigation goes through the workflow sidebar (`workflow-card-*` / `run-card-*` testids) instead of view keyboard shortcuts, and run assertions target `RunPanel`.
 
 ### IPC access pattern in E2E tests
 
-E2E specs drive runs via `window.__TAURI_INTERNALS__.invoke()` inside `browser.executeAsync()` rather than purely through the UI. This keeps setup deterministic and avoids races between UI state and run progression. The `review.spec.js` spec navigates through the Library UI (clicking the workflow card and the "Live Run" button on a run card) to mount `LiveRunView` before starting the run — this is the critical ordering that ensures event subscriptions are registered before the run fires events.
+E2E specs drive runs via `window.__TAURI_INTERNALS__.invoke()` inside `browser.executeAsync()` rather than purely through the UI. This keeps setup deterministic and avoids races between UI state and run progression. Specs that assert on live run UI (`review.spec.js`, `failure.spec.js`) first open the run through the sidebar (workflow card → run card) so `RunPanel` mounts and registers its event listeners *before* the run is started via IPC — with the DEC-011 backfill this ordering is less critical (the panel reloads the persisted log on open), but it remains the convention.
 
 ### Builder flow spec (TEST-002)
 
 `tests/e2e/specs/builder.spec.js` covers the full builder workflow:
 
-1. **Node creation** — clicks all 7 palette items (Start, End, Agent, Tool, Router, Memory, Review), verifies each node type appears in the React Flow canvas via `.react-flow__node-{kind}` class selectors.
-2. **Workflow save** — clicks the Save toolbar button, verifies "Saved" status text, then confirms via `list_workflows` IPC that the workflow was persisted with 7 nodes of all required types.
+1. **Node creation** — starts a fresh canvas via the sidebar's "+ New" button, clicks all 7 palette items (Start, End, Agent, Tool, Router, Memory, Review), verifies each node type appears in the React Flow canvas via `.react-flow__node-{kind}` class selectors.
+2. **Workflow save** — clicks the top-bar Save button, verifies "Saved" in the top-bar status, then confirms via `list_workflows` IPC that the workflow was persisted with 7 nodes of all required types.
 3. **Edge persistence** — adds 6 edges (start → agent → tool → router → memory → human_review → end chain) via `update_workflow` IPC, verifies via `get_workflow`. Edges are added via IPC rather than mouse drag-and-drop on React Flow handles because WebKitWebDriver mouse action reliability on small handle elements (~10px) is insufficient for CI stability.
-4. **Workflow reload** — clicks Load toolbar button, selects "Untitled Workflow" from the picker, verifies the canvas renders 7 `.react-flow__node` elements and 6 `.react-flow__edge` elements.
-5. **Library verification** — navigates to Library view (keyboard shortcut '4'), verifies the workflow card exists via `data-testid` and displays the correct name.
+4. **Workflow reload** — clicks the saved workflow's sidebar card, verifies the canvas renders 7 `.react-flow__node` elements and 6 `.react-flow__edge` elements.
+5. **Sidebar verification** — verifies the workflow card exists via `data-testid` and displays the correct name.
 
 ### Replay flow spec (TEST-005)
 
 `tests/e2e/specs/replay.spec.js` covers the replay timeline and event inspection flow:
 
 1. **Setup: completed run** — creates a run via `create_run` IPC, starts it, waits for it to pause at the HumanReview node, then approves via `submit_human_review_decision` IPC so the run reaches `succeeded`. All setup is done via IPC, not UI, keeping it deterministic.
-2. **Library → Replay navigation** — navigates to Library view (keyboard shortcut '4'), clicks the demo workflow card to load run history, finds the completed run card, clicks its "Replay" button (`data-testid="open-replay-{runId}"`), and verifies ReplayView mounts.
-3. **ReplayView loads events** — verifies REPLAY title, subtitle shows run ID, event list is populated with `[role="option"]` items, and both graph state and event detail panels are visible.
-4. **Timeline scrubbing** — tests all scrubber controls (go-to-first, go-to-last, next, previous buttons via `aria-label`), verifies that node state count in `[data-testid="graph-state-panel"]` increases when scrubbing forward and decreases when scrubbing backward.
+2. **Sidebar → run surface navigation** — clicks the demo workflow card to load run history, finds the completed run card, clicks it, and verifies the run surface opens showing that run.
+3. **Run surface loads the completed run** — verifies the run strip shows `succeeded`, the event list is populated with `[role="option"]` items, and both the run graph and event detail panel are visible.
+4. **Timeline scrubbing** — tests all scrubber controls (go-to-first, go-to-last, next, previous buttons via `aria-label`), verifies node-state overlays accumulate when scrubbing forward and revert when scrubbing backward.
 5. **Event inspector** — verifies envelope pane (`ei-envelope`) shows event fields, payload pane (`ei-payload`) shows JSON content, clicking a `node.succeeded` event renders the node context pane (`ei-node-pane`), and scrubbing to a different event changes the envelope content.
 6. **Event data integrity** — verifies UI event count matches IPC `list_events_for_run` count, run lifecycle events (started/paused/succeeded) are present, and all demo workflow nodes have lifecycle events.
 
@@ -420,9 +413,9 @@ E2E specs drive runs via `window.__TAURI_INTERNALS__.invoke()` inside `browser.e
 `tests/e2e/specs/failure.spec.js` covers the failure-handling flow. It does **not** reuse the canonical demo workflow — the demo's Tool node runs `echo 'tool executed'`, which always succeeds. Instead the spec creates a dedicated minimal workflow via IPC:
 
 - **Workflow creation** — `create_workflow` IPC with a fixed-ID `start → tool → end` graph (workflow_id `30000000-...-0001`). The Tool node's config is `{ "command": "exit 1" }` with `retry_policy.max_retries: 0`, so the node fails on its first attempt with no retry delay. The `tool → end` edge uses `condition_kind: "on_success"` and there is no `on_failure` edge, so `RouterEvaluator` returns `NoMatch` when the Tool node fails and the run coordinator fails the run (mirrors the `no_match_causes_run_failure` behavior in `crates/core-engine/src/execution/mod.rs`).
-- **Run creation and LiveRunView navigation** — creates a run via `create_run` IPC (not started), navigates Library → workflow card → run card → "Live Run" button to mount `LiveRunView` and register its event listeners *before* starting the run (same ordering rationale as `review.spec.js` / TEST-004).
+- **Run creation and run-surface navigation** — creates a run via `create_run` IPC (not started), opens it through the sidebar (workflow card → run card) so `RunPanel` mounts and registers its event listeners *before* starting the run (same ordering rationale as `review.spec.js` / TEST-004).
 - **Run start and failure** — starts the run via IPC, polls `get_run` until `status === "failed"`, verifies the Tool node's event log contains `node.started` then `node.failed`, and verifies a `run.failed` event is recorded.
-- **Failed node visual state** — polls the DOM (via `browser.waitUntil`, not a single render pass) for `.react-flow__node-tool.wf-node--failed` in the live graph panel, asserts the node panel entry has `.lr-node-status--fail`, and asserts the run HUD `[data-testid="run-status"]` reads `failed`. Polling instead of a single assertion accounts for `node_status_changed` being a fire-and-forget Tauri push event (see WebKitWebDriver quirks below).
+- **Failed node visual state** — polls the DOM (via `browser.waitUntil`, not a single render pass) for `.react-flow__node-tool.wf-node--failed` in the run graph, checks a `node.failed` event is visible in the event feed, and asserts the run strip `[data-testid="run-status"]` reads `failed`. Polling instead of a single assertion accounts for `node_status_changed` being a fire-and-forget Tauri push event (see WebKitWebDriver quirks below).
 
 ### WebKitWebDriver quirks
 
@@ -438,9 +431,23 @@ These are known behaviours in the WebKitGTK WebDriver used by tauri-driver on Li
    ```js
    await pollUntil('get_run', { runId }, (r) => r?.status === 'paused', { timeoutMs: 20000 });
    ```
-   `LiveRunView` implements a 2-second polling fallback (`ipc.getRun` + `ipc.listEventsForRun`) precisely because push-event delivery cannot be relied upon in this environment. This fallback is production code, not a test-only workaround — it also handles cases where the browser tab is backgrounded or the event bridge is slow.
+   `RunPanel` implements a 2-second polling fallback (`ipc.getRun` + `ipc.listEventsForRun`) precisely because push-event delivery cannot be relied upon in this environment. This fallback is production code, not a test-only workaround — it also handles cases where the browser tab is backgrounded or the event bridge is slow.
 
 3. **`expect(element).toExist()` only checks DOM presence**, not visibility. An element can be in the DOM but outside the viewport with `getText()` returning empty. Scroll into view or use `textContent` via `browser.execute` when text content matters.
+
+### Running E2E in the WSL2 sandbox
+
+The full suite passes headed in the WSL2 sandbox (verified 2026-07-10, all 6 specs). Requirements:
+
+1. **Native WebKitWebDriver** — `webkit2gtk-driver` is not installed and there is no sudo; extract it instead:
+   `apt-get download webkit2gtk-driver && dpkg-deb -x webkit2gtk-driver_*.deb <dir>`, then
+   `tauri-driver --native-driver <dir>/usr/bin/WebKitWebDriver`.
+2. **Vite dev server on port 1420** — the plain `cargo build` debug binary loads `devUrl` (`http://localhost:1420`), not embedded assets. Without `cd apps/desktop && npm run dev` running, every spec fails with an empty title and no `#root` ("Could not connect to localhost"). (This also means the suite exercises the *current* frontend source, no rebuild needed.)
+3. **Fresh app database** — delete `~/.local/share/com.agent-arcade.dev/agent-arcade.db` before a suite run. A stale seeded demo workflow (from an older `demo-workflow.ts`) makes agent nodes fail preparation, and `failure.spec.js` re-creates a fixed-ID workflow.
+4. **Software-rendering env vars** — run both tauri-driver and wdio with
+   `GDK_BACKEND=x11 WEBKIT_DISABLE_DMABUF_RENDERER=1 WEBKIT_DISABLE_COMPOSITING_MODE=1 LIBGL_ALWAYS_SOFTWARE=1`.
+
+Then: `cd tests/e2e && npx wdio run wdio.conf.js`.
 
 ### Test workspace fixture
 

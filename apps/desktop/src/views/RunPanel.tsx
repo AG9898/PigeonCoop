@@ -136,14 +136,15 @@ export function RunPanel({ runId, onRunStatusChange }: RunPanelProps) {
   );
 
   const appendEvents = useCallback((incoming: RunEvent[]) => {
-    setEvents((prev) => {
-      const fresh = incoming.filter(
-        (ev) => !seenEventIds.current.has(ev.event_id)
-      );
-      if (fresh.length === 0) return prev;
-      fresh.forEach((ev) => seenEventIds.current.add(ev.event_id));
-      return [...prev, ...fresh];
-    });
+    // Dedupe outside the updater: React StrictMode double-invokes state
+    // updaters, and marking ids seen inside one makes the second invocation
+    // drop every event (feed stays empty).
+    const fresh = incoming.filter(
+      (ev) => !seenEventIds.current.has(ev.event_id)
+    );
+    if (fresh.length === 0) return;
+    fresh.forEach((ev) => seenEventIds.current.add(ev.event_id));
+    setEvents((prev) => [...prev, ...fresh]);
   }, []);
 
   async function handleReviewDecision(decision: HumanReviewDecision) {
@@ -276,15 +277,27 @@ export function RunPanel({ runId, onRunStatusChange }: RunPanelProps) {
         if (!run || stopped) return;
         propagateStatus(run.status);
 
-        // When paused with no panel showing, fetch the event log for the
-        // review.required event and reconstruct the review request payload.
+        // Refetch the event log each poll — when push delivery is dropped,
+        // this is the only way the graph/feed advance. appendEvents dedupes
+        // by event_id, so overlap with streamed events is safe.
+        const evs = await ipc.listEventsForRun({
+          runId,
+          offset: 0,
+          limit: 1000,
+        });
+        if (stopped) return;
+        appendEvents(evs);
+
+        // Terminal runs no longer change; one final fetch is enough.
+        if (isTerminal(run.status)) {
+          stopped = true;
+          clearInterval(id);
+          return;
+        }
+
+        // When paused with no panel showing, reconstruct the review request
+        // payload from the review.required event.
         if (run.status === "paused") {
-          const evs = await ipc.listEventsForRun({
-            runId,
-            offset: 0,
-            limit: 200,
-          });
-          if (stopped) return;
           const reviewEv = evs.find((e) => e.event_type === "review.required");
           if (reviewEv && reviewEv.node_id) {
             const p = reviewEv.payload as {

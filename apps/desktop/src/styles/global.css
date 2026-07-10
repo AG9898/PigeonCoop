@@ -282,7 +282,6 @@ body {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  padding-right: 3.2rem;
 }
 
 .sidebar-card-meta {
@@ -290,10 +289,17 @@ body {
   color: var(--color-text-muted);
 }
 
-.sidebar-export-btn {
-  position: absolute;
-  top: 0.35rem;
-  right: 0.4rem;
+/* Export/Delete row on the selected card. In normal flow (not overlaid on
+   the name) so a click anywhere else on the card always selects it. */
+.sidebar-card-actions {
+  display: flex;
+  gap: 0.25rem;
+  margin-top: 0.3rem;
+}
+
+.lib-btn--danger:hover {
+  color: #ef4444;
+  border-color: #ef4444;
 }
 
 .sidebar-runs {
@@ -346,64 +352,9 @@ body {
   text-overflow: ellipsis;
 }
 
-/* Views */
-.view {
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-}
-
-.view-header {
-  display: flex;
-  align-items: baseline;
-  gap: 0.75rem;
-  padding: 0.75rem 1.25rem;
-  border-bottom: 1px solid var(--color-border);
-  background: var(--color-surface);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
-  flex-shrink: 0;
-}
-
-.view-title {
-  font-size: 0.75rem;
-  font-weight: 700;
-  letter-spacing: 0.15em;
-  color: var(--color-accent);
-}
-
-.view-subtitle {
-  font-size: 0.7rem;
-  color: var(--color-text-muted);
-}
-
-.view-body {
-  flex: 1;
-  overflow: auto;
-}
-
-.view-placeholder {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--color-text-muted);
-  font-size: 0.8rem;
-  letter-spacing: 0.1em;
-}
-
-.placeholder-label {
-  opacity: 0.4;
-}
-
-/* ── Builder view layout ────────────────────────────────────────────── */
-
 /* Validate button variant */
 .toolbar-btn--validate {
   border-color: var(--color-accent);
-}
-
-/* Status badge for errors */
-.builder-status--error {
-  color: #f97316;
 }
 
 /* ── Validation error panel ─────────────────────────────────────────── */
@@ -1122,37 +1073,7 @@ body {
   border-color: var(--color-accent);
 }
 
-/* ── Library view ─────────────────────────────────────────────────────── */
-
-.library-body {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0;
-  overflow: hidden;
-}
-
-.library-panel {
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  border-right: 1px solid var(--color-border);
-  background: var(--color-bg);
-}
-
-.library-panel:last-child {
-  border-right: none;
-}
-
-.library-panel > .panel-header {
-  background: var(--color-surface);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
-}
-
-.library-header-actions {
-  margin-left: auto;
-  display: flex;
-  gap: 0.5rem;
-}
+/* ── Shared library/panel primitives ─────────────────────────────────── */
 
 .panel-header {
   font-size: 0.65rem;
@@ -1170,77 +1091,6 @@ body {
   letter-spacing: 0.05em;
   text-transform: none;
   color: var(--color-text);
-}
-
-.lib-list {
-  list-style: none;
-  overflow-y: auto;
-  flex: 1;
-  padding: 0.5rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.35rem;
-}
-
-.lib-card {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.75rem;
-  padding: 0.5rem 0.75rem;
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: 4px;
-  cursor: pointer;
-  box-shadow: var(--shadow-panel);
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
-}
-
-.lib-card:hover {
-  border-color: var(--color-accent);
-  box-shadow: var(--shadow-panel-hover);
-}
-
-.lib-card--selected {
-  border-color: var(--color-accent);
-  box-shadow: 0 0 0 1px var(--color-accent), var(--glow-accent);
-}
-
-.lib-card--run {
-  cursor: default;
-}
-
-.lib-card-main {
-  display: flex;
-  flex-direction: column;
-  gap: 0.2rem;
-  min-width: 0;
-  flex: 1;
-}
-
-.lib-card-name {
-  font-size: 0.8rem;
-  color: var(--color-text);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.lib-card-meta {
-  font-size: 0.65rem;
-  color: var(--color-text-muted);
-}
-
-.lib-card-id {
-  font-size: 0.65rem;
-  color: var(--color-text-muted);
-  font-family: monospace;
-}
-
-.lib-card-actions {
-  display: flex;
-  gap: 0.35rem;
-  flex-shrink: 0;
 }
 
 .lib-btn {
@@ -1300,30 +1150,7 @@ body {
 .run-status--running { color: var(--color-accent); }
 .run-status--cancelled { color: var(--color-text-muted); }
 
-/* ── Welcome banner (first-run onboarding) ───────────────────────────── */
-
-.lib-welcome {
-  padding: 1rem 1.25rem;
-  background: color-mix(in srgb, var(--color-accent) 8%, var(--color-surface));
-  border-bottom: 1px solid var(--color-accent);
-  flex-shrink: 0;
-}
-
-.lib-welcome-title {
-  font-size: 0.75rem;
-  font-weight: 700;
-  letter-spacing: 0.15em;
-  color: var(--color-accent);
-  margin-bottom: 0.35rem;
-}
-
-.lib-welcome-body {
-  font-size: 0.7rem;
-  color: var(--color-text);
-  line-height: 1.5;
-}
-
-/* ── Live Run view ───────────────────────────────────────────────────── */
+/* ── Run surface (RunPanel) ──────────────────────────────────────────── */
 
 .lr-error {
   padding: 0.5rem 1.25rem;
@@ -1331,56 +1158,6 @@ body {
   color: #ef4444;
   border-bottom: 1px solid var(--color-border);
   flex-shrink: 0;
-}
-
-.lr-body {
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-
-.lr-hud {
-  display: flex;
-  gap: 1.5rem;
-  padding: 0.5rem 1.25rem;
-  border-bottom: 1px solid var(--color-border);
-  flex-shrink: 0;
-  background: linear-gradient(180deg, var(--color-surface-raised) 0%, var(--color-surface) 100%);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
-}
-
-.lr-hud-row {
-  display: flex;
-  align-items: baseline;
-  gap: 0.4rem;
-}
-
-.lr-hud-label {
-  font-size: 0.6rem;
-  font-weight: 700;
-  letter-spacing: 0.12em;
-  color: var(--color-text-muted);
-}
-
-.lr-hud-value {
-  font-size: 0.7rem;
-  color: var(--color-text);
-}
-
-.lr-hud-id {
-  font-family: monospace;
-  opacity: 0.7;
-}
-
-.lr-hud-elapsed {
-  font-variant-numeric: tabular-nums;
-}
-
-.lr-panels {
-  flex: 1;
-  display: grid;
-  grid-template-columns: 1fr 200px 1fr 1fr;
-  overflow: hidden;
 }
 
 .lr-panel {
@@ -1409,55 +1186,6 @@ body {
   font-size: 0.7rem;
   opacity: 0.5;
   letter-spacing: 0.05em;
-}
-
-/* Node status list */
-.lr-node-list {
-  list-style: none;
-  overflow-y: auto;
-  flex: 1;
-  padding: 0.35rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.2rem;
-}
-
-.lr-node-item {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  padding: 0.25rem 0.4rem;
-  border-radius: 3px;
-  font-size: 0.65rem;
-}
-
-.lr-node-status {
-  font-size: 0.55rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  border: 1px solid currentColor;
-  border-radius: 2px;
-  padding: 0 0.2rem;
-  min-width: 52px;
-  text-align: center;
-}
-
-.lr-node-status--running { color: var(--color-accent); }
-.lr-node-status--ok      { color: var(--node-start); }
-.lr-node-status--fail    { color: #ef4444; }
-.lr-node-status--waiting { color: var(--node-router); }
-.lr-node-status--queued  { color: var(--color-text-muted); border-style: dashed; }
-.lr-node-status--muted   { color: var(--color-text-muted); }
-
-.lr-node-id {
-  color: var(--color-text-muted);
-  font-family: monospace;
-}
-
-.lr-node-attempt {
-  color: var(--node-router);
-  font-size: 0.55rem;
 }
 
 /* Event feed */
@@ -1537,10 +1265,6 @@ body {
 }
 
 /* Live graph panel */
-.lr-graph-panel {
-  min-height: 200px;
-}
-
 .lr-graph-container {
   flex: 1;
   width: 100%;
@@ -1563,40 +1287,7 @@ body {
   }
 }
 
-/* Replay graph state panel: static city tile behind derived node states. */
-.replay-graph-state {
-  position: relative;
-  overflow: hidden;
-  min-height: 120px;
-  border-bottom: 1px solid var(--color-border);
-  background: var(--color-bg);
-}
-
-.replay-graph-content {
-  position: relative;
-  z-index: 2;
-}
-
-.city-backdrop--replay {
-  opacity: 0.62;
-}
-
-.replay-backdrop-grid {
-  z-index: 1;
-  opacity: 0.8;
-}
-
-.replay-node-token-health {
-  flex: 0 0 78px;
-  display: flex;
-  justify-content: center;
-}
-
-.replay-node-token-health .ag-node-health-bar {
-  margin: 0;
-}
-
-/* ── Event Inspector (Replay View) ─────────────────────────────────── */
+/* ── Event Inspector ────────────────────────────────────────────────── */
 
 .ei-root {
   padding: 0.5rem;
@@ -1805,51 +1496,6 @@ body {
 
 .cop-pre--stderr {
   color: #f87171;
-}
-
-/* ── Event detail panel (Live Run View) ────────────────────────────── */
-.lr-detail-content {
-  padding: 0.5rem;
-  overflow-y: auto;
-  flex: 1;
-  font-size: 0.65rem;
-}
-
-.lr-detail-row {
-  display: flex;
-  gap: 0.5rem;
-  padding: 0.2rem 0;
-  border-bottom: 1px solid var(--color-border);
-}
-
-.lr-detail-row--payload {
-  flex-direction: column;
-}
-
-.lr-detail-label {
-  color: var(--color-text-muted);
-  min-width: 80px;
-  flex-shrink: 0;
-}
-
-.lr-detail-value {
-  color: var(--color-text);
-  word-break: break-all;
-}
-
-.lr-detail-payload {
-  color: var(--color-text);
-  font-family: "JetBrains Mono", "Fira Code", monospace;
-  font-size: 0.6rem;
-  white-space: pre-wrap;
-  word-break: break-all;
-  background: var(--color-bg);
-  border: 1px solid var(--color-border);
-  border-radius: 3px;
-  padding: 0.4rem;
-  margin-top: 0.25rem;
-  max-height: 300px;
-  overflow-y: auto;
 }
 
 /* ── Accessibility: respect reduced-motion preference ──────────────── */

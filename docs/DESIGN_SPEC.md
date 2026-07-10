@@ -43,35 +43,75 @@ If a visual flourish conflicts with clarity, clarity wins.
 
 ---
 
-## 4. Primary views
+## 4. The unified workspace (DEC-011)
 
-> **DEC-011 — unified workspace.** These four "views" are no longer routed
-> screens. The app is now a single workspace: a persistent workflow sidebar
-> (the Library, §4.4), a shared top bar (workflow name, Save, Validate,
-> workspace root, one-click Run), and one stage that shows either the design
-> surface (§4.1) or the run surface (§4.2 + §4.3 merged — a run streams live
-> at the tail of its event log and is scrubbable through the same timeline
-> once you rewind or it finishes). Selecting a workflow in the sidebar loads
-> it onto the canvas; selecting a run opens the run surface; "Edit workflow"
-> returns. The section contents below still describe the required elements of
-> each surface; the routing/navigation language predates DEC-011 and is
-> superseded by ARCHITECTURE.md §10. A full rewrite of this section is
-> tracked as follow-up work in DEC-011.
+The app is a single screen — there is no view routing. Three regions:
 
-### 4.1 Builder View
-Purpose: create and configure workflows.
+1. **Workflow sidebar** (§4.1) — the always-visible library.
+2. **Top bar** (§4.2) — workflow identity and the shared action row.
+3. **Stage** — one main area showing either the **design surface** (§4.3)
+   or the **run surface** (§4.4). Live monitoring and replay are the same
+   surface: a run streams live at the tail of its event log and is
+   scrubbable back through the same timeline at any point.
+
+Navigation is selection, not routing: selecting a workflow in the sidebar
+loads it onto the canvas; selecting a run opens the run surface for that
+run; the top bar's "Edit workflow" button returns to the design surface.
+See ARCHITECTURE.md §10 for the component/data-flow topology.
+
+### 4.1 Workflow sidebar
+
+`WorkflowSidebar` (`components/sidebar/WorkflowSidebar.tsx`). Purpose:
+browse workflows and their run history without leaving the workspace.
+
+Required elements:
+- workflow list (name, version, last-updated), selected card highlighted
+- run history sublist under the selected workflow: status chip
+  (color-coded: succeeded green, failed red, running accent, cancelled
+  muted), created-at timestamp, duration
+- New / Import controls in the sidebar header
+- Export and Delete buttons on the selected workflow card (Delete asks for
+  confirmation before calling `delete_workflow`; deleting the open workflow
+  loads the next one, or an empty canvas if none remain)
+- error banner when a library IPC call fails
+
+Behavior:
+- the sidebar is presentational; the App shell owns all data and selection
+- run status chips stay live via an app-wide `run_status_changed`
+  subscription — they update even when the run is not open on the stage
+
+### 4.2 Top bar
+
+Rendered by the App shell (`app/App.tsx`). Contents depend on the stage
+mode:
+
+- **Design mode:** editable workflow name, Save (Ctrl+S), Validate, and a
+  status area for save/validate results.
+- **Run mode:** an "✎ Edit workflow" button returning to the design
+  surface.
+- **Always:** the workspace-root input (persisted in
+  `localStorage: agent-arcade.workspaceRoot` so Run stays one click across
+  sessions) and the **Run** button — saves the canvas (design mode),
+  creates a run in the workspace root, starts it, and opens the run
+  surface.
+
+### 4.3 Design surface
+
+`DesignSurface` (`views/DesignSurface.tsx`). Purpose: create and configure
+workflows.
 
 Required elements:
 - graph canvas
 - node palette (lists all 7 node types: Start, End, Agent, Tool, Router, Memory, Review)
 - inspector panel
-- validation panel
-- run button / test action
+- floating validation overlay
 
 Behavior:
 - node palette items drag onto the canvas via `dataTransfer` (MIME type `application/reactflow`); drop position becomes the node's canvas coordinates; new node gets a UUID
 - node palette items can also be clicked to add the node at a default position
 - selecting a node on the canvas opens the `NodeInspector` panel on the right; deselecting or multi-selecting closes it
+- exposes a `buildWorkflow()` handle so the App shell can serialize the
+  live canvas for Save / Validate / Run
 
 #### Node inspector panel
 
@@ -95,30 +135,42 @@ All edits are reflected in the React Flow node data and serialized to `WorkflowD
 - supports edge creation; condition_kind (always/on_success/on_failure/expression) selected via dialog on connect
 - surfaces invalid graph structures before run via `validate_workflow` command
 - invalid nodes highlighted with dashed orange border; invalid edges with dashed orange stroke
-- validation panel shows human-readable error list; dismissable
+- validation overlay shows human-readable error list; dismissable
 - preserves layout and workflow metadata
 
-### 4.2 Live Run View
-Purpose: monitor an active run.
+### 4.4 Run surface
+
+`RunPanel` (`views/RunPanel.tsx`). Purpose: monitor an active run and
+inspect any run after the fact — the same surface serves both.
+
+Everything renders from the event log at an index (`deriveNodeStates`,
+`deriveTokenPcts`). Following the live tail (index at the end) shows a
+LIVE badge and auto-scrolls the feed; scrubbing to an earlier index rewinds
+the graph, feed, and inspector to that point on the same timeline. The
+panel backfills the persisted log (`list_events_for_run`) on open and
+dedupes against streamed `run_event_appended` events by `event_id`, so a
+run opened mid-flight shows its full history.
 
 Required elements:
-- animated graph
-- current node highlight
+- the real workflow graph with node-state overlays and current node highlight
+- timeline scrubber (event-indexed; keyboard-scrubbable)
 - event feed
-- run summary HUD
-- selected node inspector
+- run summary HUD (status, elapsed, run id) with Start/Cancel controls
+- selected event inspector
 - command output panel
 - agent session terminal (interactive claude nodes — DEC-009)
+- human review panel when a review gate is waiting
 
 Behavior:
 - transitions should make active flow obvious
 - active routes should pulse/animate subtly
 - errors should be impossible to miss
 - terminal-like output should be visible without taking over the entire screen
+- route decisions and memory updates are inspectable at any timeline point
 
 #### Agent session terminal
 
-When an Agent node on the interactive claude path (DEC-009) is running, the Live Run View shows an embedded terminal (`xterm.js` + fit addon) bound to the node's PTY session:
+When an Agent node on the interactive claude path (DEC-009) is running, the run surface shows an embedded terminal (`xterm.js` + fit addon) bound to the node's PTY session:
 
 - renders raw PTY bytes streamed via the `agent_terminal_output` Tauri event (filtered by run_id + node_id)
 - keystrokes typed into the terminal are sent back via the `agent_terminal_input` command — the user can answer permission prompts, the workspace-trust dialog, or steer claude mid-turn
@@ -148,7 +200,7 @@ The feed auto-scrolls to the latest event. Clicking an event selects it and popu
 
 #### Command output panel
 
-`CommandOutputPanel` (`components/panels/CommandOutputPanel.tsx`) is a self-contained component that accepts a filtered `RunEvent[]` and derives its display with no dependency on `LiveRunView` internals. It:
+`CommandOutputPanel` (`components/panels/CommandOutputPanel.tsx`) is a self-contained component that accepts a filtered `RunEvent[]` and derives its display with no dependency on `RunPanel` internals. It:
 
 - filters for `event_type == "command.stdout"` and `"command.stderr"`, reading `payload.chunk` (string) and `payload.byte_offset` (number) from each event; events with a malformed payload are ignored
 - concatenates each stream's chunks in ascending `byte_offset` order (not event arrival order) — this tolerates out-of-order delivery
@@ -157,22 +209,7 @@ The feed auto-scrolls to the latest event. Clicking an event selects it and popu
 - wraps output in a scrollable `<pre>` (`max-height: 320px`) with `user-select: text` so all output is copyable
 - shows a placeholder ("No command output for this run.") when no stdout/stderr events are present
 
-`LiveRunView` selects the current run's `command.*` events with `useMemo` and passes them to `CommandOutputPanel` in the existing detail column. The command output panel renders when command events are present and no non-command event is selected; selecting a non-command event keeps the generic event detail inspector visible.
-
-### 4.3 Replay View
-Purpose: inspect completed runs.
-
-Required elements:
-- timeline scrubber
-- event list
-- graph playback state
-- selected event details
-- input/output diff panes
-
-Behavior:
-- user can scrub by event or time
-- graph state updates to selected point in run
-- route decisions and memory updates are inspectable
+`RunPanel` selects the current run's `command.*` events with `useMemo` and passes them to `CommandOutputPanel` in the detail column. The command output panel renders when command events are present and no non-command event is selected; selecting a non-command event keeps the generic event detail inspector visible.
 
 #### Event inspector panel
 
@@ -187,15 +224,6 @@ Every selected event shows:
 3. **Full payload pane** — always rendered last as formatted JSON for complete transparency
 
 Run-level events (e.g. `run.started`) show only the envelope and payload panes — no family-specific context.
-
-### 4.4 Library View
-Purpose: browse workflows and past runs.
-
-Required elements:
-- workflow cards/list
-- recent run history
-- status indicators
-- import/export controls
 
 ---
 
@@ -338,7 +366,7 @@ Terminal output should be a panel within the app, not the whole experience.
 
 Custom styled `<div>`/`<pre>` output panel for **captured output** (Tool nodes, post-hoc event review) — ANSI SGR escape codes (colors, bold, underline) are rendered to HTML `<span>` elements via the `anser` npm package. Non-SGR escape sequences (cursor movement, screen clear) are stripped. Output is rendered per-event as React components with click-through to the originating node/event in the inspector.
 
-**Live interactive agent sessions** are the one surface that uses a real terminal emulator: DEC-009 adds xterm.js scoped to the agent session terminal in the Live Run View (see §4.2), because those sessions are genuinely interactive PTY streams, not captured strings. DEC-004's rationale still governs every captured-output surface.
+**Live interactive agent sessions** are the one surface that uses a real terminal emulator: DEC-009 adds xterm.js scoped to the agent session terminal on the run surface (see §4.4), because those sessions are genuinely interactive PTY streams, not captured strings. DEC-004's rationale still governs every captured-output surface.
 
 ### Design stance
 The app should feel more visually rich than a terminal without hiding that terminal-backed execution is occurring.
@@ -393,34 +421,37 @@ Motion should explain state, not decorate it.
 Keyboard-driven workflows are a priority, not an afterthought. Experienced developers navigate primarily by keyboard. The UI must support this from the start.
 
 ### Required keyboard behaviors
-- global keybinding for switching between views (Builder, Live Run, Replay, Library)
 - canvas navigation without the mouse (arrow keys, zoom shortcuts)
 - node selection, inspection, and connection from keyboard
-- run start/stop/pause from keyboard
+- save from keyboard
+- run start/stop from keyboard
 - human review approve/reject from keyboard
-- timeline scrubbing in Replay View from keyboard
+- timeline scrubbing on the run surface from keyboard
+
+There is no view-switching keybinding: DEC-011 removed view routing, so the
+old `1`–`4` shortcuts no longer exist.
 
 ### Implemented keyboard shortcut map
 
 | Context | Key | Action |
 |---|---|---|
-| Global | `1` / `2` / `3` / `4` | Switch to Builder / Live Run / Replay / Library |
-| Canvas (Builder) | `Arrow keys` | Pan canvas (50px per step) |
-| Canvas (Builder) | `+` / `=` | Zoom in |
-| Canvas (Builder) | `-` | Zoom out |
-| Canvas (Builder) | `F` | Fit view (reset zoom to show all nodes) |
-| Canvas (Builder) | `Tab` / `Shift+Tab` | Cycle node selection forward / backward |
-| Canvas (Builder) | `Escape` | Deselect all nodes |
-| Canvas (Builder) | `Delete` | Delete selected node/edge (React Flow built-in) |
-| Live Run | `Ctrl+Enter` | Start run |
-| Live Run | `Ctrl+.` | Cancel (stop) run |
+| Design surface | `Ctrl+S` / `Cmd+S` | Save the current canvas |
+| Canvas (design) | `Arrow keys` | Pan canvas (50px per step) |
+| Canvas (design) | `+` / `=` | Zoom in |
+| Canvas (design) | `-` | Zoom out |
+| Canvas (design) | `F` | Fit view (reset zoom to show all nodes) |
+| Canvas (design) | `Tab` / `Shift+Tab` | Cycle node selection forward / backward |
+| Canvas (design) | `Escape` | Deselect all nodes |
+| Canvas (design) | `Delete` | Delete selected node/edge (React Flow built-in) |
+| Run surface | `Ctrl+Enter` | Start run |
+| Run surface | `Ctrl+.` | Cancel (stop) run |
 | Human Review | `A` | Approve |
 | Human Review | `R` | Reject |
 | Human Review | `T` | Retry |
-| Replay | `Arrow Left/Down` | Previous event |
-| Replay | `Arrow Right/Up` | Next event |
-| Replay | `Home` | Jump to first event |
-| Replay | `End` | Jump to last event |
+| Timeline scrubber | `Arrow Left/Down` | Previous event |
+| Timeline scrubber | `Arrow Right/Up` | Next event |
+| Timeline scrubber | `Home` | Jump to first event |
+| Timeline scrubber | `End` | Jump to last event |
 
 Canvas keyboard navigation is implemented in `useCanvasKeyboard` hook (`src/hooks/useCanvasKeyboard.ts`), which requires the canvas container to have `tabIndex={0}` for focus. Shortcuts are suppressed when focus is on form elements (input, textarea, select).
 
@@ -431,7 +462,7 @@ Reference tools: `lazygit`, `k9s`, VS Code command palette.
 
 ---
 
-## 13. First visual benchmark for success
+## 14. First visual benchmark for success
 
 A user should be able to watch a running workflow and immediately understand:
 - where execution is

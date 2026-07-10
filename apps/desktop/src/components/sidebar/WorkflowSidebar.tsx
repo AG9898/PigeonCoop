@@ -18,6 +18,7 @@ export interface WorkflowSidebarProps {
   onNewWorkflow: () => void;
   onImport: (json: string) => void;
   onExport: (workflowId: string) => void;
+  onDelete: (workflowId: string) => void;
   error?: string | null;
 }
 
@@ -57,6 +58,7 @@ export function WorkflowSidebar({
   onNewWorkflow,
   onImport,
   onExport,
+  onDelete,
   error,
 }: WorkflowSidebarProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -134,16 +136,29 @@ export function WorkflowSidebar({
                     v{wf.version} · {formatDate(wf.updated_at)}
                   </span>
                   {isSelected && (
-                    <button
-                      className="lib-btn lib-btn--sm sidebar-export-btn"
-                      data-testid={`export-btn-${wf.workflow_id}`}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onExport(wf.workflow_id);
-                      }}
-                    >
-                      Export
-                    </button>
+                    <div className="sidebar-card-actions">
+                      <button
+                        className="lib-btn lib-btn--sm sidebar-export-btn"
+                        data-testid={`export-btn-${wf.workflow_id}`}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onExport(wf.workflow_id);
+                        }}
+                      >
+                        Export
+                      </button>
+                      <button
+                        className="lib-btn lib-btn--sm lib-btn--danger"
+                        data-testid={`delete-btn-${wf.workflow_id}`}
+                        title="Delete this workflow"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onDelete(wf.workflow_id);
+                        }}
+                      >
+                        Delete
+                      </button>
+                    </div>
                   )}
                 </div>
 

@@ -90,10 +90,11 @@ describe('Agent Arcade — replay flow', () => {
 
     it('approves the human review to complete the run', async () => {
       // Submit approval via IPC (bypass UI — this is setup, not the test target).
+      // decision is the internally-tagged HumanReviewDecision enum (ipc.ts).
       await tauriInvoke('submit_human_review_decision', {
         runId,
         nodeId: NODE.approve,
-        decision: 'approve',
+        decision: { type: 'approved' },
       });
 
       // Wait for run to reach a terminal state.
