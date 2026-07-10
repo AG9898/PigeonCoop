@@ -17,10 +17,8 @@ import ReactFlow, {
   type NodeTypes,
 } from "reactflow";
 import "reactflow/dist/style.css";
-import WorkflowNode, {
-  type WorkflowNodeData,
-} from "../components/nodes/WorkflowNode";
-import AgentNode from "../components/nodes/AgentNode";
+import { type WorkflowNodeData } from "../components/nodes/WorkflowNode";
+import RoleNode from "../components/nodes/RoleNode";
 import type {
   NodeStatus,
   NodeState as VisualNodeState,
@@ -40,19 +38,18 @@ import { CommandOutputPanel } from "../components/panels/CommandOutputPanel";
 import { AgentSessionTerminal } from "../components/panels/AgentSessionTerminal";
 import { EventInspector } from "../components/panels/EventInspector";
 import { TimelineScrubber } from "../components/panels/TimelineScrubber";
-import { CityBackdropViewportSynced } from "../components/canvas/CityBackdrop";
+import { CommandDeckBackdrop } from "../components/canvas/CommandDeckBackdrop";
 import { deriveNodeStates } from "../state/deriveNodeStates";
 import { deriveTokenPcts, type TokenPctByNode } from "../state/deriveTokenPcts";
 
-// Agent nodes render the procedural pigeon and runtime token health bar.
 const NODE_TYPES: NodeTypes = {
-  start: WorkflowNode,
-  end: WorkflowNode,
-  agent: AgentNode,
-  tool: WorkflowNode,
-  router: WorkflowNode,
-  memory: WorkflowNode,
-  human_review: WorkflowNode,
+  start: RoleNode,
+  end: RoleNode,
+  agent: RoleNode,
+  tool: RoleNode,
+  router: RoleNode,
+  memory: RoleNode,
+  human_review: RoleNode,
 };
 
 /** Map backend NodeStatus to the 8-state visual NodeState used by WorkflowNode. */
@@ -617,7 +614,7 @@ function RunGraph({ workflow, nodeStates, tokenPcts }: RunGraphProps) {
         zoomOnScroll
         proOptions={{ hideAttribution: true }}
       >
-        <CityBackdropViewportSynced />
+        <CommandDeckBackdrop />
         <div className="wf-canvas-grid" aria-hidden="true" />
         <MiniMap
           nodeColor="var(--color-surface)"

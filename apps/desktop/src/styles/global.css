@@ -2419,3 +2419,266 @@ select:focus-visible,
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
+
+/* ── Generated command-table canvas and role nodes (DEC-013) ───────── */
+
+.command-deck-backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+  background: #0a0d0f;
+}
+
+.command-deck-backdrop__art,
+.command-deck-backdrop__shade {
+  position: absolute;
+  inset: 0;
+}
+
+.command-deck-backdrop__art {
+  background-image: url("/assets/command-deck/campaign-table.webp");
+  background-position: center;
+  background-size: cover;
+  opacity: 0.48;
+  filter: saturate(0.78) contrast(0.92) brightness(0.72);
+}
+
+.command-deck-backdrop__shade {
+  background:
+    radial-gradient(circle at 50% 42%, rgba(8, 10, 11, 0.08) 0%, rgba(8, 10, 11, 0.42) 78%, rgba(8, 10, 11, 0.76) 100%),
+    linear-gradient(rgba(5, 7, 8, 0.2), rgba(5, 7, 8, 0.38));
+}
+
+.wf-canvas-grid {
+  background:
+    linear-gradient(var(--grid-color) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-color) 1px, transparent 1px),
+    radial-gradient(circle, rgba(201, 168, 98, 0.16) 1px, transparent 1.5px);
+  background-position: 0 0, 0 0, -1px -1px;
+  background-size: var(--grid-size) var(--grid-size), var(--grid-size) var(--grid-size), calc(var(--grid-size) * 4) calc(var(--grid-size) * 4);
+}
+
+.palette-item-icon {
+  position: relative;
+  overflow: hidden;
+}
+
+.palette-item-icon img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: saturate(0.75) brightness(0.84);
+}
+
+.palette-item:hover .palette-item-icon img {
+  filter: saturate(0.95) brightness(0.98);
+}
+
+.palette-item-fallback {
+  position: relative;
+  z-index: 0;
+}
+
+.wf-node.role-node {
+  width: 170px;
+  min-width: 170px;
+  overflow: hidden;
+  background: #121618;
+  border: 1px solid #3a4143;
+  border-radius: 7px;
+  font-family: inherit;
+  box-shadow: 0 13px 26px rgba(0, 0, 0, 0.32), inset 0 1px 0 rgba(255, 255, 255, 0.035);
+}
+
+.role-node-portrait {
+  position: relative;
+  height: 86px;
+  overflow: hidden;
+  background: #0d1112;
+}
+
+.role-node-portrait::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, transparent 38%, rgba(10, 12, 13, 0.9) 100%);
+  pointer-events: none;
+}
+
+.role-node-portrait img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+  object-position: center 28%;
+  filter: saturate(0.72) brightness(0.78) contrast(1.03);
+  transition: filter 150ms ease, transform 180ms ease;
+}
+
+.role-node:hover .role-node-portrait img,
+.wf-node--selected .role-node-portrait img,
+.wf-node--running .role-node-portrait img {
+  filter: saturate(0.95) brightness(0.93) contrast(1.04);
+  transform: scale(1.025);
+}
+
+.role-node-fallback {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  color: var(--color-text-muted);
+  background: #111719;
+}
+
+.role-node-kind {
+  position: absolute;
+  left: 9px;
+  bottom: 7px;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: #d9dfdc;
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  text-shadow: 0 1px 4px #000;
+}
+
+.role-node-content {
+  min-height: 48px;
+  padding: 9px 10px 10px;
+  border-top: 1px solid rgba(201, 168, 98, 0.2);
+}
+
+.role-node-title-row {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.role-node-title {
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+  color: var(--color-text);
+  font-size: 11px;
+  font-weight: 650;
+  line-height: 1.25;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.role-node-state {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--color-text-muted);
+  font-size: 8px;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.role-node-state i {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.role-node-state--running { color: var(--color-accent); }
+.role-node-state--waiting,
+.role-node-state--paused { color: var(--color-warning); }
+.role-node-state--succeeded { color: var(--color-success); }
+.role-node-state--failed { color: var(--color-danger); }
+
+.role-node-meter {
+  height: 3px;
+  margin-top: 8px;
+  overflow: hidden;
+  background: #282d2e;
+  border-radius: 2px;
+}
+
+.role-node-meter span {
+  width: var(--meter-fill, 0%);
+  height: 100%;
+  display: block;
+  background: var(--color-accent);
+  transition: width 180ms ease;
+}
+
+.role-node .react-flow__handle {
+  width: 11px;
+  height: 7px;
+  background: #171c1e;
+  border: 1px solid #7f8b88;
+  border-radius: 3px;
+}
+
+.role-node .react-flow__handle:hover {
+  background: var(--color-focus);
+  border-color: #ead49b;
+}
+
+.role-node.wf-node--selected {
+  border-color: var(--color-focus);
+  box-shadow: 0 0 0 1px rgba(201, 168, 98, 0.42), 0 14px 34px rgba(0, 0, 0, 0.4), 0 0 24px rgba(201, 168, 98, 0.08);
+}
+
+.role-node.wf-node--running {
+  border-color: var(--color-accent);
+}
+
+.role-node.wf-node--waiting,
+.role-node.wf-node--paused {
+  border-color: var(--color-warning);
+}
+
+.role-node.wf-node--succeeded {
+  border-color: var(--color-success);
+}
+
+.role-node.wf-node--failed {
+  border-color: var(--color-danger);
+}
+
+.role-node.wf-node--invalid {
+  border-color: var(--color-warning);
+  border-style: dashed;
+}
+
+.react-flow__controls,
+.react-flow__minimap {
+  overflow: hidden;
+  border-radius: 6px !important;
+  background: rgba(16, 19, 21, 0.94) !important;
+  border-color: var(--color-border) !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.24) !important;
+}
+
+.react-flow__edge-path {
+  stroke: #68716e;
+  stroke-width: 1.6;
+}
+
+.react-flow__edge-textbg {
+  fill: #111416;
+}
+
+.react-flow__edge-text {
+  fill: var(--color-text-soft);
+  font-size: 9px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .role-node-portrait img,
+  .role-node-meter span {
+    transition: none;
+  }
+}

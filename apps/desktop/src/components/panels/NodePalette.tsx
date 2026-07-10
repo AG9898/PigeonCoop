@@ -12,6 +12,7 @@ import {
   Trophy,
   type LucideIcon,
 } from "lucide-react";
+import { ROLE_META } from "../nodes/RoleNode";
 
 interface PaletteItem {
   kind: NodeKind;
@@ -55,7 +56,20 @@ export function NodePalette({ onAddNode }: NodePaletteProps) {
           tabIndex={0}
           onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") onAddNode(kind); }}
         >
-          <span className="palette-item-icon" style={{ color: colorVar }}><Icon size={18} /></span>
+          <span className="palette-item-icon" style={{ color: colorVar }}>
+            <Icon size={18} className="palette-item-fallback" />
+            <img
+              src={ROLE_META[kind].image}
+              alt=""
+              aria-hidden="true"
+              width="384"
+              height="384"
+              draggable={false}
+              onError={(event) => {
+                event.currentTarget.hidden = true;
+              }}
+            />
+          </span>
           <span className="palette-item-label">{label}</span>
         </div>
       ))}

@@ -19,23 +19,20 @@ import ReactFlow, {
   useReactFlow,
 } from "reactflow";
 import "reactflow/dist/style.css";
-import WorkflowNode, { WorkflowNodeData } from "../nodes/WorkflowNode";
-import AgentNode from "../nodes/AgentNode";
-import ToolNode from "../nodes/ToolNode";
+import { type WorkflowNodeData } from "../nodes/WorkflowNode";
+import RoleNode from "../nodes/RoleNode";
 import type { ConditionKind, NodeKind, WorkflowDefinition } from "../../types/workflow";
 import { useCanvasKeyboard } from "../../hooks/useCanvasKeyboard";
-import { CityBackdropViewportSynced } from "./CityBackdrop";
+import { CommandDeckBackdrop } from "./CommandDeckBackdrop";
 
-// Agent and Tool nodes render procedural sprites (DEC-008); remaining node
-// types stay on the text-based WorkflowNode until their characters land.
 const NODE_TYPES: NodeTypes = {
-  start:        WorkflowNode,
-  end:          WorkflowNode,
-  agent:        AgentNode,
-  tool:         ToolNode,
-  router:       WorkflowNode,
-  memory:       WorkflowNode,
-  human_review: WorkflowNode,
+  start: RoleNode,
+  end: RoleNode,
+  agent: RoleNode,
+  tool: RoleNode,
+  router: RoleNode,
+  memory: RoleNode,
+  human_review: RoleNode,
 };
 
 const DEFAULT_LABELS: Record<NodeKind, string> = {
@@ -322,7 +319,7 @@ const CanvasInner = forwardRef<WorkflowCanvasHandle, WorkflowCanvasProps>(
           deleteKeyCode="Delete"
           proOptions={{ hideAttribution: true }}
         >
-          <CityBackdropViewportSynced />
+          <CommandDeckBackdrop />
           <div className="wf-canvas-grid" aria-hidden="true" />
           <Controls showInteractive={false} />
           <MiniMap
