@@ -2,7 +2,60 @@
 
 ## Overview
 
-Agent Arcade is a Tauri desktop application. Testing is split across three distinct layers because the Tauri native webview cannot be driven by Playwright or standard browser automation tools.
+The current Agent Arcade implementation is a Tauri desktop application. The
+existing layers/runbooks below remain migration regression coverage. The accepted
+PigeonCoop direction (DEC-014) adds assistant-owned reporting, CLI/MCP, optional
+terminal/desktop clients, and mock simulation; those paths are not yet implemented.
+
+## Target verification matrix (DEC-014)
+
+Native Windows and native Linux execution are both v1 release gates. Record
+results separately: a WSL/Linux pass does not verify native Windows behavior.
+Use native toolchains/checkouts; no repository move is required by this doc edit.
+Headless tests/builds must not initialize Tauri or require a display/WebKit.
+
+| Surface | Required behavior |
+|---|---|
+| Recording boundary | Invalid identities/transitions rejected; durable acknowledgment; idempotent retries; conflicting duplicates rejected; stable replay order |
+| Sources and gaps | Assistant assertions distinguishable from captured evidence; missing artifacts and contact loss remain visible; no fabricated terminal state |
+| CLI | Machine output parses under redirection; diagnostics separate; no TTY/display requirement; nonzero failure exits |
+| MCP | Protocol-clean stdio; same operations/projections as CLI; reconnect does not adopt or dispatch a run |
+| Built-in template | Accepted plan precedes board writes; dependency readiness; one fresh worker/task per cycle; explicit tasks/iterations bound; stop on failure, blocking, malformed summary, or no progress |
+| Control | Request, acknowledgment, and outcome remain distinct; disconnected owner cannot report a completed cancel or manufacture approval |
+| Owner/viewer lifecycle | Viewer closure leaves owner work unaffected; recorder restart does not retry/adopt; reopening backfills then follows without gaps/duplicates |
+| Project evidence | Board/plan revisions retained; dirty baseline attribution explicit; missing/skipped checks never become passes |
+| Simulation | Explicit mock outcomes exercise routes/review/retry/limits; no real agent/shell/network calls or repository writes; isolated storage |
+| Replay and migration | No side effects; legacy histories remain readable without invented provenance; real/simulation modes remain separate |
+| Optional viewers | Desktop and terminal match persisted state/evidence on both OSes; pending and stale states remain legible |
+| Native integration | OS-specific shell/argv/quoting, spaced/non-ASCII paths, PTYs, process trees/cancellation, permissions and changed-file capture verified |
+| Distribution | Headless install and first recorded workflow without desktop dependencies; optional viewer attachment on Windows and Linux |
+
+DEC-015 visual verification adds paired desktop/terminal fixtures for session
+character identity, task/phase stations, selected evidence, reduced-motion/static
+poses, stale contact, scrubbed replay, missing-new-art text fallbacks, resizing,
+and ASCII-only/reduced-color terminals. Verify that legacy RPG/city/pigeon art
+does not load in the replacement UI, including fallbacks. Desktop checks cover
+1280x720, 1440x900, and 1920x1080; terminal checks cover a compact 80x24 layout and
+a larger layout on native Windows and Linux. New art must not reduce readability
+of controls, paths, command output, or diffs.
+
+The movement/interaction prototype verifies approach -> face target -> interact
+-> settle with stable foot anchors, two-character offsets and clip timing. Cover
+stale contact, cancellation/interruption, replay seeks, immediate/static reduced-
+motion poses and terminal text fallback. Advancing/skipping playback must not
+change workflow status, start workers or delay accepted outcomes. Replay must
+reconstruct scene state without playing obsolete approach-animation backlogs.
+
+Use deterministic fixtures and stub assistant reporters for most integration
+coverage. Test simulator isolation by failing any attempted real-executor call
+and asserting no selected-repository changes, not merely by checking UI labels.
+Add an opt-in real-harness smoke path per supported OS/capability; do not infer
+support from an old provider registry or historical desktop E2E result.
+
+Existing check commands below remain current. New CLI/MCP/TUI build/test commands
+must be documented when their targets exist; none are introduced by this pass.
+
+## Existing desktop verification
 
 | Layer | What it covers | Tooling |
 |---|---|---|
@@ -558,7 +611,11 @@ agent-arcade/
 
 ---
 
-## 8. Visual overhaul verification (DEC-013)
+## 8. Legacy visual overhaul verification (DEC-013)
+
+This section applies only to the existing app during migration. The replacement
+UI follows DEC-015 and the target matrix above; it must not inherit the old art
+or fixed canvas/panel layout as a design requirement.
 
 The game-forward workspace requires visual verification in addition to component
 assertions. For substantial frontend changes:
@@ -580,7 +637,8 @@ suite. Screenshots are inspection artifacts and do not replace behavioral tests.
 
 ## 9. What is not tested here
 
-- **Simulation crate** — deferred to v1.1
+- **Simulation crate** — currently a placeholder; mock simulation is required by
+  the DEC-014 target and needs new coverage before release
 - **Plugin adapters** — out of scope for v1
 - **Cloud/sync behavior** — out of scope for v1
 - **Automated pixel-diff regression** — manual headed screenshot inspection is the

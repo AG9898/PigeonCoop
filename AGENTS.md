@@ -1,8 +1,10 @@
 # AGENTS.md
 
-## Project: Agent Arcade
+## Project: PigeonCoop
 
-Agent Arcade is a local-first Tauri desktop app for designing, running, monitoring, and replaying agent workflows through a game-inspired 2D interface. Rust owns the core engine; React/TypeScript renders the workflow builder, live monitor, replay tools, and library views.
+PigeonCoop packages assistant-owned project workflows as a skill with CLI and MCP interfaces, backed by Rust recording, validation, replay, and mock simulation. Desktop (Tauri + React/TypeScript) and terminal workspaces are optional clients. Native Windows and Linux are both v1 execution targets.
+
+This is the accepted target direction (DEC-014), not a claim that the transition is implemented. Existing crates, binary names (`agent-arcade`), schemas, and desktop execution paths remain until migrated explicitly. Read `docs/INTEGRATION_CONTRACT.md` for the target ownership and interface boundaries.
 
 This is the working contract for implementation agents. Keep it current, concise, and aligned with the docs in `docs/`.
 
@@ -10,30 +12,34 @@ This is the working contract for implementation agents. Keep it current, concise
 
 ## 1. Product intent
 
-Build a workflow design and monitoring tool for agentic systems.
+Package repeatable project workflows for existing coding assistants and make their activity inspectable across plans, tasks, runs, artifacts, changes, and verification.
 
 It is:
-- a local desktop tool
-- a visual workflow builder
-- a runtime monitor and replay/debugger
-- a CLI/task wrapper for practical repository workflows
-- game-styled, but developer-grade
+
+- a local skill + CLI + MCP toolset
+- an assistant-owned workflow model with a built-in project delivery template
+- a Rust-backed activity recorder, validator, replay debugger, and mock simulator
+- optional desktop and simplified terminal workspaces over the same recorded data
+- a developer tool whose visual hierarchy prioritizes execution evidence
 
 It is not:
+
 - a generic chatbot app
 - a cloud-first SaaS in v1
 - a universal autonomous multi-agent framework
 - a full 3D game
 - an unconstrained swarm sandbox
 
-Core promise: a developer can define a workflow visually, run it against a local repo, watch progress live, inspect prompts/commands/outputs/routing, and replay failures afterward.
+Core promise: use an existing assistant to plan a project change, write dependency-aware tasks, and execute a bounded task loop; optionally open a workspace to understand activity, evidence, changes, and failures. A general workflow model supports other explicit pipelines.
 
 ---
 
 ## 2. Non-negotiable architecture
 
-### Engine owns truth
-The Rust core owns execution state. The UI renders backend state/events and must not invent execution truth.
+### Assistant owns execution; Rust owns the recorded projection
+The assistant session owns dispatch, worker/process lifetime, retries, and execution decisions. Rust validates structured reports and owns persisted events and derived inspection state. Recording an assistant report does not independently verify its claims. Clients never infer success from silence, terminal text, or a disconnected session.
+
+The recorder and viewers do not secretly continue a run after its owner exits. Control actions are requests to the owner; requested, acknowledged, and observed outcomes are distinct. Mock simulation is the exception: Rust may drive explicit mock steps without invoking real agents or repository commands.
 
 ### Event-first system
 Every important transition emits a typed event. Replay is a first-class requirement.
@@ -53,15 +59,18 @@ Node and run state must be modeled as finite state machines. Do not infer state 
 
 ### Constrained execution
 Allowed in v1:
+
 - DAG execution
 - conditional routing
 - bounded retries
 - human review gates
-- optional bounded loops only if explicitly modeled
+- bounded task cycles with explicit task/iteration limits and stop conditions
+- existing DAG routing and bounded node retries within an individual run
 
 Not allowed in v1:
+
 - autonomous graph rewrites
-- freeform agent spawning
+- undeclared or unbounded worker spawning
 - unconstrained agent-to-agent chatter outside the graph
 - hidden side effects
 
@@ -73,10 +82,13 @@ Every node type must declare expected inputs, produced outputs, memory access, s
 ## 3. v1 scope
 
 In scope:
-- Tauri desktop app with Rust core and React/TypeScript frontend
-- 2D graph/canvas builder
-- local workflow execution against selected projects/repos
-- CLI/shell command wrapper execution
+
+- skill integration plus CLI and MCP access to one Rust recording/inspection layer
+- general workflow model; project-plan -> edit-workboard -> ralphloop -> start-task as the first template
+- assistant-owned execution against selected projects/repos on native Windows and Linux
+- optional Tauri/React desktop and simplified Rust terminal workspaces
+- project context linking plans, task dependencies, runs, artifacts, changes, and checks
+- isolated mock simulation of routing, reviews, retries, and limits
 - live run visualization
 - replay/timeline debugging
 - human review nodes
@@ -85,6 +97,7 @@ In scope:
 - practical developer workflows
 
 Out of scope:
+
 - cloud multi-tenant deployment
 - collaborative editing
 - distributed workers
@@ -92,9 +105,12 @@ Out of scope:
 - dynamic runtime graph mutation
 - open-ended orchestrator agents
 - broad compatibility with every agent ecosystem
+- codebase knowledge-graph extraction as a v1 requirement
+- predictions of real agent edits, cost, or success from mock simulation
 - 3D-first game engine work
 
 If tradeoffs are required, preserve this order:
+
 1. replay/debugging integrity
 2. execution state correctness
 3. practical usability on real projects
@@ -104,12 +120,14 @@ If tradeoffs are required, preserve this order:
 
 ## 4. Stack and execution model
 
-- Desktop shell: Tauri
-- Core engine: Rust
-- Frontend: React, TypeScript, React Flow or equivalent
+- Optional desktop shell: Tauri
+- Recording, validation, replay, and simulation core: Rust
+- Desktop frontend: React, TypeScript, React Flow or equivalent
+- Optional terminal workspace: Rust; toolkit selected during implementation
 - Persistence: SQLite
 - Serialization: JSON
-- Execution: CLI/shell command wrapper first; claude agent nodes run as headed interactive PTY sessions with transcript-based output capture (DEC-009), other providers via pipe-based CLI wrapping
+- Target execution owner: existing assistant session using the packaged skill; CLI/MCP report activity and expose inspection/control-request operations
+- Existing execution baseline: desktop-owned command adapters and interactive Claude PTYs (DEC-009); preserve until explicitly migrated, and do not assume this provider behavior is current without verification
 
 Commands execute in a selected workspace root. Arbitrary shell commands are allowed in v1 behind explicit user configuration and safety controls. Prefer structured patch/edit flows when available, but raw write commands are allowed if execution logs capture command, working directory, exit code, stdout/stderr metadata, and detectable changed files.
 
@@ -117,7 +135,7 @@ Commands execute in a selected workspace root. Arbitrary shell commands are allo
 
 ## 5. Node taxonomy
 
-Implement exactly these node types first:
+Retain these existing node types as the initial workflow vocabulary. They describe workflow steps; the skill/assistant dispatches real work in the target architecture:
 
 1. Start Node: entry point only
 2. End Node: terminal success/failure sink
@@ -129,7 +147,7 @@ Implement exactly these node types first:
 
 Do not add manager/orchestrator nodes in v1 unless the rest of the system is stable.
 
-Canonical first demo workflow: **Plan -> Execute Tool -> Critique -> Approve**.
+Canonical product template: **project-plan -> edit-workboard -> ralphloop(start-task, explicit bound)**. Planning direction is accepted before board writes; each worker handles one startable task and reports verification/docs outcomes. The prior **Plan -> Execute Tool -> Critique -> Approve** fixture remains an engine smoke test. A task cycle is distinct from node retries or graph back-edges (DEC-014).
 
 ---
 
@@ -179,33 +197,38 @@ Each event should include, where applicable: `event_id`, `run_id`, `workflow_id`
 
 ## 7. UX principles
 
-The UI should feel like mission control, a strategy-game HUD, or a systems simulator. It should not feel like a toy, noisy arcade gimmick, or decorative tech demo.
+Design a fresh pixel-character workspace that makes project progress and evidence easy to inspect (DEC-015). Original characters identify assistant/worker sessions, with task/phase stations and explicit technical state. Translate the identity to terminal cell/ASCII characters with text fallbacks. Current RPG/MMO artwork, sprites, portraits, backdrops, and older city/pigeon assets are retired design inputs, not new-UI fallbacks. Their files remain only until the legacy UI is replaced; do not delete assets still used by the running app during docs work. Desktop and terminal clients share semantics, not identical layouts; a permanently visible node editor is not required.
 
 Prioritize:
+
 1. debugging clarity
 2. practical task execution
 3. live visibility
 4. aesthetic differentiation
 
-Required surfaces (one unified workspace since DEC-011 — no view routing):
-- Workflow sidebar (library: workflows + run history, always visible)
-- Design surface (canvas + palette + inspector)
-- Run surface (live monitoring and replay unified; scrubbable event timeline)
-- Shared top bar (workflow identity, Save/Validate, workspace root, one-click Run)
+Default connections become one character visiting another and playing an interaction; shared stations are optional. Plan sprite-sheet clips and a separate Rust visual runtime for movement/facing/frame sampling. Evaluate hand-built versus library-backed playback in a prototype, keeping drawing-backend choice separate. Animation never owns workflow state or gates real execution; replay seeks reconstruct presentation without stale animation queues.
+
+Required information across clients:
+
+- project identity, plan/task dependencies, workflow revision, run owner, and recording coverage
+- live activity and chronological replay with clear gaps and pending control requests
+- task/run details, prompts, commands, artifacts, changed files, and verification evidence
+- explicit real / simulation / replay modes
+- optional desktop workspace and compact keyboard-driven terminal views; neither is required to execute a workflow
 
 ---
 
 ## 8. Implementation priorities
 
 Phase order:
-1. shared models and schemas
-2. core engine state machine
-3. event log and persistence
-4. minimal CLI execution adapter
-5. builder UI
-6. live monitoring UI
-7. replay UI
-8. polish and docs
+
+1. settle recording provenance, owner/control semantics, and schema migration contracts
+2. extract transport-independent recording, validation, persistence, and replay services
+3. CLI + skill integration for the canonical bounded project workflow
+4. MCP access to the same domain operations
+5. native Windows and Linux integration verification
+6. safe mock simulation, simplified terminal inspection, and desktop workspace redesign
+7. polish, distribution, and documentation
 
 Optimize for inspectability, deterministic replay, typed contracts, clean module boundaries, and documentation quality. Do not optimize first for adapter breadth, collaboration, remote orchestration, or visual overproduction.
 
@@ -222,6 +245,7 @@ Rust:
 
 Frontend:
 - treat backend events as source-of-truth input
+- distinguish assistant reports, captured evidence, missing coverage, and pending requests
 - do not duplicate execution logic in the UI
 - keep visual state derivable from engine state/events
 - separate design-time graph editing from run-time monitoring
@@ -244,10 +268,13 @@ Update:
 - `docs/EVENT_SCHEMA.md` for events, lifecycles, replay, or payloads
 - `docs/REPO_STRUCTURE.md` for layout or major generated assets
 - `docs/TAURI_IPC_CONTRACT.md` for frontend/backend command contracts
+- `docs/INTEGRATION_CONTRACT.md` for skill/CLI/MCP ownership, recording, and optional clients
 - `docs/TESTING.md` for test strategy, commands, fixtures, or patterns
 - `docs/workboard.md` and `docs/workboard.schema.json` for workboard shape/rules
 - `docs/DECISIONS.md` for meaningful technical decisions
 - this file when durable agent rules or summarized constraints change
+
+Keep the accepted target distinct from implemented behavior. The existing workboard has not been replanned for DEC-014; reconcile task intent against the new docs before selecting legacy desktop-only work. Do not silently rewrite the board during documentation changes.
 
 When changing schema, state, or event design, include examples where practical and note migration implications.
 

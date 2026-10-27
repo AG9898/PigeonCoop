@@ -1,186 +1,145 @@
 # Visual Identity Guide
 
-This guide defines Agent Arcade's game-forward visual identity. It is the
-authoritative reference for generated artwork, node-role identity, color,
-typography, motion, and canvas atmosphere.
+**Accepted target, 2026-10-27 (DEC-014, refined by DEC-015). Implementation pending.**
 
 ## 1. Identity
 
-Agent Arcade should feel like an RPG command interface built with the rigor of
-a modern creative tool. The game influence is central, but the language and
-interaction model remain developer-native.
+PigeonCoop is a local project workflow and inspection tool used alongside a coding
+assistant. Its visual identity should help developers read activity, task
+dependencies, changes, evidence, and interventions quickly.
 
-The visual metaphor is a **campaign command table**:
+The new direction is a **pixel-character workspace**: small bit/pixel characters
+make agents and their activity recognizable within a working project. Design a
+new interface, composition, and asset family. The existing RPG/MMO art, portraits,
+sprites, fantasy chrome, and backdrops are retired design inputs; do not recolor
+them or use them as new-UI fallback art. Earlier pigeon sprites and procedural
+city assets are not a ready-made substitute either.
 
-- workflows are composed operations, not decorative flowcharts
-- node roles read like a coordinated party without renaming technical concepts
-- a live run feels active and consequential
-- replay feels like inspecting the record of an encounter
+The visualizer still explains project work, evidence, intervention, and replay.
+Pixel characters give that work identity without replacing technical vocabulary,
+readable controls, or recorded state.
 
-Avoid faux-medieval copy, ornamental overload, pixel-art nostalgia, generic
-cyberpunk neon, and fantasy decoration that competes with execution state.
+### Character and workspace vocabulary
 
-## 2. Visual principles
+- A character represents an identified assistant/worker session. A fresh worker
+  cycle keeps its own identity; do not imply one persistent worker did all tasks.
+- A station represents a task/phase context, such as planning, working, checking,
+  or review. It does not create a new workflow node type.
+- Dependencies and routing are explicit relationships, not guessed paths through
+  a decorative room. Default connections appear as one agent visiting another:
+  approach, face the other character, interact, then settle. Stations/props are
+  optional. Selection/diagnostic inspection reveals the exact underlying graph;
+  spatial moves and animation are presentation only.
+- Selecting a character/station reveals its task/run/evidence. State labels and
+  unknown/stale coverage remain readable without animation.
+- More characters do not grant permission to spawn workers or change the
+  template's one-worker-per-cycle execution contract.
 
-1. **Technical clarity first.** Labels, status, configuration, event payloads,
-   terminal output, and validation errors remain the strongest information.
-2. **Game identity through hierarchy.** Portraits, role marks, resource meters,
-   illuminated routes, and deliberate motion carry the RPG layer.
-3. **Creative-tool discipline.** Use compact controls, stable panel geometry,
-   consistent spacing, familiar icons, and predictable selection behavior.
-4. **Atmosphere behind content.** Artwork sits below nodes and data with enough
-   contrast suppression to preserve legibility at every zoom level.
-5. **State is never decorative.** Color and motion always correspond to engine
-   state or user focus.
+Character species, room/board composition, sprite dimensions, and palette belong
+to the fresh design pass. The name does not require reusing existing pigeon art.
+No new assets or application redesign have shipped yet.
 
-## 3. Palette
+The user prefers the second generated character study (V2). Its
+[retained concept](../assets/concepts/pigeoncoop-character-v2-draft.png) is the
+character direction for further studies, not an animation-ready atlas. See
+[VISUAL_PROTOTYPE_PLAN.md](VISUAL_PROTOTYPE_PLAN.md) for the proposed asset pipeline
+and first scene test. Renderer/library recommendations there are not yet decisions.
 
-The product is dark-only in this phase. Use a neutral graphite foundation with
-several distinct semantic families rather than a one-note blue or purple UI.
+The visual reference is the compact, warm, living-world pixel language and
+elevated three-quarter top-down framing of
+[Sunnyside World](https://danieldiggle.itch.io/sunnyside). Prefer square-aligned
+orthographic terrain/stations with visible tops and fronts, not diagonal diamond
+isometric tiles. Character studies and proposed idle frames are drafts; pixel
+alignment, transparency, frame anchors, and animation timing require validation
+before deployment.
 
-| Role | Direction |
+Production assets target sprite-sheet/atlas playback: idle, walking and
+interaction clips with consistent frame bounds, foot anchors, facing, timing and
+interaction offsets. Keep identity stable across clips. A Rust visual runtime
+can sample clips independently of desktop drawing; terminal equivalents preserve
+the visit/interaction meaning without raster playback. Walking does not prove
+routing, communication, work starting or completion.
+
+## 2. Information hierarchy
+
+1. Project/task/run identity and current recorded state.
+2. Current operation, blocking reason, review request, or failure.
+3. Evidence: changed files, checks, artifacts, prompts, commands, and output.
+4. Timing, source, ownership, recording coverage, and other supporting context.
+
+Keep workflow structure, task dependencies, and file changes visually distinct.
+Topology helps explain relationships; it should not compete with evidence or
+become the mandatory entry point for every action.
+
+## 3. Shared semantics
+
+Use text labels plus consistent status accents across desktop and terminal:
+
+| Meaning | Presentation |
 |---|---|
-| Base | near-black graphite with a cool cast |
-| Raised surfaces | charcoal and gunmetal |
-| Primary accent | pale arcane cyan |
-| Focus / premium action | muted antique gold |
-| Running | cyan |
-| Waiting / review | amber |
-| Succeeded | verdant green |
-| Failed | crimson |
-| Technical metadata | cool grey |
+| Active recorded operation | restrained active accent + label |
+| Human attention / blocked work | amber + specific reason |
+| Recorded success | green + source/evidence context |
+| Recorded failure | red + failure detail |
+| Cancelled / skipped | neutral treatment + explicit label |
+| Missing/stale coverage | separate warning/unknown cue, not a terminal status |
+| Pending control request | pending label, distinct from acknowledgment/outcome |
+| Simulation / replay | persistent explicit mode label |
 
-Gold is reserved for focus, selection, and primary action. Cyan communicates
-active systems. Neither color should flood entire panels.
+Do not invent percentages, confidence, token totals, or health bars where the
+source has not supplied measurable data. Animation may indicate an active
+recorded operation; it cannot prove liveness after contact is lost.
 
-## 4. Typography and iconography
+## 4. Desktop direction
 
-- Use bundled **Manrope Variable** for controls, labels, node content, and dense
-  information. Do not depend on platform font availability.
-- Use bundled **Marcellus** only for the Agent Arcade product mark and similarly
-  rare identity moments.
-- Use bundled **IBM Plex Mono** for ids, paths, timestamps, commands, payloads,
-  keyboard hints, and terminal-adjacent data.
-- Letter spacing is `0`; hierarchy comes from weight, size, case, and contrast.
-- Use Lucide icons for familiar actions. Do not use Unicode symbols as toolbar
-  icons when a standard icon exists.
-- Pair unfamiliar icon-only controls with tooltips and accessible labels.
+Build a fresh workspace composition rather than reskin the current node editor.
+Pair crisp pixel characters and compact task/phase stations with readable normal
+interface typography and evidence panels. Use intentional pixel grids and integer
+art scaling where practical; do not pixelate output, diffs, labels, or the entire
+webview. Pixel styling does not require a game engine or new desktop renderer.
 
-## 5. Generated art system
+Use restrained surfaces, readable contrast, compact but comfortable density,
+stable selection, familiar controls, clear typography, and limited motion.
+Paths, IDs, commands, and code use a legible monospace face; ordinary navigation
+uses a readable interface font. Existing bundled fonts may be reused without
+preserving the fantasy product mark.
 
-Generated assets are authored as one coherent dark-fantasy operations family:
+Support keyboard focus and non-color state cues. Avoid ornamental borders,
+large atmospheric artwork, or a required full-screen canvas obscuring work.
+Choose detailed palette, spacing, and component tokens in the implementation
+design pass; this document does not imply a new theme has shipped.
 
-- painterly game-interface illustration, not photorealism or pixel art
-- strong silhouettes and readable subjects at small sizes
-- graphite, steel, muted cyan, old gold, crimson, and moss-green accents
-- no embedded text, logos, watermarks, UI chrome, or critical status information
-- controlled lighting and restrained detail at the edges
+## 5. Terminal direction
 
-Runtime assets live in `apps/desktop/public/assets/command-deck/`. Source-quality
-outputs may live under `assets/generated/command-deck/` when retention is useful.
+Translate identities and stations into small cell-based portraits, block/ASCII
+characters, status markers, and task lists. Desktop sprites need not render
+literally in terminal cells. Provide plain ASCII/text fallback when block glyphs,
+color, or width support is limited. Preserve identity and selection in fallback.
 
-### 5.1 Canvas environment
+Use layouts that remain legible in native Windows and Linux terminals. Provide
+text labels, keyboard hints, truncation/wrapping rules for long paths, and
+scrollable details. Handle terminal resizing and reduced color capability.
+Avoid relying on emoji, wide glyphs, or exact font metrics to convey state.
 
-The canvas uses a wide illustrated campaign-map surface: dark stone or metal,
-faint cartographic markings, route traces, and subtle table illumination. It must
-tile or cover without exposing a focal subject behind nodes. A dark overlay and
-code-native grid sit above it.
+The full-screen terminal workspace is optional. CLI structured output and MCP
+protocol streams contain no decorative styling or terminal control sequences.
 
-### 5.2 Animated role sprites and portrait fallbacks
+## 6. Existing assets and verification
 
-Every role has a four-frame animated character or landmark sprite. Humanoid roles
-use full-body character loops; Start and End use animated landmarks. Square
-portrait art remains behind each sprite as atmosphere and as a fallback if a
-sprite request fails.
+Artwork under apps/desktop/public/assets/command-deck/ and
+assets/generated/command-deck/ is retired from the new design. Older public
+sprite/backdrop assets and procedural city/pigeon renderers are also legacy,
+not replacement-UI fallbacks. Files remain solely to keep the current app working
+until replacement. Remove active imports/deployed legacy art during migration;
+handle source/archive cleanup explicitly. This doc pass deletes no assets.
 
-| Node | Identity |
-|---|---|
-| Start | lit gateway or expedition standard |
-| Agent | focused arcane operator / tactician |
-| Tool | armored artificer / machine specialist |
-| Router | pathfinder at a branching map |
-| Memory | archivist or guarded memory vault |
-| Human Review | commanding adjudicator |
-| End | secured destination or completed seal |
+Create a fresh coherent pixel asset family after desktop and terminal design
+studies establish shared shapes, identities, and reduced-detail fallbacks.
+Asset tooling and raster versus code-native generation are not fixed here.
 
-Generated frames are identity and pose, not execution truth. Runtime state remains
-code-native through borders, badges, meters, tint, and cadence so replay stays
-deterministic and accessible.
-
-Runtime sprite sheets live under
-`apps/desktop/public/assets/command-deck/sprites/`. Each strip contains four
-128x128 frames in a single 512x128 transparent WebP. The source generation layout
-is a 2x2 chroma-key sheet; local post-processing removes the key, extracts the
-four cells in reading order, and composes the runtime strip.
-
-All node instances subscribe to the singleton `useAnimationTick()` clock. Never
-create a timer per node. Cadence is state-dependent: running is fast, idle is
-deliberate, waiting is slow, and paused/terminal states hold a deterministic frame.
-
-### 5.3 Empty states
-
-Empty-state art may use a quiet command table or dormant map motif. It must not
-replace the visible action required to create or import a workflow.
-
-## 6. Node presentation
-
-All node types share a stable card footprint and anatomy:
-
-1. animated role sprite over its portrait fallback
-2. technical node-kind label
-3. user-defined label
-4. state badge
-5. optional resource or token meter
-6. explicit connection handles
-
-Selection uses a gold focus edge plus a restrained outer highlight. Running uses
-cyan route energy, waiting/review uses amber, success uses a stable green mark,
-and failure uses a high-contrast crimson treatment. Color is always paired with
-text or icon shape.
-
-## 7. Canvas atmosphere
-
-- The generated environment is rendered as a non-interactive layer below graph
-  content and above the base surface.
-- A code-native grid and vignette keep graph positions readable.
-- Nodes and edges must remain clear at minimum and maximum supported zoom.
-- Mini-map, controls, selection rectangles, and dialogs use the same panel system.
-- The old procedural city and pigeon/wrench sprite renderers are retired rather
-  than extended.
-
-## 8. Motion
-
-- Running nodes use a controlled cyan perimeter sweep or pulse.
-- Active edges use directional motion.
-- Waiting and review states use a slow amber hold signal.
-- Failure gets one brief impact treatment, then becomes static.
-- Panels use short opacity/transform transitions only when spatial continuity is
-  useful.
-- `prefers-reduced-motion` disables nonessential animation while retaining state.
-
-Short sprite loops are the primary ambient motion on the canvas. Avoid adding
-independent portrait, backdrop, or panel motion around them.
-
-## 9. Accessibility and asset fallbacks
-
-- Generated images are `aria-hidden` when decorative.
-- Role and state names are always available as text.
-- Every important state meets contrast requirements and is not color-only.
-- Missing images fall back to code-native role icons without changing layout.
-- Artwork loading must not shift panels or node dimensions.
-- `prefers-reduced-motion` prevents the shared tick from starting and holds frame
-  zero.
-- At 1280x720 and larger, labels, controls, inspector fields, timeline, and output
-  remain usable without incoherent overlap.
-
-## 10. Verification
-
-Before visual work is considered complete:
-
-- capture the full workspace at 1280x720, 1440x900, and 1920x1080
-- inspect design, live-tail, scrubbed replay, waiting review, failed run, and empty
-  states where fixtures allow
-- verify generated asset requests succeed and fallback icons preserve layout
-- verify at least one idle sprite advances frames and reduced motion freezes it
-- verify reduced motion and keyboard focus indicators
-- run frontend unit tests, production build, and the headed E2E suite
+Check desktop and terminal layouts using real project names, long paths, dense
+task lists, failed checks, lost owner contact, and missing artifacts. Record
+native Windows and Linux verification separately. Semantics must match across
+clients even when their layouts differ. Include reduced-motion/static characters,
+missing-new-art text fallbacks, small terminal sizes, and ASCII-only rendering.
+Old RPG art must not reappear when new art is missing.

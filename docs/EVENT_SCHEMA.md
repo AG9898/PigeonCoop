@@ -1,5 +1,28 @@
 # Event Schema
 
+## DEC-014 transition status (2026-10-27)
+
+The envelope, event families, and implemented payloads below remain the existing
+desktop trace contract. No schema/type/migration changes accompany this product
+reframe. For the accepted assistant-owned target, Rust validates and projects
+reported activity; it does not independently verify every assistant claim.
+
+Before shipping ingestion, specify versioned provenance/source, owner identity,
+workflow/board revision links, task-cycle identity, capture coverage/gaps,
+evidence references, real/simulation mode, and correlated control-request,
+acknowledgment, and observed-outcome data. These are requirements, not fields to
+silently insert into today's payloads. Examples and compatibility migrations
+must land with matching Rust types and JSON schemas.
+
+Reports require idempotent acceptance and stable durable replay order independent
+of producer timestamps. Missing owner contact is coverage metadata, not a new UI-
+invented lifecycle transition. A reported verification pass differs from captured
+command evidence. Task cycles differ from node retries. Simulation records must
+never imply actual file edits, verification, or human approval.
+
+Preserve legacy traces without backfilling invented ownership, complete coverage,
+or outcomes. See [INTEGRATION_CONTRACT.md](INTEGRATION_CONTRACT.md) and DEC-014.
+
 ## 1. Purpose
 
 The event model is the backbone of monitoring and replay. Every important execution transition should be captured as a typed event.
