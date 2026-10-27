@@ -1,0 +1,2014 @@
+{
+  "scope": "Headless native Windows Edge/PixiJS visual study; not a native Rust/Macroquad or Tauri/WebView2 benchmark",
+  "browser_version": "156.0.4314.42",
+  "renderer": {
+    "type": 1,
+    "vendor": "Google Inc. (NVIDIA)",
+    "renderer": "ANGLE (NVIDIA, NVIDIA GeForce RTX 3080 (0x00002216) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+    "dpr": 1,
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/156.0.0.0 Safari/537.36 Edg/156.0.0.0"
+  },
+  "benchmarks": [
+    {
+      "count": 2,
+      "player": "sampler",
+      "samples": 180,
+      "elapsed_ms": 3750.7999999988824,
+      "frame_intervals_ms": {
+        "p50": 17.899999998509884,
+        "p95": 18.5,
+        "p99": 20.09999999962747,
+        "max": 20.300000000745058
+      },
+      "cpu_submit_ms": {
+        "p50": 0.40000000037252903,
+        "p95": 0.5,
+        "p99": 0.6000000014901161,
+        "max": 0.7000000011175871
+      },
+      "stalls_over_33ms": 0
+    },
+    {
+      "count": 2,
+      "player": "library",
+      "samples": 180,
+      "elapsed_ms": 3785.300000000745,
+      "frame_intervals_ms": {
+        "p50": 17.700000001117587,
+        "p95": 19.699999999254942,
+        "p99": 23.40000000037253,
+        "max": 25.199999999254942
+      },
+      "cpu_submit_ms": {
+        "p50": 0.3999999985098839,
+        "p95": 0.5,
+        "p99": 0.6000000014901161,
+        "max": 0.6999999992549419
+      },
+      "stalls_over_33ms": 0
+    },
+    {
+      "count": 20,
+      "player": "sampler",
+      "samples": 180,
+      "elapsed_ms": 3745.60000000149,
+      "frame_intervals_ms": {
+        "p50": 17.800000000745058,
+        "p95": 18.5,
+        "p99": 18.899999998509884,
+        "max": 29
+      },
+      "cpu_submit_ms": {
+        "p50": 0.30000000074505806,
+        "p95": 0.5,
+        "p99": 0.8000000007450581,
+        "max": 1.5
+      },
+      "stalls_over_33ms": 0
+    },
+    {
+      "count": 20,
+      "player": "library",
+      "samples": 180,
+      "elapsed_ms": 3727.9000000003725,
+      "frame_intervals_ms": {
+        "p50": 17.699999999254942,
+        "p95": 18.299999998882413,
+        "p99": 18.59999999962747,
+        "max": 18.700000001117587
+      },
+      "cpu_submit_ms": {
+        "p50": 0.2999999988824129,
+        "p95": 0.40000000037252903,
+        "p99": 0.5,
+        "max": 0.599999999627471
+      },
+      "stalls_over_33ms": 0
+    },
+    {
+      "count": 100,
+      "player": "sampler",
+      "samples": 180,
+      "elapsed_ms": 3712.300000000745,
+      "frame_intervals_ms": {
+        "p50": 17.600000001490116,
+        "p95": 18.299999998882413,
+        "p99": 18.59999999962747,
+        "max": 18.700000001117587
+      },
+      "cpu_submit_ms": {
+        "p50": 0.30000000074505806,
+        "p95": 0.5,
+        "p99": 0.6000000014901161,
+        "max": 0.7000000011175871
+      },
+      "stalls_over_33ms": 0
+    },
+    {
+      "count": 100,
+      "player": "library",
+      "samples": 180,
+      "elapsed_ms": 3746.89999999851,
+      "frame_intervals_ms": {
+        "p50": 17.699999999254942,
+        "p95": 18.59999999962747,
+        "p99": 21.799999998882413,
+        "max": 26.300000000745058
+      },
+      "cpu_submit_ms": {
+        "p50": 0.30000000074505806,
+        "p95": 0.5,
+        "p99": 0.599999999627471,
+        "max": 0.599999999627471
+      },
+      "stalls_over_33ms": 0
+    }
+  ],
+  "benchmark_reused": false,
+  "metrics": {
+    "metrics": [
+      {
+        "name": "Timestamp",
+        "value": 15009.873909
+      },
+      {
+        "name": "AudioHandlers",
+        "value": 0
+      },
+      {
+        "name": "AudioWorkletProcessors",
+        "value": 0
+      },
+      {
+        "name": "Documents",
+        "value": 1
+      },
+      {
+        "name": "Frames",
+        "value": 1
+      },
+      {
+        "name": "JSEventListeners",
+        "value": 47
+      },
+      {
+        "name": "LayoutObjects",
+        "value": 647
+      },
+      {
+        "name": "MediaKeySessions",
+        "value": 0
+      },
+      {
+        "name": "MediaKeys",
+        "value": 0
+      },
+      {
+        "name": "Nodes",
+        "value": 841
+      },
+      {
+        "name": "Resources",
+        "value": 4
+      },
+      {
+        "name": "ContextLifecycleStateObservers",
+        "value": 8
+      },
+      {
+        "name": "V8PerContextDatas",
+        "value": 2
+      },
+      {
+        "name": "WorkerGlobalScopes",
+        "value": 1
+      },
+      {
+        "name": "UACSSResources",
+        "value": 0
+      },
+      {
+        "name": "RTCPeerConnections",
+        "value": 0
+      },
+      {
+        "name": "ResourceFetchers",
+        "value": 3
+      },
+      {
+        "name": "AdSubframes",
+        "value": 0
+      },
+      {
+        "name": "DetachedScriptStates",
+        "value": 0
+      },
+      {
+        "name": "ArrayBufferContents",
+        "value": 5
+      },
+      {
+        "name": "LayoutCount",
+        "value": 0
+      },
+      {
+        "name": "RecalcStyleCount",
+        "value": 0
+      },
+      {
+        "name": "LayoutDuration",
+        "value": 0
+      },
+      {
+        "name": "RecalcStyleDuration",
+        "value": 0
+      },
+      {
+        "name": "DevToolsCommandDuration",
+        "value": 0.000204
+      },
+      {
+        "name": "ScriptDuration",
+        "value": 0.002805
+      },
+      {
+        "name": "V8CompileDuration",
+        "value": 0
+      },
+      {
+        "name": "TaskDuration",
+        "value": 0.019847
+      },
+      {
+        "name": "TaskOtherDuration",
+        "value": 0.016838
+      },
+      {
+        "name": "ThreadTime",
+        "value": 0.023396
+      },
+      {
+        "name": "ProcessTime",
+        "value": 3.652973
+      },
+      {
+        "name": "JSHeapUsedSize",
+        "value": 8864816
+      },
+      {
+        "name": "JSHeapTotalSize",
+        "value": 16588800
+      },
+      {
+        "name": "FirstMeaningfulPaint",
+        "value": 14981.50516
+      },
+      {
+        "name": "DomContentLoaded",
+        "value": 14981.586539
+      },
+      {
+        "name": "NavigationStart",
+        "value": 14981.438073
+      }
+    ]
+  },
+  "idle": {
+    "window_seconds": 2,
+    "main_thread_task_seconds": 0.019818,
+    "js_heap_used_bytes": 8864816,
+    "note": "CDP main-thread tasks and JS heap only; not total browser/application CPU or memory"
+  },
+  "checks": {
+    "browser_errors": [],
+    "atlas_valid": true,
+    "seek_deterministic": true,
+    "library_pixel_parity": true,
+    "selection": true,
+    "scenario_controls": true,
+    "resizing": true,
+    "reduced_motion_static": true,
+    "stale_static": true
+  },
+  "shots": [
+    {
+      "file": "evidence/01-idle.png",
+      "state": {
+        "time_ms": 0,
+        "phase": "idle",
+        "status": "Ready",
+        "coverage": "fixture captured",
+        "scenario": "normal",
+        "reduced_motion": false,
+        "actors": [
+          {
+            "id": "worker-a",
+            "x": 76,
+            "y": 139,
+            "facing": "right",
+            "frame": 0,
+            "variant": 0,
+            "action": "idle"
+          },
+          {
+            "id": "worker-b",
+            "x": 253,
+            "y": 139,
+            "facing": "left",
+            "frame": 0,
+            "variant": 1,
+            "action": "idle"
+          }
+        ],
+        "event": {
+          "at": 0,
+          "type": "node.ready",
+          "status": "Ready",
+          "phase": "idle"
+        },
+        "events": [
+          {
+            "at": 0,
+            "type": "node.ready",
+            "status": "Ready",
+            "phase": "idle"
+          },
+          {
+            "at": 800,
+            "type": "node.running",
+            "status": "Running",
+            "phase": "walk"
+          },
+          {
+            "at": 3500,
+            "type": "fixture.handoff",
+            "status": "Running",
+            "phase": "interact"
+          },
+          {
+            "at": 4700,
+            "type": "node.succeeded",
+            "status": "Succeeded",
+            "phase": "settled"
+          }
+        ]
+      }
+    },
+    {
+      "file": "evidence/02-approach.png",
+      "state": {
+        "time_ms": 2000,
+        "phase": "walk",
+        "status": "Running",
+        "coverage": "fixture captured",
+        "scenario": "normal",
+        "reduced_motion": false,
+        "actors": [
+          {
+            "id": "worker-a",
+            "x": 136.44444444444446,
+            "y": 87,
+            "facing": "right",
+            "frame": 2,
+            "variant": 0,
+            "action": "walk"
+          },
+          {
+            "id": "worker-b",
+            "x": 253,
+            "y": 139,
+            "facing": "left",
+            "frame": 1,
+            "variant": 1,
+            "action": "idle"
+          }
+        ],
+        "event": {
+          "at": 800,
+          "type": "node.running",
+          "status": "Running",
+          "phase": "walk"
+        },
+        "events": [
+          {
+            "at": 0,
+            "type": "node.ready",
+            "status": "Ready",
+            "phase": "idle"
+          },
+          {
+            "at": 800,
+            "type": "node.running",
+            "status": "Running",
+            "phase": "walk"
+          },
+          {
+            "at": 3500,
+            "type": "fixture.handoff",
+            "status": "Running",
+            "phase": "interact"
+          },
+          {
+            "at": 4700,
+            "type": "node.succeeded",
+            "status": "Succeeded",
+            "phase": "settled"
+          }
+        ]
+      }
+    },
+    {
+      "file": "evidence/03-handoff.png",
+      "state": {
+        "time_ms": 3700,
+        "phase": "interact",
+        "status": "Running",
+        "coverage": "fixture captured",
+        "scenario": "normal",
+        "reduced_motion": false,
+        "actors": [
+          {
+            "id": "worker-a",
+            "x": 225,
+            "y": 139,
+            "facing": "right",
+            "frame": 5,
+            "variant": 0,
+            "action": "interact"
+          },
+          {
+            "id": "worker-b",
+            "x": 253,
+            "y": 139,
+            "facing": "left",
+            "frame": 5,
+            "variant": 1,
+            "action": "receive"
+          }
+        ],
+        "event": {
+          "at": 3500,
+          "type": "fixture.handoff",
+          "status": "Running",
+          "phase": "interact"
+        },
+        "events": [
+          {
+            "at": 0,
+            "type": "node.ready",
+            "status": "Ready",
+            "phase": "idle"
+          },
+          {
+            "at": 800,
+            "type": "node.running",
+            "status": "Running",
+            "phase": "walk"
+          },
+          {
+            "at": 3500,
+            "type": "fixture.handoff",
+            "status": "Running",
+            "phase": "interact"
+          },
+          {
+            "at": 4700,
+            "type": "node.succeeded",
+            "status": "Succeeded",
+            "phase": "settled"
+          }
+        ]
+      }
+    },
+    {
+      "file": "evidence/04-settled.png",
+      "state": {
+        "time_ms": 5200,
+        "phase": "settled",
+        "status": "Succeeded",
+        "coverage": "fixture captured",
+        "scenario": "normal",
+        "reduced_motion": false,
+        "actors": [
+          {
+            "id": "worker-a",
+            "x": 225,
+            "y": 139,
+            "facing": "right",
+            "frame": 0,
+            "variant": 0,
+            "action": "settled"
+          },
+          {
+            "id": "worker-b",
+            "x": 253,
+            "y": 139,
+            "facing": "left",
+            "frame": 0,
+            "variant": 1,
+            "action": "idle"
+          }
+        ],
+        "event": {
+          "at": 4700,
+          "type": "node.succeeded",
+          "status": "Succeeded",
+          "phase": "settled"
+        },
+        "events": [
+          {
+            "at": 0,
+            "type": "node.ready",
+            "status": "Ready",
+            "phase": "idle"
+          },
+          {
+            "at": 800,
+            "type": "node.running",
+            "status": "Running",
+            "phase": "walk"
+          },
+          {
+            "at": 3500,
+            "type": "fixture.handoff",
+            "status": "Running",
+            "phase": "interact"
+          },
+          {
+            "at": 4700,
+            "type": "node.succeeded",
+            "status": "Succeeded",
+            "phase": "settled"
+          }
+        ]
+      }
+    },
+    {
+      "file": "evidence/05-contact-lost.png",
+      "state": {
+        "time_ms": 5200,
+        "phase": "interrupted",
+        "status": "Running",
+        "coverage": "owner contact lost; outcome unknown",
+        "scenario": "stale",
+        "reduced_motion": false,
+        "actors": [
+          {
+            "id": "worker-a",
+            "x": 155.1851851851852,
+            "y": 87,
+            "facing": "right",
+            "frame": 0,
+            "variant": 0,
+            "action": "interrupted"
+          },
+          {
+            "id": "worker-b",
+            "x": 253,
+            "y": 139,
+            "facing": "left",
+            "frame": 0,
+            "variant": 1,
+            "action": "idle"
+          }
+        ],
+        "event": {
+          "at": 2200,
+          "type": "owner.contact_lost",
+          "status": "Running",
+          "phase": "interrupted"
+        },
+        "events": [
+          {
+            "at": 0,
+            "type": "node.ready",
+            "status": "Ready",
+            "phase": "idle"
+          },
+          {
+            "at": 800,
+            "type": "node.running",
+            "status": "Running",
+            "phase": "walk"
+          },
+          {
+            "at": 2200,
+            "type": "owner.contact_lost",
+            "status": "Running",
+            "phase": "interrupted"
+          }
+        ]
+      }
+    },
+    {
+      "file": "evidence/06-cancelled.png",
+      "state": {
+        "time_ms": 5200,
+        "phase": "interrupted",
+        "status": "Cancelled",
+        "coverage": "fixture captured",
+        "scenario": "cancelled",
+        "reduced_motion": false,
+        "actors": [
+          {
+            "id": "worker-a",
+            "x": 155.1851851851852,
+            "y": 87,
+            "facing": "right",
+            "frame": 0,
+            "variant": 0,
+            "action": "interrupted"
+          },
+          {
+            "id": "worker-b",
+            "x": 253,
+            "y": 139,
+            "facing": "left",
+            "frame": 0,
+            "variant": 1,
+            "action": "idle"
+          }
+        ],
+        "event": {
+          "at": 2200,
+          "type": "node.cancelled",
+          "status": "Cancelled",
+          "phase": "interrupted"
+        },
+        "events": [
+          {
+            "at": 0,
+            "type": "node.ready",
+            "status": "Ready",
+            "phase": "idle"
+          },
+          {
+            "at": 800,
+            "type": "node.running",
+            "status": "Running",
+            "phase": "walk"
+          },
+          {
+            "at": 2200,
+            "type": "node.cancelled",
+            "status": "Cancelled",
+            "phase": "interrupted"
+          }
+        ]
+      }
+    },
+    {
+      "file": "evidence/07-failure.png",
+      "state": {
+        "time_ms": 5200,
+        "phase": "interrupted",
+        "status": "Failed",
+        "coverage": "fixture captured",
+        "scenario": "failure",
+        "reduced_motion": false,
+        "actors": [
+          {
+            "id": "worker-a",
+            "x": 155.1851851851852,
+            "y": 87,
+            "facing": "right",
+            "frame": 0,
+            "variant": 0,
+            "action": "interrupted"
+          },
+          {
+            "id": "worker-b",
+            "x": 253,
+            "y": 139,
+            "facing": "left",
+            "frame": 0,
+            "variant": 1,
+            "action": "idle"
+          }
+        ],
+        "event": {
+          "at": 2200,
+          "type": "node.failure",
+          "status": "Failed",
+          "phase": "interrupted"
+        },
+        "events": [
+          {
+            "at": 0,
+            "type": "node.ready",
+            "status": "Ready",
+            "phase": "idle"
+          },
+          {
+            "at": 800,
+            "type": "node.running",
+            "status": "Running",
+            "phase": "walk"
+          },
+          {
+            "at": 2200,
+            "type": "node.failure",
+            "status": "Failed",
+            "phase": "interrupted"
+          }
+        ]
+      }
+    },
+    {
+      "file": "evidence/08-reduced-motion.png",
+      "state": {
+        "time_ms": 2000,
+        "phase": "walk",
+        "status": "Running",
+        "coverage": "fixture captured",
+        "scenario": "normal",
+        "reduced_motion": true,
+        "actors": [
+          {
+            "id": "worker-a",
+            "x": 225,
+            "y": 139,
+            "facing": "right",
+            "frame": 0,
+            "variant": 0,
+            "action": "walk"
+          },
+          {
+            "id": "worker-b",
+            "x": 253,
+            "y": 139,
+            "facing": "left",
+            "frame": 0,
+            "variant": 1,
+            "action": "idle"
+          }
+        ],
+        "event": {
+          "at": 800,
+          "type": "node.running",
+          "status": "Running",
+          "phase": "walk"
+        },
+        "events": [
+          {
+            "at": 0,
+            "type": "node.ready",
+            "status": "Ready",
+            "phase": "idle"
+          },
+          {
+            "at": 800,
+            "type": "node.running",
+            "status": "Running",
+            "phase": "walk"
+          },
+          {
+            "at": 3500,
+            "type": "fixture.handoff",
+            "status": "Running",
+            "phase": "interact"
+          },
+          {
+            "at": 4700,
+            "type": "node.succeeded",
+            "status": "Succeeded",
+            "phase": "settled"
+          }
+        ]
+      }
+    },
+    {
+      "file": "evidence/09-small-character.png",
+      "state": {
+        "time_ms": 3700,
+        "phase": "interact",
+        "status": "Running",
+        "coverage": "fixture captured",
+        "scenario": "normal",
+        "reduced_motion": false,
+        "actors": [
+          {
+            "id": "worker-a",
+            "x": 225,
+            "y": 139,
+            "facing": "right",
+            "frame": 5,
+            "variant": 0,
+            "action": "interact"
+          },
+          {
+            "id": "worker-b",
+            "x": 253,
+            "y": 139,
+            "facing": "left",
+            "frame": 5,
+            "variant": 1,
+            "action": "receive"
+          }
+        ],
+        "event": {
+          "at": 3500,
+          "type": "fixture.handoff",
+          "status": "Running",
+          "phase": "interact"
+        },
+        "events": [
+          {
+            "at": 0,
+            "type": "node.ready",
+            "status": "Ready",
+            "phase": "idle"
+          },
+          {
+            "at": 800,
+            "type": "node.running",
+            "status": "Running",
+            "phase": "walk"
+          },
+          {
+            "at": 3500,
+            "type": "fixture.handoff",
+            "status": "Running",
+            "phase": "interact"
+          },
+          {
+            "at": 4700,
+            "type": "node.succeeded",
+            "status": "Succeeded",
+            "phase": "settled"
+          }
+        ]
+      }
+    },
+    {
+      "file": "evidence/10-stress-100.png",
+      "state": {
+        "time_ms": 3700,
+        "phase": "interact",
+        "status": "Running",
+        "coverage": "fixture captured",
+        "scenario": "normal",
+        "reduced_motion": false,
+        "actors": [
+          {
+            "id": "worker-a",
+            "x": 225,
+            "y": 139,
+            "facing": "right",
+            "frame": 5,
+            "variant": 0,
+            "action": "interact"
+          },
+          {
+            "id": "worker-b",
+            "x": 253,
+            "y": 139,
+            "facing": "left",
+            "frame": 5,
+            "variant": 1,
+            "action": "receive"
+          },
+          {
+            "id": "fixture-002",
+            "x": 23,
+            "y": 174,
+            "frame": 0,
+            "variant": 0,
+            "facing": "right",
+            "action": "idle"
+          },
+          {
+            "id": "fixture-003",
+            "x": 39,
+            "y": 174,
+            "frame": 0,
+            "variant": 1,
+            "facing": "right",
+            "action": "idle"
+          },
+          {
+            "id": "fixture-004",
+            "x": 55,
+            "y": 174,
+            "frame": 0,
+            "variant": 0,
+            "facing": "right",
+            "action": "idle"
+          },
+          {
+            "id": "fixture-005",
+            "x": 71,
+            "y": 174,
+            "frame": 0,
+            "variant": 1,
+            "facing": "right",
+            "action": "idle"
+          },
+          {
+            "id": "fixture-006",
+            "x": 87,
+            "y": 174,
+            "frame": 0,
+            "variant": 0,
+            "facing": "right",
+            "action": "idle"
+          },
+          {
+            "id": "fixture-007",
+            "x": 103,
+            "y": 174,
+            "frame": 0,
+            "variant": 1,
+            "facing": "right",
+            "action": "idle"
+          },
+          {
+            "id": "fixture-008",
+            "x": 119,
+            "y": 174,
+            "frame": 0,
+            "variant": 0,
+            "facing": "right",
+            "action": "idle"
+          },
+          {
+            "id": "fixture-009",
+            "x": 135,
+            "y": 174,
+            "frame": 0,
+            "variant": 1,
+            "facing": "right",
+            "action": "idle"
+          },
+          {
+            "id": "fixture-010",
+            "x": 151,
+            "y": 174,
+            "frame": 0,
+            "variant": 0,
+            "facing": "right",
+            "action": "idle"
+          },
+          {
+            "id": "fixture-011",
+            "x": 167,
+            "y": 174,
+            "frame": 0,
+            "variant": 1,
+            "facing": "right",
+            "action": "idle"
+          },
+          {
+            "id": "fixture-012",
+            "x": 183,
+            "y": 174,
+            "frame": 0,
+            "variant": 0,
+            "facing": "right",
+            "action": "idle"
+          },
+          {
+            "id": "fixture-013",
+            "x": 199,
+            "y": 174,
+            "frame": 0,
+            "variant": 1,
+            "facing": "right",
+            "action": "idle"
+          },
+          {
+            "id": "fixture-014",
+            "x": 215,
+            "y": 174,
+            "frame": 1,
+            "variant": 0,
+            "facing": "right",
+            "action": "idle"
+          },
+          {
+            "id": "fixture-015",
+            "x": 231,
+            "y": 174,
+            "frame": 1,
+            "variant": 1,
+            "facing": "right",
+            "action": "idle"
+          },
+          {
+            "id": "fixture-016",
+            "x": 247,
+            "y": 174,
+            "frame": 1,
+            "variant": 0,
+            "facing": "right",
+            "action": "idle"
+          },
+          {
+            "id": "fixture-017",
+            "x": 263,
+            "y": 174,
+            "frame": 1,
+            "variant": 1,
+            "facing": "right",
+            "action": "idle"
+          },
+          {
+            "id": "fixture-018",
+            "x": 279,
+            "y": 174,
+            "frame": 1,
+            "variant": 0,
+            "facing": "right",
+            "action": "idle"
+          },
+          {
+            "id": "fixture-019",
+            "x": 23,
+            "y": 182,
+            "frame": 1,
+            "variant": 1,
+            "facing": "right",
+            "action": "idle"
+          },
+          {
+            "id": "fixture-020",
+            "x": 39,
+            "y": 182,
+            "frame": 1,
+            "variant": 0,
+            "facing": "right",
+            "action": "idle"
+          },
+          {
+            "id": "fixture-021",
+            "x": 55,
+            "y": 182,
+            "frame": 1,
+            "variant": 1,
+            "facing": "right",
+            "action": "idle"
+          },
+          {
+            "id": "fixture-022",
+            "x": 71,
+            "y": 182,
+            "frame": 1,
+            "variant": 0,
+            "facing": "right",
+            "action": "idle"
+          },
+          {
+            "id": "fixture-023",
+            "x": 87,
+            "y": 182,
+            "frame": 1,
+            "variant": 1,
+            "facing": "right",
+            "action": "idle"
+          },
+          {
+            "id": "fixture-024",
+            "x": 103,
+            "y": 182,
+            "frame": 1,
+            "variant": 0,
+            "facing": "right",
+            "action": "idle"
+          },
+          {
+            "id": "fixture-025",
+            "x": 119,
+            "y": 182,
+            "frame": 1,
+            "variant": 1,
+            "facing": "right",
+            "action": "idle"
+          },
+          {
+            "id": "fixture-026",
+            "x": 135,
+            "y": 182,
+            "frame": 1,
+            "variant": 0,
+            "facing": "right",
+            "action": "idle"
+          },
+          {
+            "id": "fixture-027",
+            "x": 151,
+            "y": 182,
+            "frame": 1,
+            "variant": 1,
+            "facing": "right",
+            "action": "idle"
+          },
+          {
+            "id": "fixture-028",
+            "x": 167,
+            "y": 182,
+            "frame": 1,
+            "variant": 0,
+            "facing": "right",
+            "action": "idle"
+          },
+          {
+            "id": "fixture-029",
+            "x": 183,
+            "y": 182,
+            "frame": 1,
+            "variant": 1,
+            "facing": "right",
+            "action": "idle"
+          },
+          {
+            "id": "fixture-030",
+            "x": 199,
+            "y": 182,
+            "frame": 0,
+            "variant": 0,
+            "facing": "right",
+            "action": "idle"
+          },
+          {
+            "id": "fixture-031",
+            "x": 215,
+            "y": 182,
+            "frame": 0,
+            "variant": 1,
+            "facing": "right",
+            "action": "idle"
+          },
+          {
+            "id": "fixture-032",
+            "x": 231,
+            "y": 182,
+            "frame": 0,
+            "variant": 0,
+            "facing": "right",
+            "action": "idle"
+          },
+          {
+            "id": "fixture-033",
+            "x": 247,
+            "y": 182,
+            "frame": 0,
+            "variant": 1,
+            "facing": "right",
+            "action": "idle"
+          },
+          {
+            "id": "fixture-034",
+            "x": 263,
+            "y": 182,
+            "frame": 0,
+            "variant": 0,
+            "facing": "right",
+            "action": "idle"
+          },
+          {
+            "id": "fixture-035",
+            "x": 279,
+            "y": 182,
+            "frame": 0,
+            "variant": 1,
+            "facing": "right",
+            "action": "idle"
+          },
+          {
+            "id": "fixture-036",
+            "x": 23,
+            "y": 190,
+            "frame": 0,
+            "variant": 0,
+            "facing": "right",
+            "action": "idle"
+          },
+          {
+            "id": "fixture-037",
+            "x": 39,
+            "y": 190,
+            "frame": 0,
+            "variant": 1,
+            "facing": "right",
+            "action": "idle"
+          },
+          {
+            "id": "fixture-038",
+            "x": 55,
+            "y": 190,
+            "frame": 0,
+            "variant": 0,
+            "facing": "right",
+            "action": "idle"
+          },
+          {
+            "id": "fixture-039",
+            "x": 71,
+            "y": 190,
+            "frame": 0,
+            "variant": 1,
+            "facing": "right",
+            "action": "idle"
+          },
+          {
+            "id": "fixture-040",
+            "x": 87,
+            "y": 190,
+            "frame": 0,
+            "variant": 0,
+            "facing": "right",
+            "action": "idle"
+          },
+          {
+            "id": "fixture-041",
+            "x": 103,
+            "y": 190,
+            "frame": 0,
+            "variant": 1,
+            "facing": "right",
+            "action": "idle"
+          },
+          {
+            "id": "fixture-042",
+            "x": 119,
+            "y": 190,
+            "frame": 0,
+            "variant": 0,
+            "facing": "right",
+            "action": "idle"
+          },
+          {
+            "id": "fixture-043",
+            "x": 135,
+            "y": 190,
+            "frame": 0,
+            "variant": 1,
+            "facing": "right",
+            "action": "idle"
+          },
+          {
+            "id": "fixture-044",
+            "x": 151,
+            "y": 190,
+            "frame": 0,
+            "variant": 0,
+            "facing": "right",
+            "action": "idle"
+          },
+          {
+            "id": "fixture-045",
+            "x": 167,
+            "y": 190,
+            "frame": 0,
+            "variant": 1,
+            "facing": "right",
+            "action": "idle"
+          },
+          {
+            "id": "fixture-046",
+            "x": 183,
+            "y": 190,
+            "frame": 1,
+            "variant": 0,
+            "facing": "right",
+            "action": "idle"
+          },
+          {
+            "id": "fixture-047",
+            "x": 199,
+            "y": 190,
+            "frame": 1,
+            "variant": 1,
+            "facing": "right",
+            "action": "idle"
+          },
+          {
+            "id": "fixture-048",
+            "x": 215,
+            "y": 190,
+            "frame": 1,
+            "variant": 0,
+            "facing": "right",
+            "action": "idle"
+          },
+          {
+            "id": "fixture-049",
+            "x": 231,
+            "y": 190,
+            "frame": 1,
+            "variant": 1,
+            "facing": "right",
+            "action": "idle"
+          },
+          {
+            "id": "fixture-050",
+            "x": 247,
+            "y": 190,
+            "frame": 1,
+            "variant": 0,
+            "facing": "right",
+            "action": "idle"
+          },
+          {
+            "id": "fixture-051",
+            "x": 263,
+            "y": 190,
+            "frame": 1,
+            "variant": 1,
+            "facing": "right",
+            "action": "idle"
+          },
+          {
+            "id": "fixture-052",
+            "x": 279,
+            "y": 190,
+            "frame": 1,
+            "variant": 0,
+            "facing": "right",
+            "action": "idle"
+          },
+          {
+            "id": "fixture-053",
+            "x": 23,
+            "y": 198,
+            "frame": 1,
+            "variant": 1,
+            "facing": "right",
+            "action": "idle"
+          },
+          {
+            "id": "fixture-054",
+            "x": 39,
+            "y": 198,
+            "frame": 1,
+            "variant": 0,
+            "facing": "right",
+            "action": "idle"
+          },
+          {
+            "id": "fixture-055",
+            "x": 55,
+            "y": 198,
+            "frame": 1,
+            "variant": 1,
+            "facing": "right",
+            "action": "idle"
+          },
+          {
+            "id": "fixture-056",
+            "x": 71,
+            "y": 198,
+            "frame": 1,
+            "variant": 0,
+            "facing": "right",
+            "action": "idle"
+          },
+          {
+            "id": "fixture-057",
+            "x": 87,
+            "y": 198,
+            "frame": 1,
+            "variant": 1,
+            "facing": "right",
+            "action": "idle"
+          },
+          {
+            "id": "fixture-058",
+            "x": 103,
+            "y": 198,
+            "frame": 1,
+            "variant": 0,
+            "facing": "right",
+            "action": "idle"
+          },
+          {
+            "id": "fixture-059",
+            "x": 119,
+            "y": 198,
+            "frame": 1,
+            "variant": 1,
+            "facing": "right",
+            "action": "idle"
+          },
+          {
+            "id": "fixture-060",
+            "x": 135,
+            "y": 198,
+            "frame": 1,
+            "variant": 0,
+            "facing": "right",
+            "action": "idle"
+          },
+          {
+            "id": "fixture-061",
+            "x": 151,
+            "y": 198,
+            "frame": 1,
+            "variant": 1,
+            "facing": "right",
+            "action": "idle"
+          },
+          {
+            "id": "fixture-062",
+            "x": 167,
+            "y": 198,
+            "frame": 1,
+            "variant": 0,
+            "facing": "right",
+            "action": "idle"
+          },
+          {
+            "id": "fixture-063",
+            "x": 183,
+            "y": 198,
+            "frame": 0,
+            "variant": 1,
+            "facing": "right",
+            "action": "idle"
+          },
+          {
+            "id": "fixture-064",
+            "x": 199,
+            "y": 198,
+            "frame": 0,
+            "variant": 0,
+            "facing": "right",
+            "action": "idle"
+          },
+          {
+            "id": "fixture-065",
+            "x": 215,
+            "y": 198,
+            "frame": 0,
+            "variant": 1,
+            "facing": "right",
+            "action": "idle"
+          },
+          {
+            "id": "fixture-066",
+            "x": 231,
+            "y": 198,
+            "frame": 0,
+            "variant": 0,
+            "facing": "right",
+            "action": "idle"
+          },
+          {
+            "id": "fixture-067",
+            "x": 247,
+            "y": 198,
+            "frame": 0,
+            "variant": 1,
+            "facing": "right",
+            "action": "idle"
+          },
+          {
+            "id": "fixture-068",
+            "x": 263,
+            "y": 198,
+            "frame": 0,
+            "variant": 0,
+            "facing": "right",
+            "action": "idle"
+          },
+          {
+            "id": "fixture-069",
+            "x": 279,
+            "y": 198,
+            "frame": 0,
+            "variant": 1,
+            "facing": "right",
+            "action": "idle"
+          },
+          {
+            "id": "fixture-070",
+            "x": 23,
+            "y": 206,
+            "frame": 0,
+            "variant": 0,
+            "facing": "right",
+            "action": "idle"
+          },
+          {
+            "id": "fixture-071",
+            "x": 39,
+            "y": 206,
+            "frame": 0,
+            "variant": 1,
+            "facing": "right",
+            "action": "idle"
+          },
+          {
+            "id": "fixture-072",
+            "x": 55,
+            "y": 206,
+            "frame": 0,
+            "variant": 0,
+            "facing": "right",
+            "action": "idle"
+          },
+          {
+            "id": "fixture-073",
+            "x": 71,
+            "y": 206,
+            "frame": 0,
+            "variant": 1,
+            "facing": "right",
+            "action": "idle"
+          },
+          {
+            "id": "fixture-074",
+            "x": 87,
+            "y": 206,
+            "frame": 0,
+            "variant": 0,
+            "facing": "right",
+            "action": "idle"
+          },
+          {
+            "id": "fixture-075",
+            "x": 103,
+            "y": 206,
+            "frame": 0,
+            "variant": 1,
+            "facing": "right",
+            "action": "idle"
+          },
+          {
+            "id": "fixture-076",
+            "x": 119,
+            "y": 206,
+            "frame": 0,
+            "variant": 0,
+            "facing": "right",
+            "action": "idle"
+          },
+          {
+            "id": "fixture-077",
+            "x": 135,
+            "y": 206,
+            "frame": 0,
+            "variant": 1,
+            "facing": "right",
+            "action": "idle"
+          },
+          {
+            "id": "fixture-078",
+            "x": 151,
+            "y": 206,
+            "frame": 0,
+            "variant": 0,
+            "facing": "right",
+            "action": "idle"
+          },
+          {
+            "id": "fixture-079",
+            "x": 167,
+            "y": 206,
+            "frame": 1,
+            "variant": 1,
+            "facing": "right",
+            "action": "idle"
+          },
+          {
+            "id": "fixture-080",
+            "x": 183,
+            "y": 206,
+            "frame": 1,
+            "variant": 0,
+            "facing": "right",
+            "action": "idle"
+          },
+          {
+            "id": "fixture-081",
+            "x": 199,
+            "y": 206,
+            "frame": 1,
+            "variant": 1,
+            "facing": "right",
+            "action": "idle"
+          },
+          {
+            "id": "fixture-082",
+            "x": 215,
+            "y": 206,
+            "frame": 1,
+            "variant": 0,
+            "facing": "right",
+            "action": "idle"
+          },
+          {
+            "id": "fixture-083",
+            "x": 231,
+            "y": 206,
+            "frame": 1,
+            "variant": 1,
+            "facing": "right",
+            "action": "idle"
+          },
+          {
+            "id": "fixture-084",
+            "x": 247,
+            "y": 206,
+            "frame": 1,
+            "variant": 0,
+            "facing": "right",
+            "action": "idle"
+          },
+          {
+            "id": "fixture-085",
+            "x": 263,
+            "y": 206,
+            "frame": 1,
+            "variant": 1,
+            "facing": "right",
+            "action": "idle"
+          },
+          {
+            "id": "fixture-086",
+            "x": 279,
+            "y": 206,
+            "frame": 1,
+            "variant": 0,
+            "facing": "right",
+            "action": "idle"
+          },
+          {
+            "id": "fixture-087",
+            "x": 23,
+            "y": 214,
+            "frame": 1,
+            "variant": 1,
+            "facing": "right",
+            "action": "idle"
+          },
+          {
+            "id": "fixture-088",
+            "x": 39,
+            "y": 214,
+            "frame": 1,
+            "variant": 0,
+            "facing": "right",
+            "action": "idle"
+          },
+          {
+            "id": "fixture-089",
+            "x": 55,
+            "y": 214,
+            "frame": 1,
+            "variant": 1,
+            "facing": "right",
+            "action": "idle"
+          },
+          {
+            "id": "fixture-090",
+            "x": 71,
+            "y": 214,
+            "frame": 1,
+            "variant": 0,
+            "facing": "right",
+            "action": "idle"
+          },
+          {
+            "id": "fixture-091",
+            "x": 87,
+            "y": 214,
+            "frame": 1,
+            "variant": 1,
+            "facing": "right",
+            "action": "idle"
+          },
+          {
+            "id": "fixture-092",
+            "x": 103,
+            "y": 214,
+            "frame": 1,
+            "variant": 0,
+            "facing": "right",
+            "action": "idle"
+          },
+          {
+            "id": "fixture-093",
+            "x": 119,
+            "y": 214,
+            "frame": 1,
+            "variant": 1,
+            "facing": "right",
+            "action": "idle"
+          },
+          {
+            "id": "fixture-094",
+            "x": 135,
+            "y": 214,
+            "frame": 1,
+            "variant": 0,
+            "facing": "right",
+            "action": "idle"
+          },
+          {
+            "id": "fixture-095",
+            "x": 151,
+            "y": 214,
+            "frame": 0,
+            "variant": 1,
+            "facing": "right",
+            "action": "idle"
+          },
+          {
+            "id": "fixture-096",
+            "x": 167,
+            "y": 214,
+            "frame": 0,
+            "variant": 0,
+            "facing": "right",
+            "action": "idle"
+          },
+          {
+            "id": "fixture-097",
+            "x": 183,
+            "y": 214,
+            "frame": 0,
+            "variant": 1,
+            "facing": "right",
+            "action": "idle"
+          },
+          {
+            "id": "fixture-098",
+            "x": 199,
+            "y": 214,
+            "frame": 0,
+            "variant": 0,
+            "facing": "right",
+            "action": "idle"
+          },
+          {
+            "id": "fixture-099",
+            "x": 215,
+            "y": 214,
+            "frame": 0,
+            "variant": 1,
+            "facing": "right",
+            "action": "idle"
+          }
+        ],
+        "event": {
+          "at": 3500,
+          "type": "fixture.handoff",
+          "status": "Running",
+          "phase": "interact"
+        },
+        "events": [
+          {
+            "at": 0,
+            "type": "node.ready",
+            "status": "Ready",
+            "phase": "idle"
+          },
+          {
+            "at": 800,
+            "type": "node.running",
+            "status": "Running",
+            "phase": "walk"
+          },
+          {
+            "at": 3500,
+            "type": "fixture.handoff",
+            "status": "Running",
+            "phase": "interact"
+          },
+          {
+            "at": 4700,
+            "type": "node.succeeded",
+            "status": "Succeeded",
+            "phase": "settled"
+          }
+        ]
+      }
+    },
+    {
+      "file": "evidence/12-twenty-actors.png",
+      "state": {
+        "time_ms": 3700,
+        "phase": "interact",
+        "status": "Running",
+        "coverage": "fixture captured",
+        "scenario": "normal",
+        "reduced_motion": false,
+        "actors": [
+          {
+            "id": "worker-a",
+            "x": 225,
+            "y": 139,
+            "facing": "right",
+            "frame": 5,
+            "variant": 0,
+            "action": "interact"
+          },
+          {
+            "id": "worker-b",
+            "x": 253,
+            "y": 139,
+            "facing": "left",
+            "frame": 5,
+            "variant": 1,
+            "action": "receive"
+          },
+          {
+            "id": "fixture-002",
+            "x": 32,
+            "y": 184,
+            "frame": 0,
+            "variant": 0,
+            "facing": "right",
+            "action": "idle"
+          },
+          {
+            "id": "fixture-003",
+            "x": 60,
+            "y": 184,
+            "frame": 0,
+            "variant": 1,
+            "facing": "right",
+            "action": "idle"
+          },
+          {
+            "id": "fixture-004",
+            "x": 88,
+            "y": 184,
+            "frame": 0,
+            "variant": 0,
+            "facing": "right",
+            "action": "idle"
+          },
+          {
+            "id": "fixture-005",
+            "x": 116,
+            "y": 184,
+            "frame": 0,
+            "variant": 1,
+            "facing": "right",
+            "action": "idle"
+          },
+          {
+            "id": "fixture-006",
+            "x": 144,
+            "y": 184,
+            "frame": 0,
+            "variant": 0,
+            "facing": "right",
+            "action": "idle"
+          },
+          {
+            "id": "fixture-007",
+            "x": 172,
+            "y": 184,
+            "frame": 0,
+            "variant": 1,
+            "facing": "right",
+            "action": "idle"
+          },
+          {
+            "id": "fixture-008",
+            "x": 200,
+            "y": 184,
+            "frame": 0,
+            "variant": 0,
+            "facing": "right",
+            "action": "idle"
+          },
+          {
+            "id": "fixture-009",
+            "x": 228,
+            "y": 184,
+            "frame": 0,
+            "variant": 1,
+            "facing": "right",
+            "action": "idle"
+          },
+          {
+            "id": "fixture-010",
+            "x": 256,
+            "y": 184,
+            "frame": 0,
+            "variant": 0,
+            "facing": "right",
+            "action": "idle"
+          },
+          {
+            "id": "fixture-011",
+            "x": 32,
+            "y": 221,
+            "frame": 0,
+            "variant": 1,
+            "facing": "right",
+            "action": "idle"
+          },
+          {
+            "id": "fixture-012",
+            "x": 60,
+            "y": 221,
+            "frame": 0,
+            "variant": 0,
+            "facing": "right",
+            "action": "idle"
+          },
+          {
+            "id": "fixture-013",
+            "x": 88,
+            "y": 221,
+            "frame": 0,
+            "variant": 1,
+            "facing": "right",
+            "action": "idle"
+          },
+          {
+            "id": "fixture-014",
+            "x": 116,
+            "y": 221,
+            "frame": 1,
+            "variant": 0,
+            "facing": "right",
+            "action": "idle"
+          },
+          {
+            "id": "fixture-015",
+            "x": 144,
+            "y": 221,
+            "frame": 1,
+            "variant": 1,
+            "facing": "right",
+            "action": "idle"
+          },
+          {
+            "id": "fixture-016",
+            "x": 172,
+            "y": 221,
+            "frame": 1,
+            "variant": 0,
+            "facing": "right",
+            "action": "idle"
+          },
+          {
+            "id": "fixture-017",
+            "x": 200,
+            "y": 221,
+            "frame": 1,
+            "variant": 1,
+            "facing": "right",
+            "action": "idle"
+          },
+          {
+            "id": "fixture-018",
+            "x": 228,
+            "y": 221,
+            "frame": 1,
+            "variant": 0,
+            "facing": "right",
+            "action": "idle"
+          },
+          {
+            "id": "fixture-019",
+            "x": 256,
+            "y": 221,
+            "frame": 1,
+            "variant": 1,
+            "facing": "right",
+            "action": "idle"
+          }
+        ],
+        "event": {
+          "at": 3500,
+          "type": "fixture.handoff",
+          "status": "Running",
+          "phase": "interact"
+        },
+        "events": [
+          {
+            "at": 0,
+            "type": "node.ready",
+            "status": "Ready",
+            "phase": "idle"
+          },
+          {
+            "at": 800,
+            "type": "node.running",
+            "status": "Running",
+            "phase": "walk"
+          },
+          {
+            "at": 3500,
+            "type": "fixture.handoff",
+            "status": "Running",
+            "phase": "interact"
+          },
+          {
+            "at": 4700,
+            "type": "node.succeeded",
+            "status": "Succeeded",
+            "phase": "settled"
+          }
+        ]
+      }
+    }
+  ]
+}

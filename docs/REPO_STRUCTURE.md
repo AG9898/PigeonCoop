@@ -232,3 +232,18 @@ Recommended order:
 
 For new work use PRD.md migration order and DEC-014. This historical list is not
 the implementation sequence for assistant-owned recording and optional clients.
+
+### Isolated renderer experiment
+
+`experiments/renderer-lab/` contains the Windows headless PixiJS visual study,
+editable SVG/PNG test atlas, draft Rust fixture sampler, browser tests/capture
+scripts, and local evidence gallery. It has its own Cargo workspace and npm lock
+file; production clients/crates do not import it. See its README/REVIEW for the
+native execution blocker and remaining Macroquad/Tauri comparison gates.
+
+The renderer lab now also contains `src/native.rs` (Macroquad), `src/wasm.rs`
+(bulk browser sampling), editable test `.aseprite` files, normalized full/trimmed
+atlas exports, and a small compiled WASM artifact. `web/draw-adapters.mjs` shares
+scene semantics across Canvas/Pixi; `scripts/` contains asset, native/webview,
+CLI lifecycle and screenshot conformance probes. `PRODUCT_VERDICT.md` summarizes
+results; generated screenshots/raw measurements remain local under `evidence/`.

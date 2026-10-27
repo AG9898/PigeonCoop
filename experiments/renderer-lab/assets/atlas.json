@@ -1,0 +1,25 @@
+{
+  "clips": {
+    "idle": [
+      0,
+      1
+    ],
+    "interact": [
+      4,
+      5
+    ],
+    "walk": [
+      2,
+      3
+    ]
+  },
+  "foot_anchor": [
+    16,
+    44
+  ],
+  "frame_height": 48,
+  "frame_width": 32,
+  "height": 96,
+  "source": "hand-authored SVG test atlas; V2-inspired, not final production art",
+  "width": 192
+}

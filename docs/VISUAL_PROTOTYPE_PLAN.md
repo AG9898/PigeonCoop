@@ -159,3 +159,69 @@ Then record the chosen native scale, atlas/clip contract, rendering route, captu
 of the scene, measured limitations and Tauri integration result. Expand assets
 only after this decision. No new asset mass-generation, procedural world system,
 physics, multiplayer, or production workflow migration is part of the experiment.
+
+## 7. Windows experiment status — 2026-10-27
+
+A bounded browser visual study now lives in
+[`experiments/renderer-lab`](../experiments/renderer-lab/README.md), with a
+[review, measurements and screenshot index](../experiments/renderer-lab/REVIEW.md).
+It uses fresh V2-inspired test art, synthetic fixture records and headless native
+Windows Edge/PixiJS; it does not modify the production workspace.
+
+Portable Rust, MSVC and the Windows SDK were installed without administrator
+rights. Native execution is blocked: Cargo-generated helper executables return
+`Access is denied` despite execute permissions in the file ACL. The cause is
+unresolved, and endpoint/security policy has not been changed. Rust fixture
+sampler tests, the standalone Macroquad renderer and Tauri/WebView2 integration
+are unverified. Browser figures must not stand in for those missing results.
+
+The browser study verifies seek reconstruction, interrupted/static presentation,
+selection, atlas bounds and deterministic direct-versus-library frame selection.
+It captures 2/20/100-actor scenes and records frame pacing. Its 100-actor layout
+fails legibility; directional art and final character fidelity remain incomplete.
+No renderer/library selection, production migration or platform-release pass is
+accepted by this experiment. Native Windows and Linux gates remain outstanding.
+
+## 8. Broader product verdict — 2026-10-27
+
+The [product comparison](../experiments/renderer-lab/PRODUCT_VERDICT.md) now
+recommends a small Canvas 2D drawing layer with normal HTML/React inspection,
+shared Rust native/WASM presentation sampling, and renderer-neutral PNG+JSON
+assets. This is a recommendation for the next implementation proposal, not an
+accepted production migration or completed release verification.
+
+The expanded experiment includes native Linux Macroquad, actual WebKitGTK,
+the existing Linux Tauri shell, real LibreSprite batch exports with trimmed/full
+atlas registration and variable durations, shared WASM sampling, and Windows/Linux
+CLI fixture lifecycle tests. All graphics stayed headless or on private displays.
+
+Canvas/Rust/packed sheets work in Windows Edge and Linux WebKit/Tauri fixtures.
+Pixi performs well on Windows but corrupts sprites in the tested WebKit/software
+configuration, including 8.22; the cause is unresolved. Native Macroquad drawing
+works. Matched Windows submission times leave headroom for both browser routes;
+blank scheduling measurements prevent misreading headless frame cadence as GPU
+cost. Focus/session-list presentation addresses the crowded 100-actor layout.
+
+Native Windows executable/WebView2 verification remains blocked or unverified.
+WSL/Xvfb software results do not qualify physical Linux hardware, DPI or input.
+See the linked verdict and curated gallery for measured limits and release gates.
+
+**Final package/backend refinement:** inspection of the pinned PixiJS 8.22 package
+and versioned API confirmed its CanvasRenderer, despite stale wording in the
+web guide. That backend passed Windows/WebKit pixel checks, six exact packed-sheet
+comparisons, Linux Tauri attachment and CLI/browser lifecycle proof. The final
+recommendation is **PixiJS 8.22 with Canvas selected explicitly**, HTML/React
+inspection and shared Rust native/WASM sampling. The direct Canvas adapter stays
+an experiment reference. WebGL requires platform conformance before selection.
+The extra scene/asset facilities justify the optional viewer bundle and measured
+1.4–2.9 ms p95 submission cost for the tested 2/20/100-actor workload. This remains
+a recommendation, not an accepted production migration.
+
+## 9. Accepted WSL checkpoint (DEC-016)
+
+The user accepted the final PixiJS 8.22/Canvas + HTML/React + shared Rust
+native/WASM baseline specifically for WSL prototype iteration. The earlier
+recommendation-only statements above are historical. No production migration,
+physical platform qualification or native Windows release pass is implied.
+Source, registered assets, raw evidence and screenshots are retained with the
+[handoff](../experiments/renderer-lab/HANDOFF.md) for resumption.

@@ -1,0 +1,19 @@
+{
+  "scope": "Actual WebKitGTK under private WSL/Xvfb display, software graphics; no Tauri shell qualification",
+  "webkit_version": "2.52.6",
+  "variant": "gl1",
+  "renderer_string_note": "WebKit may sanitize renderer identity; Apple GPU is not the machine hardware",
+  "captures": [
+    "03-handoff",
+    "05-contact-lost",
+    "08-reduced"
+  ],
+  "ready_ms": 1791.9354940022458,
+  "renderer": {
+    "type": 1,
+    "vendor": "Apple Inc.",
+    "renderer": "Apple GPU",
+    "dpr": 1,
+    "userAgent": "Mozilla/5.0 (X11; Ubuntu; Linux x86_64) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/60.5 Safari/605.1.15"
+  }
+}

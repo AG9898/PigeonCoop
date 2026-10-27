@@ -1,0 +1,61 @@
+{
+  "method": "Compare opaque inner sprite pixels at recorded foot positions against the source atlas; per-channel tolerance 2; pass >99%",
+  "results": [
+    {
+      "name": "Windows Canvas/Rust/packed",
+      "checked": 1090,
+      "matched": 1081,
+      "match_ratio": 0.9917431192660551,
+      "expected_to_pass": true,
+      "passes": true
+    },
+    {
+      "name": "Windows Pixi/Rust/packed",
+      "checked": 1090,
+      "matched": 1084,
+      "match_ratio": 0.9944954128440368,
+      "expected_to_pass": true,
+      "passes": true
+    },
+    {
+      "name": "Linux WebKit Canvas/Rust/packed",
+      "checked": 1090,
+      "matched": 1082,
+      "match_ratio": 0.9926605504587156,
+      "expected_to_pass": true,
+      "passes": true
+    },
+    {
+      "name": "Linux WebKit Pixi 8.22",
+      "checked": 1090,
+      "matched": 0,
+      "match_ratio": 0,
+      "expected_to_pass": false,
+      "passes": false
+    },
+    {
+      "name": "Windows Pixi Canvas/Rust/packed",
+      "checked": 1090,
+      "matched": 1081,
+      "match_ratio": 0.9917431192660551,
+      "expected_to_pass": true,
+      "passes": true
+    },
+    {
+      "name": "Linux WebKit Pixi Canvas/Rust/packed",
+      "checked": 1090,
+      "matched": 1082,
+      "match_ratio": 0.9926605504587156,
+      "expected_to_pass": true,
+      "passes": true
+    },
+    {
+      "name": "Linux native Macroquad",
+      "checked": 1090,
+      "matched": 1090,
+      "match_ratio": 1,
+      "expected_to_pass": true,
+      "passes": true
+    }
+  ]
+}

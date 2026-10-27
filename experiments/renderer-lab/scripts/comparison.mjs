@@ -1,0 +1,13 @@
+import {chromium} from 'playwright';import {writeFile,mkdir} from 'node:fs/promises';import {startServer} from './serve.mjs';import assert from 'node:assert/strict';
+await mkdir('evidence/comparison-windows',{recursive:true});const server=await startServer(),url=`http://127.0.0.1:${server.address().port}`;let browser;
+try{browser=await chromium.launch({channel:'msedge',headless:true});const candidates=[];
+for(const [name,query] of [['canvas','?renderer=canvas&core=js&atlas=untrimmed'],['pixi-8.22','?renderer=pixi&bundle=latest&core=js&atlas=untrimmed'],['pixi-8.21','?renderer=pixi&core=js&atlas=untrimmed']]){
+ const page=await browser.newPage({viewport:{width:1280,height:800}}),errors=[];page.on('pageerror',e=>errors.push(e.message));const start=performance.now();await page.goto(url+query);await page.waitForFunction(()=>globalThis.labReady);const ready=performance.now()-start,info=await page.evaluate(()=>lab.rendererInfo());
+ for(const [shot,time,scenario,reduced] of [['handoff',3700,'normal',false],['stale',5200,'stale',false],['reduced',2000,'normal',true]]){await page.evaluate(o=>lab.set(o),{time,scenario,reduced});await page.screenshot({path:`evidence/comparison-windows/${name}-${shot}.png`});}
+ await page.evaluate(()=>lab.set({time:3700,scenario:'normal',reduced:false}));const expected=await page.evaluate(()=>lab.snapshot());for(const time of [8000,0,2000,3700])await page.evaluate(t=>lab.set({time:t}),time);assert.deepEqual(await page.evaluate(()=>lab.snapshot()),expected);
+ const blankBaseline=await page.evaluate(()=>lab.baseline(120)),measurements=[];
+ if(name!=='pixi-8.21')for(let repetition=0;repetition<3;repetition++)for(const count of [2,20,100]){const result=await page.evaluate(count=>lab.benchmark(count,'sampler',120),count);measurements.push({repetition,...result});console.log(`${name} / ${count} / run ${repetition+1}: draw submission p95 ${result.cpu_submit_ms.p95.toFixed(2)} ms`);}
+ await page.setViewportSize({width:1024,height:600});await page.screenshot({path:`evidence/comparison-windows/${name}-compact.png`});assert.deepEqual(errors,[]);candidates.push({name,info,ready_ms:ready,baseline_frame_intervals_ms:blankBaseline,measurements,checks:{seek:true,page_errors:errors}});await page.close();
+}
+await writeFile('evidence/comparison-windows/report.json',JSON.stringify({scope:'Windows Edge, headless, matched atlas/geometry/UI; no forced GPU readbacks; CPU submission and scheduling measured separately',candidates},null,2));console.log('Matched Windows comparison saved.');
+}finally{if(browser)await browser.close();await new Promise(done=>server.close(done));}

@@ -84,3 +84,12 @@ The current adapters still include sh -c execution and desktop-owned interactive
 PTY sessions; OS portability and detached inspection are implementation work.
 Windows-to-WSL execution is deferred. Existing historical test results are not
 evidence that the new package passes on either OS.
+
+## WSL renderer prototype checkpoint
+
+DEC-016 accepts PixiJS 8.22's Canvas backend, HTML/React inspection and shared Rust
+native/WASM sampling for WSL prototype iteration. Production migration and native
+Windows release verification remain open. Resume from the
+[renderer handoff](../experiments/renderer-lab/HANDOFF.md),
+[findings](../experiments/renderer-lab/PRODUCT_VERDICT.md), and
+[committed screenshots](../experiments/renderer-lab/evidence/product-index.html).

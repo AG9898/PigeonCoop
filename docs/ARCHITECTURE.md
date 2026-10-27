@@ -817,7 +817,7 @@ Summary:
 - **Frontend component tests** (Vitest + React Testing Library) cover React components and hooks with mocked Tauri APIs
 - **E2E tests** (`tauri-driver` + WebdriverIO) cover full app flows against a real Tauri build
 
-Playwright is **not used** — it cannot drive Tauri's native webview. Use `tauri-driver` + WebdriverIO for E2E coverage.
+Production Tauri E2E uses tauri-driver + WebdriverIO because Playwright cannot drive its native webview. The isolated renderer lab also uses Playwright for headless browser coverage (section 16).
 
 ### Quality gates for the critical integration path
 
@@ -838,3 +838,16 @@ Deferred, but architecture should not block them:
 - framework adapters
 - persistent project memory
 - collaboration/cloud sync
+
+## 16. Accepted WSL visual prototype baseline (DEC-016)
+
+The isolated `experiments/renderer-lab/` baseline uses pinned PixiJS 8.22 with
+Canvas selected explicitly, HTML/React inspection and one Rust visual sampler
+compiled natively and to WASM. This is accepted for WSL prototype iteration;
+it does not replace the production desktop renderer or change execution ownership.
+PNG+JSON asset metadata and bulk scene sampling separate authoring, playback and
+drawing. Native Windows and physical platform verification remain open.
+
+The lab uses Playwright for headless browser captures. Native Tauri inspection
+uses tauri-driver/WebKitWebDriver on a private display; the existing production
+E2E strategy is unchanged. See DEC-016 and the lab handoff for results/limits.

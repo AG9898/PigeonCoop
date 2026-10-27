@@ -237,3 +237,12 @@ and mock review/retry/limit paths. Native Windows and Linux both require visual
 and integration checks. Verify new identities/stations, stale contact, scrubbed
 replay, reduced motion, missing-new-art text fallback, and terminal ASCII/narrow
 layouts. See [TESTING.md](TESTING.md).
+
+## 11. WSL prototype baseline (DEC-016)
+
+The accepted WSL experiment uses PixiJS 8.22's explicit Canvas backend with normal
+HTML/React controls and shared Rust native/WASM presentation sampling. Registered
+PNG+JSON clips retain durations, trim offsets and foot anchors. Active-pair focus
+and a selectable session list are the tested alternatives to a crowded scene.
+This does not accept final artwork, migrate the production UI or qualify native
+Windows/physical Linux behavior. Continue from the renderer lab handoff.

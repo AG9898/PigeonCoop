@@ -1,0 +1,201 @@
+{
+  "checks": [
+    {
+      "time": 0,
+      "canvas_packed_and_rust_pixel_parity": true
+    },
+    {
+      "time": 600,
+      "canvas_packed_and_rust_pixel_parity": true
+    },
+    {
+      "time": 1200,
+      "canvas_packed_and_rust_pixel_parity": true
+    },
+    {
+      "time": 3700,
+      "canvas_packed_and_rust_pixel_parity": true
+    },
+    {
+      "time": 4200,
+      "canvas_packed_and_rust_pixel_parity": true
+    },
+    {
+      "time": 5200,
+      "canvas_packed_and_rust_pixel_parity": true
+    }
+  ],
+  "captureInfo": {
+    "canvas-rust-packed": {
+      "origin": {
+        "x": 189,
+        "y": 193
+      },
+      "scale": 2,
+      "dpr": 1,
+      "scene": {
+        "time_ms": 3700,
+        "phase": "interact",
+        "status": "Running",
+        "coverage": "fixture captured",
+        "scenario": "normal",
+        "reduced_motion": false,
+        "actors": [
+          {
+            "id": "worker-a",
+            "frame": 5,
+            "variant": 0,
+            "facing": "right",
+            "action": "interact",
+            "x": 225,
+            "y": 139
+          },
+          {
+            "id": "worker-b",
+            "frame": 5,
+            "variant": 1,
+            "facing": "left",
+            "action": "receive",
+            "x": 253,
+            "y": 139
+          }
+        ]
+      }
+    },
+    "pixi-rust-packed": {
+      "origin": {
+        "x": 189,
+        "y": 193
+      },
+      "scale": 2,
+      "dpr": 1,
+      "scene": {
+        "time_ms": 3700,
+        "phase": "interact",
+        "status": "Running",
+        "coverage": "fixture captured",
+        "scenario": "normal",
+        "reduced_motion": false,
+        "actors": [
+          {
+            "id": "worker-a",
+            "frame": 5,
+            "variant": 0,
+            "facing": "right",
+            "action": "interact",
+            "x": 225,
+            "y": 139
+          },
+          {
+            "id": "worker-b",
+            "frame": 5,
+            "variant": 1,
+            "facing": "left",
+            "action": "receive",
+            "x": 253,
+            "y": 139
+          }
+        ]
+      }
+    }
+  },
+  "presentation_checks": {
+    "focus_preserves_100_records": true,
+    "list_selection": true,
+    "missing_evidence_not_invented": true
+  },
+  "canvas_rust_packed_budget": [
+    {
+      "count": 2,
+      "player": "sampler",
+      "samples": 120,
+      "frame_intervals_ms": {
+        "p50": 16.699999999254942,
+        "p95": 16.900000002235174,
+        "p99": 17.100000001490116,
+        "max": 17.599999997764826
+      },
+      "cpu_submit_ms": {
+        "p50": 0.4000000022351742,
+        "p95": 0.6999999992549419,
+        "p99": 0.9000000022351742,
+        "max": 1
+      },
+      "completion_probe": false,
+      "synchronous_render_ms": null,
+      "stalls_over_33ms": 0
+    },
+    {
+      "count": 20,
+      "player": "sampler",
+      "samples": 120,
+      "frame_intervals_ms": {
+        "p50": 16.699999999254942,
+        "p95": 16.900000002235174,
+        "p99": 17.5,
+        "max": 20.399999998509884
+      },
+      "cpu_submit_ms": {
+        "p50": 0.4000000022351742,
+        "p95": 0.6999999992549419,
+        "p99": 1,
+        "max": 1.3999999985098839
+      },
+      "completion_probe": false,
+      "synchronous_render_ms": null,
+      "stalls_over_33ms": 0
+    },
+    {
+      "count": 100,
+      "player": "sampler",
+      "samples": 120,
+      "frame_intervals_ms": {
+        "p50": 16.699999999254942,
+        "p95": 17.199999999254942,
+        "p99": 18.100000001490116,
+        "max": 22.599999997764826
+      },
+      "cpu_submit_ms": {
+        "p50": 0.8999999985098839,
+        "p95": 1.199999999254942,
+        "p99": 1.3999999985098839,
+        "max": 1.8999999985098839
+      },
+      "completion_probe": false,
+      "synchronous_render_ms": null,
+      "stalls_over_33ms": 0
+    }
+  ],
+  "renderers": [
+    {
+      "kind": "Canvas2D",
+      "dpr": 1,
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/156.0.0.0 Safari/537.36 Edg/156.0.0.0",
+      "pixi_loaded": false,
+      "webgl_required": false,
+      "core": "JS reference fixture",
+      "packed_atlas": false
+    },
+    {
+      "kind": "Canvas2D",
+      "dpr": 1,
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/156.0.0.0 Safari/537.36 Edg/156.0.0.0",
+      "pixi_loaded": false,
+      "webgl_required": false,
+      "core": "Rust/WASM",
+      "packed_atlas": true
+    },
+    {
+      "kind": "PixiJS",
+      "version": "8.22.0",
+      "gl_version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+      "vendor": "Google Inc. (NVIDIA)",
+      "renderer": "ANGLE (NVIDIA, NVIDIA GeForce RTX 3080 (0x00002216) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+      "dpr": 1,
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/156.0.0.0 Safari/537.36 Edg/156.0.0.0",
+      "core": "Rust/WASM",
+      "packed_atlas": true
+    }
+  ],
+  "scope": "Windows browser integration of compiled Rust sampler and actual editor-exported trimmed/full sheets; no native Windows Rust executable verification"
+}

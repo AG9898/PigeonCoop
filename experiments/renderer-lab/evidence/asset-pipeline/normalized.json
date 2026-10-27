@@ -1,0 +1,358 @@
+{
+  "full": {
+    "size": {
+      "w": 192,
+      "h": 48
+    },
+    "frames": [
+      {
+        "index": 0,
+        "source": {
+          "x": 0,
+          "y": 0,
+          "w": 32,
+          "h": 48
+        },
+        "logical_size": {
+          "w": 32,
+          "h": 48
+        },
+        "trim_offset": {
+          "x": 0,
+          "y": 0
+        },
+        "foot_anchor": {
+          "x": 16,
+          "y": 44
+        },
+        "duration_ms": 600,
+        "draw_offset": {
+          "x": -16,
+          "y": -44
+        }
+      },
+      {
+        "index": 1,
+        "source": {
+          "x": 32,
+          "y": 0,
+          "w": 32,
+          "h": 48
+        },
+        "logical_size": {
+          "w": 32,
+          "h": 48
+        },
+        "trim_offset": {
+          "x": 0,
+          "y": 0
+        },
+        "foot_anchor": {
+          "x": 16,
+          "y": 44
+        },
+        "duration_ms": 200,
+        "draw_offset": {
+          "x": -16,
+          "y": -44
+        }
+      },
+      {
+        "index": 2,
+        "source": {
+          "x": 64,
+          "y": 0,
+          "w": 32,
+          "h": 48
+        },
+        "logical_size": {
+          "w": 32,
+          "h": 48
+        },
+        "trim_offset": {
+          "x": 0,
+          "y": 0
+        },
+        "foot_anchor": {
+          "x": 16,
+          "y": 44
+        },
+        "duration_ms": 140,
+        "draw_offset": {
+          "x": -16,
+          "y": -44
+        }
+      },
+      {
+        "index": 3,
+        "source": {
+          "x": 96,
+          "y": 0,
+          "w": 32,
+          "h": 48
+        },
+        "logical_size": {
+          "w": 32,
+          "h": 48
+        },
+        "trim_offset": {
+          "x": 0,
+          "y": 0
+        },
+        "foot_anchor": {
+          "x": 16,
+          "y": 44
+        },
+        "duration_ms": 140,
+        "draw_offset": {
+          "x": -16,
+          "y": -44
+        }
+      },
+      {
+        "index": 4,
+        "source": {
+          "x": 128,
+          "y": 0,
+          "w": 32,
+          "h": 48
+        },
+        "logical_size": {
+          "w": 32,
+          "h": 48
+        },
+        "trim_offset": {
+          "x": 0,
+          "y": 0
+        },
+        "foot_anchor": {
+          "x": 16,
+          "y": 44
+        },
+        "duration_ms": 180,
+        "draw_offset": {
+          "x": -16,
+          "y": -44
+        }
+      },
+      {
+        "index": 5,
+        "source": {
+          "x": 160,
+          "y": 0,
+          "w": 32,
+          "h": 48
+        },
+        "logical_size": {
+          "w": 32,
+          "h": 48
+        },
+        "trim_offset": {
+          "x": 0,
+          "y": 0
+        },
+        "foot_anchor": {
+          "x": 16,
+          "y": 44
+        },
+        "duration_ms": 300,
+        "draw_offset": {
+          "x": -16,
+          "y": -44
+        }
+      }
+    ],
+    "clips": {
+      "idle": [
+        0,
+        1
+      ],
+      "walk": [
+        2,
+        3
+      ],
+      "handoff": [
+        4,
+        5
+      ]
+    }
+  },
+  "trimmed": {
+    "size": {
+      "w": 128,
+      "h": 128
+    },
+    "frames": [
+      {
+        "index": 0,
+        "source": {
+          "x": 54,
+          "y": 0,
+          "w": 25,
+          "h": 39
+        },
+        "logical_size": {
+          "w": 32,
+          "h": 48
+        },
+        "trim_offset": {
+          "x": 5,
+          "y": 5
+        },
+        "foot_anchor": {
+          "x": 16,
+          "y": 44
+        },
+        "duration_ms": 600,
+        "draw_offset": {
+          "x": -11,
+          "y": -39
+        }
+      },
+      {
+        "index": 1,
+        "source": {
+          "x": 79,
+          "y": 0,
+          "w": 25,
+          "h": 39
+        },
+        "logical_size": {
+          "w": 32,
+          "h": 48
+        },
+        "trim_offset": {
+          "x": 5,
+          "y": 5
+        },
+        "foot_anchor": {
+          "x": 16,
+          "y": 44
+        },
+        "duration_ms": 200,
+        "draw_offset": {
+          "x": -11,
+          "y": -39
+        }
+      },
+      {
+        "index": 2,
+        "source": {
+          "x": 0,
+          "y": 39,
+          "w": 25,
+          "h": 39
+        },
+        "logical_size": {
+          "w": 32,
+          "h": 48
+        },
+        "trim_offset": {
+          "x": 5,
+          "y": 5
+        },
+        "foot_anchor": {
+          "x": 16,
+          "y": 44
+        },
+        "duration_ms": 140,
+        "draw_offset": {
+          "x": -11,
+          "y": -39
+        }
+      },
+      {
+        "index": 3,
+        "source": {
+          "x": 25,
+          "y": 39,
+          "w": 25,
+          "h": 39
+        },
+        "logical_size": {
+          "w": 32,
+          "h": 48
+        },
+        "trim_offset": {
+          "x": 5,
+          "y": 5
+        },
+        "foot_anchor": {
+          "x": 16,
+          "y": 44
+        },
+        "duration_ms": 140,
+        "draw_offset": {
+          "x": -11,
+          "y": -39
+        }
+      },
+      {
+        "index": 4,
+        "source": {
+          "x": 0,
+          "y": 0,
+          "w": 27,
+          "h": 39
+        },
+        "logical_size": {
+          "w": 32,
+          "h": 48
+        },
+        "trim_offset": {
+          "x": 5,
+          "y": 5
+        },
+        "foot_anchor": {
+          "x": 16,
+          "y": 44
+        },
+        "duration_ms": 180,
+        "draw_offset": {
+          "x": -11,
+          "y": -39
+        }
+      },
+      {
+        "index": 5,
+        "source": {
+          "x": 27,
+          "y": 0,
+          "w": 27,
+          "h": 39
+        },
+        "logical_size": {
+          "w": 32,
+          "h": 48
+        },
+        "trim_offset": {
+          "x": 5,
+          "y": 5
+        },
+        "foot_anchor": {
+          "x": 16,
+          "y": 44
+        },
+        "duration_ms": 300,
+        "draw_offset": {
+          "x": -11,
+          "y": -39
+        }
+      }
+    ],
+    "clips": {
+      "idle": [
+        0,
+        1
+      ],
+      "walk": [
+        2,
+        3
+      ],
+      "handoff": [
+        4,
+        5
+      ]
+    }
+  }
+}

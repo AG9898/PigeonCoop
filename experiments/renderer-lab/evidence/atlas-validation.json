@@ -1,0 +1,106 @@
+{
+  "width": 192,
+  "height": 96,
+  "anchor": [
+    16,
+    44
+  ],
+  "bounds": [
+    {
+      "variant": 0,
+      "frame": 0,
+      "minX": 5,
+      "minY": 5,
+      "maxX": 29,
+      "maxY": 43
+    },
+    {
+      "variant": 0,
+      "frame": 1,
+      "minX": 5,
+      "minY": 5,
+      "maxX": 29,
+      "maxY": 43
+    },
+    {
+      "variant": 0,
+      "frame": 2,
+      "minX": 5,
+      "minY": 5,
+      "maxX": 29,
+      "maxY": 43
+    },
+    {
+      "variant": 0,
+      "frame": 3,
+      "minX": 5,
+      "minY": 5,
+      "maxX": 29,
+      "maxY": 43
+    },
+    {
+      "variant": 0,
+      "frame": 4,
+      "minX": 5,
+      "minY": 5,
+      "maxX": 31,
+      "maxY": 43
+    },
+    {
+      "variant": 0,
+      "frame": 5,
+      "minX": 5,
+      "minY": 5,
+      "maxX": 31,
+      "maxY": 43
+    },
+    {
+      "variant": 1,
+      "frame": 0,
+      "minX": 5,
+      "minY": 5,
+      "maxX": 29,
+      "maxY": 43
+    },
+    {
+      "variant": 1,
+      "frame": 1,
+      "minX": 5,
+      "minY": 5,
+      "maxX": 29,
+      "maxY": 43
+    },
+    {
+      "variant": 1,
+      "frame": 2,
+      "minX": 5,
+      "minY": 5,
+      "maxX": 29,
+      "maxY": 43
+    },
+    {
+      "variant": 1,
+      "frame": 3,
+      "minX": 5,
+      "minY": 5,
+      "maxX": 29,
+      "maxY": 43
+    },
+    {
+      "variant": 1,
+      "frame": 4,
+      "minX": 5,
+      "minY": 5,
+      "maxX": 31,
+      "maxY": 43
+    },
+    {
+      "variant": 1,
+      "frame": 5,
+      "minX": 5,
+      "minY": 5,
+      "maxX": 31,
+      "maxY": 43
+    }
+  ]
+}

@@ -790,6 +790,58 @@ workflow state machines. Tauri/webview drawing versus a Rust-rendered surface is
 a separate integration choice. Replay seeks, interruption and reduced motion
 reconstruct/settle the scene without delaying work or playing old walking queues.
 
+## DEC-016 — WSL visual prototype baseline: Pixi Canvas and shared Rust sampling
+
+**Date:** 2026-10-27
+
+**Status:** accepted for the WSL prototype and its next iteration. Production
+adoption, physical Linux hardware qualification and native Windows release
+verification remain open. This does not migrate the running application.
+
+**Context:** DEC-015 called for a bounded movement/sprite-sheet experiment before
+selecting playback and drawing integration. The renderer lab compared direct
+Canvas, PixiJS WebGL/Canvas, and native Macroquad using synthetic activity, a fresh
+registered atlas and shared scene geometry. It exercised actual editor exports,
+Rust/native-WASM sampling, private-display WebKit/Tauri, CLI attachment and replay.
+The user accepted pinning the findings for WSL while deferring further work.
+
+**Decision:** Use pinned PixiJS 8.22 with the Canvas backend selected explicitly
+for the WSL scene prototype. Keep inspection controls in HTML/React and keep the
+deterministic visual sampler in Rust, compiled natively and to WASM for webview
+sampling. Use renderer-neutral PNG+JSON clips with explicit durations, logical
+frame bounds, trim offsets, foot anchors and interaction metadata. Viewers remain
+optional observers; animation cannot own execution state or delay outcomes.
+
+The prototype's active-pair and selectable-session-list presentations retain all
+fixture records while avoiding the unreadable 100-sprite crowd. Keep the direct
+Canvas adapter and native Macroquad renderer as experimental references.
+
+**Alternatives considered:** Direct Canvas works and has a smaller payload and
+lower measured submission cost, but Pixi's scene/texture facilities are preferred
+for the intended animated workspace. Pixi WebGL performs well in Windows Edge,
+but its tested WebKit/software path corrupts sprites, including 8.22; feature
+availability alone is insufficient to select it. Native Macroquad renders
+correctly on Linux but introduces separate native inspector/embedding work.
+Bevy was not benchmarked and is unnecessary for the bounded scene requirements.
+
+**Tradeoffs:** Pixi adds an optional viewer dependency and measured 1.4–2.9 ms
+p95 submission cost for the tested 2/20/100-actor workload. Shared Rust/WASM adds
+a build boundary but avoids maintaining separate presentation samplers or sending
+per-actor frame IPC. WSL/Xvfb software captures are reproducible compatibility
+evidence, not physical Linux hardware/DPI/input or native Windows guarantees.
+The WebKit WebGL corruption's upstream cause is still unresolved. Generated
+concept art still needs registered directional/paired production animation.
+
+**Follow-up implications:** Resume from
+[the renderer handoff](../experiments/renderer-lab/HANDOFF.md),
+[full findings](../experiments/renderer-lab/PRODUCT_VERDICT.md), and
+[saved gallery](../experiments/renderer-lab/evidence/product-index.html).
+Keep the package version/backend explicit, version the production asset/WASM
+boundary before adoption, complete directional art, and verify real-platform
+packaging/input/graphics separately. Native Windows helpers still return OS
+error 5 on this machine. No security controls were changed. Existing production
+identifiers, workflow/event schemas and the canonical board are unchanged.
+
 ## Open implementation details
 
 The accepted product direction is settled. Exact wire names, versioned payloads,

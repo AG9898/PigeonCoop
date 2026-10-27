@@ -643,3 +643,61 @@ suite. Screenshots are inspection artifacts and do not replace behavioral tests.
 - **Cloud/sync behavior** — out of scope for v1
 - **Automated pixel-diff regression** — manual headed screenshot inspection is the
   current visual gate
+
+## Isolated Windows renderer study (2026-10-27)
+
+`experiments/renderer-lab/` is a separate Cargo/npm experiment, not a production
+workspace member or a substitute for the Rust/frontend/E2E suites above.
+From that directory, `npm.cmd ci`, `node scripts/author-atlas.mjs`,
+`node --test scripts/fixture.test.mjs`, then `node scripts/capture.mjs` run the
+browser study. Capture always uses Playwright with `headless: true` and installed
+Edge, a loopback-only static server, and no visible fallback. Run
+`node scripts/review.mjs` afterward to build the local screenshot gallery/review.
+
+The fixture tests cover path obstruction, explicit recorded outcomes, stale
+contact, interruption, reduced motion, seek reconstruction and terminal evidence.
+Browser checks cover actual controls/selection, 12 registered atlas cells, six
+sampling timestamps with exact canvas parity, static stale/reduced-motion poses,
+three desktop viewports and emulated DPR 1.25/1.5. The latter is not physical
+Windows DPI/input verification. Timing JSON states the browser/GPU environment,
+warm-up/sample counts and main-thread/heap measurement limits.
+
+Portable MSVC/SDK installation succeeded under the user account, but native
+Cargo helper execution returns OS error 5. Do not treat the Rust tests, Macroquad
+window or Tauri/WebView2 path as passing. No security policy was changed. See the
+experiment README for the native commands to retry after execution permission is
+resolved through the machine's approved support path. Keep generated screenshot
+and measurement artifacts for review without inferring production support.
+
+### Expanded renderer/asset/CLI experiment
+
+The first Windows-only study above is historical. The current commands and
+matrix are in `experiments/renderer-lab/README.md` and `PRODUCT_VERDICT.md`.
+The crate now also tests native Linux Macroquad and a shared Rust/WASM sampler.
+Actual WebKitGTK and the existing Linux Tauri shell run under private Xvfb with
+isolated application data; no visible desktop fallback is allowed.
+
+Run the experiment's four Node test files (`fixture`, `atlas-contract`, `wasm`,
+`session`) on Windows/Linux, and `run-linux.sh core` for the nine Rust cases.
+`integration-proof.mjs` verifies six exact packed/unpacked canvas comparisons and
+focus/list presentation. `cli-viewer-proof.mjs` drives a real headless browser
+from a bounded CLI fixture service through detach/reconnect/explicit completion.
+`image-conformance.mjs` records opaque atlas-pixel correctness, including the
+known failing Pixi/WebKit/software configuration; its expected-failure diagnostic
+must not become a product release pass. `product-review.mjs` writes the verdict
+and curated gallery from retained evidence.
+
+The shared WASM module and registered PNG exports are small retained runtime test
+assets. Artist-editable `.aseprite` files export through LibreSprite batch mode;
+array/hash JSON, trim offsets, unequal durations and invalid metadata are checked.
+Native Windows helpers still fail with OS error 5. Linux WSL/software checks are
+separate from hardware/physical DPI/input and production installer qualification.
+No real assistant, repository command or production recorder protocol is invoked.
+
+`pixi-canvas-proof.mjs` exercises the pinned 8.22 Canvas backend, real packed
+exports, six exact packed/unpacked frame comparisons and repeated timing cases.
+`cli-viewer-proof.mjs --pixi-canvas` and `tauri-proof.mjs --pixi-canvas` cover the
+recommended library/backend path. `image-conformance.mjs` distinguishes passing
+Pixi Canvas configurations from the observed failing Pixi WebGL/WebKit setup.
+Prefer versioned package/API inspection over the stale Canvas-coming-soon text
+in the general Pixi web guide; the result changes the package recommendation.
