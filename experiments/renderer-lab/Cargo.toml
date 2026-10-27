@@ -1,0 +1,28 @@
+[package]
+name = "pigeoncoop-renderer-lab"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[lib]
+crate-type = ["rlib", "cdylib"]
+
+# Deliberately isolated from the production execution workspace.
+[workspace]
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+macroquad = { version = "=0.4.16", optional = true, default-features = false }
+
+[features]
+native = ["dep:macroquad"]
+
+[[bin]]
+name = "export-fixture"
+path = "src/export.rs"
+
+[[bin]]
+name = "native-scene"
+path = "src/native.rs"
+required-features = ["native"]

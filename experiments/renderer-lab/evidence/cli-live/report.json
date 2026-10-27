@@ -1,0 +1,19 @@
+{
+  "scope": "Windows development CLI fixture service -> headless Edge -> compiled Rust/WASM + packed PNG atlas; not production CLI",
+  "initial": {
+    "last_seq": 4,
+    "following": true,
+    "status": "Running"
+  },
+  "backfilled": {
+    "last_seq": 8,
+    "following": true,
+    "status": "Running"
+  },
+  "explicit_terminal_status": "Succeeded",
+  "owner_survived_viewer_close": true,
+  "unicode_space_path": true,
+  "first_viewer_process_ready_ms": 584.7579000000001,
+  "reopened_viewer_process_ready_ms": 1423.3028999999997,
+  "opens_visible_window": false
+}

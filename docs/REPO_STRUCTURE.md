@@ -1,5 +1,49 @@
 # Repository Structure
 
+## Accepted target boundaries (DEC-014, 2026-10-27)
+
+The actual tree below is the existing desktop-first implementation, not the new
+package layout. CLI, MCP, terminal, and skill entry points are planned. Keep
+current binary/package names until a deliberate rename; do not create empty
+crates merely to match this document.
+
+Target responsibilities:
+
+- workflow-model/event-model: typed versioned definitions, reports, evidence,
+  owner/cycle/control metadata and compatibility contracts;
+- core/application services: transport-independent validation, recording,
+  persistence/query access, projections, and replay; extract Tauri coordination
+  without creating a second real-work scheduler;
+- persistence: shared durable recording and legacy-compatible storage;
+- runtime-adapters: legacy executors and future explicit report/capture adapters;
+  keep execution ownership unambiguous during migration;
+- simulation: mock-only routing/review/retry/limit driver, no real executor access;
+- CLI/MCP surfaces: shared application operations with no desktop dependency;
+- skill/template package: assistant-owned general workflows, canonical bounded
+  project pipeline, and repository-configurable contracts;
+- desktop and terminal workspaces: optional clients over the same project record.
+- visual runtime: planned Rust actor positions/facing, presentation sequences and
+  sprite-sheet sampling; separate from workflow state and drawing-backend choice.
+  Module/crate locations follow a walking-and-interaction prototype.
+
+Exact new crate/directory names are implementation details. The shipped workflow
+skill must not be confused with generated repo-local development skills under
+.agents/.claude/.codex; those copies still sync from ag.dev/skills-core.
+
+DEC-015 requires a new pixel-character workspace/asset family. Current command-
+deck RPG art, public sprites/backdrops, and procedural city/pigeon renderers in
+the actual tree are retired design inputs. They remain only for the legacy app;
+remove deployed art/imports during replacement rather than repurpose them as
+new-UI fallbacks. New asset locations are established by the design task.
+
+New planning docs: INTEGRATION_CONTRACT.md defines the target responsibilities;
+implementation-tasks.draft.json holds proposed task records outside the active
+workboard. The draft IDs need collision reconciliation before board insertion.
+
+VISUAL_PROTOTYPE_PLAN.md proposes the V2 asset pipeline and first scene test;
+assets/concepts/ retains the preferred imagegen draft and prompts as design
+references only, not deployed sprite sheets. No runtime imports these concepts.
+
 ## Actual layout
 
 ```text
@@ -18,6 +62,8 @@ docs/
   DECISIONS.md
   DESIGN_SPEC.md
   EVENT_SCHEMA.md
+  INTEGRATION_CONTRACT.md
+  implementation-tasks.draft.json # Proposed tasks only; not the active queue
   PRD.md
   README.md
   REPO_STRUCTURE.md
@@ -165,14 +211,16 @@ Boundary layer for CLI-backed execution and future adapters.
 SQLite access, repositories, and migration-related concerns.
 
 ### `crates/simulation`
-Reserved for future modeling of latency/cost/risk without polluting core execution early.
+Currently a placeholder. DEC-014 changes its target to isolated mock routing,
+review, retry, and bounded-cycle simulation. Predictive latency/cost/risk modeling
+is not a v1 requirement. No simulator is implemented yet.
 
 ### `tests/e2e`
 End-to-end tests using `tauri-driver` + WebdriverIO against a real compiled Tauri build. See [`docs/TESTING.md`](TESTING.md) for setup and usage.
 
 ---
 
-## Early implementation order
+## Historical early implementation order
 
 Recommended order:
 1. `workflow-model`
@@ -182,4 +230,20 @@ Recommended order:
 5. `runtime-adapters`
 6. `apps/desktop`
 
-The UI will move faster once the engine and event contracts stabilize.
+For new work use PRD.md migration order and DEC-014. This historical list is not
+the implementation sequence for assistant-owned recording and optional clients.
+
+### Isolated renderer experiment
+
+`experiments/renderer-lab/` contains the Windows headless PixiJS visual study,
+editable SVG/PNG test atlas, draft Rust fixture sampler, browser tests/capture
+scripts, and local evidence gallery. It has its own Cargo workspace and npm lock
+file; production clients/crates do not import it. See its README/REVIEW for the
+native execution blocker and remaining Macroquad/Tauri comparison gates.
+
+The renderer lab now also contains `src/native.rs` (Macroquad), `src/wasm.rs`
+(bulk browser sampling), editable test `.aseprite` files, normalized full/trimmed
+atlas exports, and a small compiled WASM artifact. `web/draw-adapters.mjs` shares
+scene semantics across Canvas/Pixi; `scripts/` contains asset, native/webview,
+CLI lifecycle and screenshot conformance probes. `PRODUCT_VERDICT.md` summarizes
+results; generated screenshots/raw measurements remain local under `evidence/`.

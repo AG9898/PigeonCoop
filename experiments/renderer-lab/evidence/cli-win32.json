@@ -1,0 +1,22 @@
+{
+  "scope": "Development Node fixture harness, not shipped Rust CLI; no browser launch or real worker",
+  "observations": [
+    {
+      "platform": "win32",
+      "first_seq": 5,
+      "reopened_seq": 10,
+      "first_process_ready_ms": 497.1718000000001,
+      "first_view_ready_ms": 13.9722,
+      "reopened_process_ready_ms": 436.73710000000005,
+      "reopened_ready_ms": 13.549399999999999,
+      "unicode_space_path": true,
+      "unauthorized_rejected": true,
+      "foreign_origin_rejected": true,
+      "owner_continued": true
+    },
+    {
+      "owner_loss_preserved_status": "Running",
+      "headless_inspection": true
+    }
+  ]
+}

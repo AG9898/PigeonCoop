@@ -1,5 +1,130 @@
 # Architecture
 
+## Accepted target: assistant-owned execution (DEC-014, 2026-10-27)
+
+PigeonCoop is a skill + CLI + MCP toolset backed by Rust recording, validation,
+persistence, replay, and mock simulation. Desktop and terminal workspaces are
+optional clients. Native Windows and Linux are both required v1 execution targets.
+This target supersedes the desktop-owned execution topology below; that topology
+and its implementation notes remain as migration context, not the new contract.
+
+```text
+User <-> Existing assistant session + PigeonCoop skill
+                    | owns real work: plans, board edits, bounded task workers
+                    | reports activity/evidence; consumes control requests
+                CLI / MCP
+                    |
+       Shared Rust recording/application boundary
+       validation + durable event log + project/evidence queries
+                    |
+           SQLite + referenced artifacts
+                    |
+       optional desktop / optional terminal workspace
+
+       Mock-only Rust driver -> isolated simulation records
+```
+
+### Responsibilities and truth
+
+- The assistant session owns real dispatch, worker/process lifetime, deterministic
+  routing decisions, retries, task bounds, permissions, and outcome reporting.
+- Rust validates submitted reports and maintains the authoritative *recorded
+  projection*. A valid report is not independent proof of its content.
+- Clients render accepted records plus explicit capture/source/coverage metadata.
+  They never infer execution truth from terminal text, timers, or silence.
+- Real runs identify an owner and workflow revision. Viewers and the recorder
+  cannot silently adopt a run or continue real work after its owner exits.
+- Human review/cancellation actions are correlated requests to the owner, with
+  separate acknowledgment and observed-outcome reporting. Missing owners leave
+  requests pending/unavailable; Rust does not launch substitute agents.
+- Rust may execute mock transitions in simulation, with no real executor path.
+
+The full target contract is [INTEGRATION_CONTRACT.md](INTEGRATION_CONTRACT.md).
+Exact wire fields and new event payloads require a versioned implementation
+contract; no JSON schema, SQL migration, or lifecycle enum changes here.
+
+### Shared application boundary and delivery
+
+Extract domain services from Tauri command handlers and TauriEventLog rather than
+copying them into independent CLI/MCP runtimes. Acknowledged reports are durable,
+delivery retries are idempotent, and stable per-run append order drives replay.
+Reconnect backfills then follows from a durable position. Multi-process clients
+must share write coordination; local recorder/IPC details are an implementation
+choice, not an implicit autonomous orchestration service.
+
+Keep provenance and recording coverage distinct from RunStatus/NodeStatus.
+Lost contact cannot fabricate a terminal status. Legacy traces retain their
+existing semantics and unspecified provenance; migration must not invent events.
+
+### General workflows and the first template
+
+Keep WorkflowDefinition separate from RunInstance, RunEvent, MemoryState, and
+NodeSnapshot. Reuse typed node vocabulary, validators, reducers, and state
+machines. Do not invoke the old real-work scheduler as a second owner of an
+assistant-owned run. Keep the legacy execution path isolated during migration.
+
+The first built-in template is project-plan -> edit-workboard ->
+ralphloop(start-task, explicit tasks/iterations bound). One fresh worker handles
+at most one dependency-ready task per cycle. The assistant halts on the bound,
+failure, blocking, invalid/missing summaries, or no task progress. Cycle/task
+identity is distinct from node retry attempts. These outer task cycles do not
+require graph back-edges; the existing individual graph remains a DAG (DEC-002).
+
+Project inspection links document/plan revisions, board snapshots/dependencies,
+task cycles, runs, artifact references, file-change evidence, and check results.
+The skill owns board edits; Rust indexes evidence without becoming a second board
+writer. Missing captures and ambiguous change attribution remain visible.
+
+### Optional viewers and mock simulation
+
+Desktop uses Tauri + React/TypeScript. The terminal workspace uses Rust with a
+toolkit chosen during implementation. Both consume the same stored project/run
+data and request actions through the common boundary. DEC-015 calls for a fresh
+pixel-character desktop workspace and terminal cell/ASCII equivalents, retiring
+current RPG and older city/pigeon art. Characters/stations present recorded
+session/task context, not new node types or execution logic. Graph editing is
+secondary; a permanent canvas is not required.
+
+A separate Rust visual runtime is planned for actor positions/facing, approach/
+interaction sequences and sprite-sheet clip/frame sampling. It consumes recorded
+projections and owns presentation only; it never dispatches agents or changes
+RunStatus/NodeStatus. Default edges become an agent visiting another and playing
+an interaction, with stations as optional context. Stable scene layout and clip
+metadata support replay reconstruction and reduced-motion fallback.
+
+Prototype hand-built playback versus a reusable animation library before choosing
+the implementation. Keep drawing behind a separate boundary: the current Tauri
+webview can draw sampled state, while a Rust-rendered surface needs an explicit
+integration decision. No full game engine or renderer rewrite is implied.
+Terminal clients may use cell/text visit phases instead of raster frames.
+Playback never delays actual workflow events.
+
+Simulation uses explicit mock outcomes for routes, reviews, retries, and limits.
+It may write isolated application-owned simulation data, but cannot invoke real
+agents, shells, network tools, or write to the selected repository. Replay only
+reads recorded history. Modes must be explicit and separate in storage and UI.
+
+### Platforms, packaging, and migration
+
+The headless skill/CLI/MCP path cannot depend on Tauri, WebKit, or a display.
+Verify native Windows and Linux shell selection/quoting, argv, filesystem paths,
+PTY support, process trees/cancellation, and evidence capture. Current sh -c
+adapters are migration work, not portable execution support. Windows-to-WSL
+execution is deferred; macOS support is not a v1 release gate.
+
+Existing crates and binary names remain. Target delivery starts with recording
+contracts and schema migration, shared domain services, then CLI/skill and MCP
+integration, native OS verification, mock simulation and optional viewers. Reuse
+the current core; do not rewrite the renderer in Rust as part of this shift.
+
+## Existing desktop baseline — migration reference
+
+The numbered sections below describe the pre-DEC-014 design/implementation.
+Desktop-owned orchestration, mandatory builder/UI layout, and future-only CLI or
+simulation language are superseded by the target above. Current APIs remain
+supported until explicit migration; their presence does not make them suitable
+for assistant-owned runs.
+
 ## 1. System overview
 
 Agent Arcade is a local-first desktop system with four major layers:
@@ -692,7 +817,7 @@ Summary:
 - **Frontend component tests** (Vitest + React Testing Library) cover React components and hooks with mocked Tauri APIs
 - **E2E tests** (`tauri-driver` + WebdriverIO) cover full app flows against a real Tauri build
 
-Playwright is **not used** — it cannot drive Tauri's native webview. Use `tauri-driver` + WebdriverIO for E2E coverage.
+Production Tauri E2E uses tauri-driver + WebdriverIO because Playwright cannot drive its native webview. The isolated renderer lab also uses Playwright for headless browser coverage (section 16).
 
 ### Quality gates for the critical integration path
 
@@ -713,3 +838,16 @@ Deferred, but architecture should not block them:
 - framework adapters
 - persistent project memory
 - collaboration/cloud sync
+
+## 16. Accepted WSL visual prototype baseline (DEC-016)
+
+The isolated `experiments/renderer-lab/` baseline uses pinned PixiJS 8.22 with
+Canvas selected explicitly, HTML/React inspection and one Rust visual sampler
+compiled natively and to WASM. This is accepted for WSL prototype iteration;
+it does not replace the production desktop renderer or change execution ownership.
+PNG+JSON asset metadata and bulk scene sampling separate authoring, playback and
+drawing. Native Windows and physical platform verification remain open.
+
+The lab uses Playwright for headless browser captures. Native Tauri inspection
+uses tauri-driver/WebKitWebDriver on a private display; the existing production
+E2E strategy is unchanged. See DEC-016 and the lab handoff for results/limits.

@@ -1,5 +1,21 @@
 # Tauri IPC Contract
 
+## Scope after DEC-014 (2026-10-27)
+
+The commands/events below describe the existing desktop execution path. They
+remain its contract until migrated; they are not the future CLI/MCP protocol.
+In the accepted target, the assistant owns real execution and Tauri is an
+optional recording/inspection client. In particular, current start_run,
+cancel_run, PTY input, and node-completion handlers must not be exposed unchanged
+as assistant-run orchestration tools. Target control actions request an owner
+response; a request is not an observed execution outcome.
+
+Extract shared recording/query services rather than call Tauri handlers from
+headless clients. Specify future command/tool names, request acknowledgment,
+source/coverage data, and migrations before changing this wire contract.
+No commands or events are added or removed in this documentation pass.
+See [INTEGRATION_CONTRACT.md](INTEGRATION_CONTRACT.md).
+
 This document is the **authoritative specification** for every `invoke()` command and `listen()` event crossing the Tauri bridge. Any deviation between a Rust implementation and this contract is a bug.
 
 **Blocks:** TAURI-002, TAURI-003, TAURI-004 must implement against this contract. No undocumented commands or events are permitted.

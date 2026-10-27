@@ -1,0 +1,437 @@
+{
+  "notice": "Planning artifact only; not docs/workboard.json. IDs are provisional and unreserved. Use edit-workboard to reconcile collisions, overlap and dependencies before insertion. No active queue/status changes are authorized by this file.",
+  "basis": "DEC-014 and DEC-015, accepted 2026-10-27",
+  "tasks": [
+    {
+      "id": "EVENT-900",
+      "group_id": "EVENT",
+      "title": "Define versioned assistant report and evidence contracts",
+      "description": "Specify and implement versioned reporting types and schema/migration rules for owner/source identity, capture coverage, evidence, task cycles, mode and control correlation. Preserve legacy workflow/event records without invented provenance; do not turn disconnect into an inferred lifecycle outcome.",
+      "acceptance_criteria": [
+        "Rust types, wire schemas, examples and migration behavior agree for owner/source/coverage/cycle/control data.",
+        "Duplicate report identity is defined; conflicting content is rejected and old traces remain readable.",
+        "Real, simulation and replay semantics and request/acknowledgment/outcome are explicit."
+      ],
+      "depends_on": [],
+      "files": [
+        "crates/workflow-model/",
+        "crates/event-model/",
+        "schemas/",
+        "crates/persistence/migrations/"
+      ],
+      "docs": [
+        "docs/INTEGRATION_CONTRACT.md",
+        "docs/EVENT_SCHEMA.md",
+        "docs/DECISIONS.md"
+      ],
+      "estimate": "L",
+      "status": "todo",
+      "priority": "high",
+      "type": "implementation",
+      "summary": "Define versioned assistant report and evidence contracts",
+      "blocked_by": [],
+      "notes": [
+        "Draft only: reconcile IDs/dependencies and overlapping legacy work before inserting into the canonical board.",
+        "Paths for new package/client surfaces are planned; confirm concrete locations during implementation."
+      ],
+      "commands": [
+        "cargo test --workspace --exclude agent-arcade"
+      ]
+    },
+    {
+      "id": "FOUND-900",
+      "group_id": "FOUND",
+      "title": "Extract shared recording and inspection services",
+      "description": "Extract transport-independent report validation, durable append, evidence/project queries and replay projection from Tauri coordination. Coordinate concurrent clients without adopting real execution ownership; keep legacy desktop execution isolated.",
+      "acceptance_criteria": [
+        "CLI/MCP/client callers can use services without Tauri or display dependencies.",
+        "Acknowledged reports are durable and idempotent with stable per-run order; rejected reports do not partially mutate projections.",
+        "Owner loss preserves recorded state with coverage gaps; service restart never re-dispatches workers."
+      ],
+      "depends_on": [
+        "EVENT-900"
+      ],
+      "files": [
+        "crates/core-engine/",
+        "crates/persistence/",
+        "apps/desktop/src-tauri/src/bridge/",
+        "apps/desktop/src-tauri/src/commands/"
+      ],
+      "docs": [
+        "docs/ARCHITECTURE.md",
+        "docs/INTEGRATION_CONTRACT.md",
+        "docs/REPO_STRUCTURE.md"
+      ],
+      "estimate": "L",
+      "status": "todo",
+      "priority": "high",
+      "type": "implementation",
+      "summary": "Extract shared recording and inspection services",
+      "blocked_by": [],
+      "notes": [
+        "Draft only: reconcile IDs/dependencies and overlapping legacy work before inserting into the canonical board.",
+        "Paths for new package/client surfaces are planned; confirm concrete locations during implementation."
+      ],
+      "commands": [
+        "cargo test --workspace --exclude agent-arcade"
+      ]
+    },
+    {
+      "id": "FOUND-901",
+      "group_id": "FOUND",
+      "title": "Add headless CLI recording and query operations",
+      "description": "Add a native Rust CLI over the shared services for workflow validation, owner-associated recording, report ingestion, history/evidence queries and owner control requests. Define concrete command names and machine-output/error contracts in the same change.",
+      "acceptance_criteria": [
+        "Recording and query work under redirection without a TTY/display or Tauri/WebKit dependency.",
+        "Machine output is parseable with separate diagnostics and nonzero errors.",
+        "Reconnect/backfill uses stable cursors; control requests do not claim completed execution or spawn replacement agents."
+      ],
+      "depends_on": [
+        "FOUND-900"
+      ],
+      "files": [
+        "Cargo.toml",
+        "crates/"
+      ],
+      "docs": [
+        "docs/INTEGRATION_CONTRACT.md",
+        "docs/REPO_STRUCTURE.md",
+        "docs/TESTING.md"
+      ],
+      "estimate": "L",
+      "status": "todo",
+      "priority": "high",
+      "type": "implementation",
+      "summary": "Add headless CLI recording and query operations",
+      "blocked_by": [],
+      "notes": [
+        "Draft only: reconcile IDs/dependencies and overlapping legacy work before inserting into the canonical board.",
+        "Paths for new package/client surfaces are planned; confirm concrete locations during implementation."
+      ],
+      "commands": [
+        "cargo test --workspace --exclude agent-arcade"
+      ]
+    },
+    {
+      "id": "ADAPT-900",
+      "group_id": "ADAPT",
+      "title": "Package the canonical assistant skill and capture integration",
+      "description": "Ship the general-workflow skill and built-in project-plan -> edit-workboard -> bounded ralphloop(start-task) template. Define supported harness capture capabilities, structured report/evidence collection and native Windows/Linux behavior. Configure repository board contracts rather than hardcoding this project's shape; do not edit generated development-skill copies.",
+      "acceptance_criteria": [
+        "Accepted planning direction precedes board writes; each fresh worker handles at most one dependency-ready task.",
+        "Explicit task/iteration bound is checked before dispatch; failure, blocking, missing/invalid summaries or no progress halt the loop.",
+        "Native Windows/Linux capture fixtures cover argv, shell/path handling, baseline change attribution and check evidence; unavailable captures stay unknown.",
+        "Assistant retains worker/process/permission ownership; closing recorder/viewers never becomes an autonomous dispatch path."
+      ],
+      "depends_on": [
+        "FOUND-901"
+      ],
+      "files": [
+        "skills/",
+        "crates/runtime-adapters/",
+        "examples/"
+      ],
+      "docs": [
+        "docs/PRD.md",
+        "docs/INTEGRATION_CONTRACT.md",
+        "docs/TESTING.md",
+        "docs/REPO_STRUCTURE.md"
+      ],
+      "estimate": "L",
+      "status": "todo",
+      "priority": "high",
+      "type": "implementation",
+      "summary": "Package the canonical assistant skill and capture integration",
+      "blocked_by": [],
+      "notes": [
+        "Draft only: reconcile IDs/dependencies and overlapping legacy work before inserting into the canonical board.",
+        "Paths for new package/client surfaces are planned; confirm concrete locations during implementation."
+      ],
+      "commands": [
+        "cargo test --workspace --exclude agent-arcade"
+      ]
+    },
+    {
+      "id": "FOUND-902",
+      "group_id": "FOUND",
+      "title": "Expose the shared recording contract through MCP",
+      "description": "Add an MCP entry point using the same domain services and recording identities as CLI. Document concrete tool/input/output contracts and connection lifecycle without adapting desktop start_run handlers into orchestration tools.",
+      "acceptance_criteria": [
+        "MCP stdio stays protocol-clean; CLI and MCP fixtures produce identical recorded projections.",
+        "Connection loss/reconnect neither adopts ownership nor duplicates accepted reports.",
+        "Tool actions distinguish control requests, acknowledgments and observed outcomes; no automatic human approval."
+      ],
+      "depends_on": [
+        "FOUND-901"
+      ],
+      "files": [
+        "Cargo.toml",
+        "crates/"
+      ],
+      "docs": [
+        "docs/INTEGRATION_CONTRACT.md",
+        "docs/TESTING.md",
+        "docs/REPO_STRUCTURE.md"
+      ],
+      "estimate": "M",
+      "status": "todo",
+      "priority": "high",
+      "type": "implementation",
+      "summary": "Expose the shared recording contract through MCP",
+      "blocked_by": [],
+      "notes": [
+        "Draft only: reconcile IDs/dependencies and overlapping legacy work before inserting into the canonical board.",
+        "Paths for new package/client surfaces are planned; confirm concrete locations during implementation."
+      ],
+      "commands": [
+        "cargo test --workspace --exclude agent-arcade"
+      ]
+    },
+    {
+      "id": "ENGINE-900",
+      "group_id": "ENGINE",
+      "title": "Implement isolated mock workflow simulation",
+      "description": "Use shared validation and projection semantics with a mock-only driver for routing, review gates, retries and task bounds. Keep simulation storage/mode separate from real records and provide inspection through shared services.",
+      "acceptance_criteria": [
+        "Deterministic success/failure/review/retry/limit fixtures replay identically.",
+        "Tests fail any real agent/shell/network executor invocation and prove the selected repository is unchanged.",
+        "Mock decisions/results are explicitly simulated and never become real approvals or predictions."
+      ],
+      "depends_on": [
+        "FOUND-900"
+      ],
+      "files": [
+        "crates/simulation/",
+        "crates/core-engine/"
+      ],
+      "docs": [
+        "docs/ARCHITECTURE.md",
+        "docs/INTEGRATION_CONTRACT.md",
+        "docs/TESTING.md"
+      ],
+      "estimate": "M",
+      "status": "todo",
+      "priority": "high",
+      "type": "implementation",
+      "summary": "Implement isolated mock workflow simulation",
+      "blocked_by": [],
+      "notes": [
+        "Draft only: reconcile IDs/dependencies and overlapping legacy work before inserting into the canonical board.",
+        "Paths for new package/client surfaces are planned; confirm concrete locations during implementation."
+      ],
+      "commands": [
+        "cargo test --workspace --exclude agent-arcade"
+      ]
+    },
+    {
+      "id": "UX-900",
+      "group_id": "UX",
+      "title": "Design fresh desktop and terminal pixel-character workspaces",
+      "description": "Produce paired desktop and terminal design studies for a new pixel-character workspace, including session characters, task/phase stations, dependency/routing views and selected evidence. Define layout, character identity, pixel art rules, typography, state/mode labels, static/text fallbacks and fresh asset locations without reusing current RPG or older city/pigeon art. Default links are expressed by one character walking to another and playing an interaction; shared stations/props are optional. Specify clip poses and foot/facing anchors for that sequence.",
+      "acceptance_criteria": [
+        "Reviewable desktop and terminal studies show the same project/session/task identity and evidence across different layouts.",
+        "Desktop composition is newly designed; current RPG/city/pigeon art is not reused or listed as fallback material.",
+        "Running, review, failure, stale contact, replay, simulation, reduced motion, missing art and ASCII-only terminal cases are shown.",
+        "Readable evidence/controls and compact 80x24 terminal behavior are specified; characters/stations do not introduce new execution logic."
+      ],
+      "depends_on": [],
+      "files": [
+        "docs/DESIGN_SPEC.md",
+        "docs/VISUAL_IDENTITY.md",
+        "assets/"
+      ],
+      "docs": [
+        "docs/DESIGN_SPEC.md",
+        "docs/VISUAL_IDENTITY.md",
+        "docs/DECISIONS.md",
+        "docs/TESTING.md",
+        "docs/REPO_STRUCTURE.md",
+        "docs/VISUAL_PROTOTYPE_PLAN.md"
+      ],
+      "estimate": "M",
+      "status": "todo",
+      "priority": "high",
+      "type": "design",
+      "summary": "Design a new pixel-character workspace identity and paired desktop/terminal compositions before client implementation.",
+      "blocked_by": [],
+      "notes": [
+        "Draft only: reconcile ID/dependencies and overlapping legacy work before inserting into the canonical board.",
+        "Mockup format, character species, palette and asset tooling are resolved in the design pass; existing art is retired.",
+        "V2 is the preferred retained character concept. VISUAL_PROTOTYPE_PLAN.md proposes the asset pipeline and candidate experiment; no renderer/library is selected yet."
+      ],
+      "commands": []
+    },
+    {
+      "id": "UI-RUN-902",
+      "group_id": "UI-RUN",
+      "title": "Prototype Rust actor movement and sprite playback",
+      "description": "Prototype one character approaching another, facing the target, playing an interaction clip and settling using a fresh registered test atlas. Compare a small hand-built Rust clip/sequence runtime with a reusable animation library. Document the selected playback boundary, frame/anchor/timing metadata, presentation state and drawing integration; do not dispatch agents or change workflow lifecycles.",
+      "acceptance_criteria": [
+        "One actor walks to another and plays a two-character interaction with stable foot anchors, facing and offsets; a shared station is optional.",
+        "Rust presentation state/frame sampling is independent of execution and the drawing backend; Tauri/webview versus a Rust-rendered surface is assessed explicitly.",
+        "Replay seeks, new events, cancellation, stale contact and reduced motion settle/reconstruct the scene without stale movement queues or delayed workflow outcomes.",
+        "A representative prototype records the hand-built versus library tradeoff, native Windows/Linux support, asset requirements and terminal cell/text equivalent; no game-framework commitment without evidence."
+      ],
+      "depends_on": [
+        "UX-900"
+      ],
+      "files": [
+        "crates/",
+        "apps/desktop/src/",
+        "assets/"
+      ],
+      "docs": [
+        "docs/ARCHITECTURE.md",
+        "docs/DESIGN_SPEC.md",
+        "docs/VISUAL_IDENTITY.md",
+        "docs/DECISIONS.md",
+        "docs/TESTING.md",
+        "docs/REPO_STRUCTURE.md",
+        "docs/VISUAL_PROTOTYPE_PLAN.md"
+      ],
+      "estimate": "M",
+      "status": "todo",
+      "priority": "high",
+      "type": "implementation",
+      "summary": "Choose the Rust presentation runtime through a bounded walking/interaction prototype before client implementation.",
+      "blocked_by": [],
+      "notes": [
+        "Draft only: reconcile ID/dependencies and overlapping legacy work before insertion into the canonical board.",
+        "Imagegen concepts are not registered production sprite sheets; use a new test atlas with explicit metadata.",
+        "V2 is the preferred retained character concept. VISUAL_PROTOTYPE_PLAN.md proposes the asset pipeline and candidate experiment; no renderer/library is selected yet."
+      ],
+      "commands": [
+        "cargo test --workspace --exclude agent-arcade"
+      ]
+    },
+    {
+      "id": "UI-RUN-900",
+      "group_id": "UI-RUN",
+      "title": "Add a simplified native terminal workspace",
+      "description": "Implement the optional Rust terminal client over recorded project/task/run/evidence services. Select a Windows/Linux-compatible toolkit, provide keyboard navigation and chronological inspection, and keep it separate from CLI machine/MCP output. Translate the new desktop character/task-station identities into cell/ASCII representations with readable evidence and plain-text fallback.",
+      "acceptance_criteria": [
+        "Native Windows/Linux layouts handle resizing, long paths, reduced colors and keyboard focus.",
+        "Project/task dependencies, cycles, recorded activity, coverage gaps and selected evidence are readable without a canvas.",
+        "Owner requests remain pending until acknowledged/outcome reported; viewer closure does not cancel or continue work.",
+        "Implements the paired DEC-015 design: original pixel/cell character identities and task stations, static/text fallbacks, and no current RPG/city/pigeon art reuse.",
+        "Uses the prototype's recorded-state-driven visit/interaction sequence; playback never gates real work and terminal may use cell/text equivalents."
+      ],
+      "depends_on": [
+        "FOUND-901",
+        "ENGINE-900",
+        "UX-900",
+        "UI-RUN-902"
+      ],
+      "files": [
+        "Cargo.toml",
+        "crates/"
+      ],
+      "docs": [
+        "docs/DESIGN_SPEC.md",
+        "docs/VISUAL_IDENTITY.md",
+        "docs/TESTING.md",
+        "docs/REPO_STRUCTURE.md"
+      ],
+      "estimate": "L",
+      "status": "todo",
+      "priority": "high",
+      "type": "implementation",
+      "summary": "Add a simplified native terminal workspace",
+      "blocked_by": [],
+      "notes": [
+        "Draft only: reconcile IDs/dependencies and overlapping legacy work before inserting into the canonical board.",
+        "Paths for new package/client surfaces are planned; confirm concrete locations during implementation."
+      ],
+      "commands": [
+        "cargo test --workspace --exclude agent-arcade"
+      ]
+    },
+    {
+      "id": "UI-RUN-901",
+      "group_id": "UI-RUN",
+      "title": "Build the new desktop pixel-character project workspace",
+      "description": "Build an entirely new pixel-character project workspace in the existing Tauri/React stack, using shared recording/query services and the UX design studies. Preserve useful state/event logic and legacy trace access while replacing layout and artwork; remove retired active art imports and deployed legacy art as the replacement lands.",
+      "acceptance_criteria": [
+        "Opening mid-run backfills then follows consistently with terminal/CLI projections.",
+        "Real/simulation/replay, stale coverage, source attribution and pending requests remain distinguishable.",
+        "Assistant-owned records never invoke the legacy desktop executor; closing the window leaves owner execution unaffected.",
+        "Native Windows/Linux screenshots and headed flows verify long paths, failures, review, missing artifacts and disconnection.",
+        "Implements the paired DEC-015 design: original pixel/cell character identities and task stations, static/text fallbacks, and no current RPG/city/pigeon art reuse.",
+        "Uses the prototype's recorded-state-driven visit/interaction sequence; playback never gates real work and terminal may use cell/text equivalents."
+      ],
+      "depends_on": [
+        "FOUND-900",
+        "ADAPT-900",
+        "ENGINE-900",
+        "UX-900",
+        "UI-RUN-902"
+      ],
+      "files": [
+        "apps/desktop/src/",
+        "apps/desktop/src-tauri/",
+        "tests/e2e/"
+      ],
+      "docs": [
+        "docs/DESIGN_SPEC.md",
+        "docs/VISUAL_IDENTITY.md",
+        "docs/TAURI_IPC_CONTRACT.md",
+        "docs/TESTING.md"
+      ],
+      "estimate": "L",
+      "status": "todo",
+      "priority": "high",
+      "type": "implementation",
+      "summary": "Build the new desktop pixel-character project workspace",
+      "blocked_by": [],
+      "notes": [
+        "Draft only: reconcile IDs/dependencies and overlapping legacy work before inserting into the canonical board.",
+        "Paths for new package/client surfaces are planned; confirm concrete locations during implementation."
+      ],
+      "commands": [
+        "cargo test --workspace --exclude agent-arcade",
+        "cd apps/desktop && npm test -- --run"
+      ]
+    },
+    {
+      "id": "TEST-900",
+      "group_id": "TEST",
+      "title": "Verify and package the workflow toolset on Windows and Linux",
+      "description": "Add native OS integration/CI and release packaging for the assistant skill, headless CLI/MCP and optional viewers. Verify the canonical recorded workflow and legacy migration independently of historical desktop results. Document installer layout and actual commands when implemented.",
+      "acceptance_criteria": [
+        "Native Windows and Linux CI verify headless install/record/query without desktop dependencies and optional viewer attachment.",
+        "Bounded template, owner loss, controls, idempotency, evidence gaps, replay and simulation isolation pass on both OSes.",
+        "Packages retain legacy identifiers until an explicit rename; new entry points and install instructions match built artifacts."
+      ],
+      "depends_on": [
+        "ADAPT-900",
+        "FOUND-902",
+        "UI-RUN-900",
+        "UI-RUN-901"
+      ],
+      "files": [
+        ".github/workflows/",
+        "distribution/",
+        "tests/"
+      ],
+      "docs": [
+        "docs/TESTING.md",
+        "docs/README.md",
+        "docs/REPO_STRUCTURE.md",
+        "docs/PRD.md"
+      ],
+      "estimate": "L",
+      "status": "todo",
+      "priority": "high",
+      "type": "testing",
+      "summary": "Verify and package the workflow toolset on Windows and Linux",
+      "blocked_by": [],
+      "notes": [
+        "Draft only: reconcile IDs/dependencies and overlapping legacy work before inserting into the canonical board.",
+        "Paths for new package/client surfaces are planned; confirm concrete locations during implementation."
+      ],
+      "commands": [
+        "cargo test --workspace --exclude agent-arcade"
+      ]
+    }
+  ]
+}

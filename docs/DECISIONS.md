@@ -1,5 +1,12 @@
 # Decisions
 
+**Current direction:** DEC-014 (2026-10-27) supersedes desktop-first execution,
+future-only CLI distribution, mandatory RPG visuals, and desktop-required Claude
+sessions as product requirements. Earlier records remain historical; existing
+code and APIs are not migrated by this documentation change. DEC-015 refines the
+visual direction to a fresh pixel-character workspace and retires all existing
+RPG and older city/pigeon art as replacement-UI design inputs.
+
 ## Accepted decisions
 
 ### 2026-03-07 — Local-first product
@@ -620,6 +627,224 @@ loading, and capture the workspace at the desktop sizes listed in
 transparent sprite strips for every role, driven by the existing singleton
 animation tick; the initial square role art remains as fallback identity.
 
-## Open decisions
+### 2026-10-27 — Assistant-owned workflows with optional project workspaces (DEC-014)
 
-*(No open decisions at this time.)*
+**Status:** accepted target direction; implementation pending.
+
+**Context:** The project has a useful Rust model/event/state/persistence foundation
+but a desktop-first workflow editor and visual identity no longer match the
+desired experience. Current coding assistants already execute planning, task
+authoring, and bounded worker loops. The developer wants to package that workflow
+for use from an existing assistant and optionally open a desktop or terminal
+workspace. Firstmate's instruction/tool distribution and Graphify's skill, CLI,
+MCP, and visualization entry points informed the packaging discussion; their
+autonomy and knowledge-graph features are not adopted wholesale.
+
+**Decision:**
+
+1. The assistant session owns real execution, dispatch, worker/process lifetime,
+   routing, retries, permissions, and task-cycle decisions. Rust validates and
+   persists reported activity and exposes recorded projections, evidence queries,
+   replay, and mock simulation. It does not silently supervise/continue work when
+   the owner exits. A valid report is not independent proof of its claims.
+2. Package the product as a skill + CLI + MCP toolset. Desktop (Tauri + React/TS)
+   and a simplified Rust terminal workspace are optional clients over one shared
+   application boundary. A recorder companion may coordinate local writes; it
+   gains no authority to dispatch real work. Headless use cannot require Tauri,
+   WebKit, or a display. Native-Rust desktop rendering is not required.
+3. Keep a general explicit workflow model. The first built-in template packages
+   project-plan -> edit-workboard -> ralphloop(start-task, explicit bound).
+   Planning direction precedes board authoring. One fresh worker handles at most
+   one ready task per cycle; the owner halts on limit, failure, blocking,
+   invalid/missing summary, or no progress. Board edits remain in project skills.
+4. Identify outer task cycles separately from node retries. This does not require
+   graph back-edges: the existing DAG restriction in DEC-002 remains for individual
+   workflows. Dynamic graph rewriting and unbounded spawning remain out of scope.
+5. Project context means plans/document revisions, board snapshots/dependencies,
+   cycles/runs, artifacts, file-change evidence, and verification. Source-code
+   knowledge-graph extraction is not a v1 requirement. Captured evidence,
+   assistant assertions, attribution limits, and missing coverage stay distinct.
+6. Simulation means mock execution of routing, review, retry, and bound paths.
+   It cannot invoke real agents/shells/network tools or write to the selected
+   repository. It may persist isolated simulation data in application storage.
+   Replay reads history without execution. Neither predicts real agent outcomes.
+7. Native Windows and Linux execution are both v1 release requirements. Windows
+   may be the primary UI development environment; Linux remains a native test
+   target. Windows UI-to-WSL execution and macOS release gating are deferred.
+8. Replace mandatory RPG art/sprites/backdrops and canvas-first onboarding with
+   an evidence-focused project workspace. Reuse code/assets where helpful, but
+   presentation must earn space by explaining work. Desktop and terminal share
+   semantics, not pixel-identical layouts.
+9. Control actions are requests to the owner. Request, acknowledgment, and observed
+   outcome are separate. Lost contact is incomplete coverage, never inferred
+   success/failure/cancellation. The recorder cannot approve work or substitute a
+   new agent. Publishing still requires explicit authorization.
+
+**Alternatives considered:**
+
+- A persistent Rust runtime owning all real execution: rejected for this direction
+  because the user wants the assistant session to own runs, with Rust supporting
+  recording and visualization.
+- A UI-only repaint: insufficient to provide skill/CLI/MCP workflows and optional
+  viewers, and preserves desktop-first entry friction.
+- A skill with unstructured terminal-log scraping: rejected because replay,
+  evidence attribution, bounded cycles, and control requests need typed records.
+- Rebuilding the desktop renderer in native Rust: unnecessary; existing Tauri/React
+  rendering can remain an optional client.
+- Adopting Firstmate's broader crew/remote-home model or Graphify's code-extraction
+  pipeline: deferred; the accepted scope is bounded local project activity.
+- Windows-only execution: rejected; Linux execution is also required in v1.
+
+**Tradeoffs:** Assistant-owned work cannot be observed or controlled beyond the
+selected harness's reporting/capture capabilities. Rust cannot guarantee complete
+logs or kill arbitrary child processes on its own. Owner loss requires honest gap
+display and explicit reconciliation. Supporting two native OSes adds shell, PTY,
+path, cancellation, packaging, and verification work. Multiple clients need shared
+durable ordering/idempotency without becoming independent executors.
+
+**Compatibility and supersession:** DEC-001 schema/revision separation, typed
+models, append-only events, state-machine validation, and local SQLite remain.
+DEC-002's graph-loop deferral remains; bounded outer task cycles are now required.
+DEC-009's current interactive Claude path remains legacy behavior, but its
+desktop-required ownership assumption is superseded for the target. DEC-011's
+selection continuity and unified live/replay projection remain useful; its fixed
+layout is not mandatory. DEC-007/008/013 art and sprite mandates are superseded.
+The earlier desktop-only distribution and future-only CLI scope are superseded.
+Current binaries, package IDs, workflow schemas, event schemas, SQL storage, and
+Tauri commands remain unchanged in this pass.
+
+**Follow-up implications:** Define versioned owner/source/coverage/mode/cycle and
+control/evidence contracts with migration examples before changing wire/storage
+schemas. Extract services from Tauri handlers/TauriEventLog, isolate legacy real
+execution, add CLI/skill and MCP, then mock simulation and optional clients.
+Preserve legacy traces without invented provenance. Verify native Windows and
+Linux and revalidate provider-specific behavior before adapter changes. Reconcile
+the existing workboard explicitly rather than treating legacy desktop tasks as
+the next implementation plan. See INTEGRATION_CONTRACT.md and the draft tasks.
+
+### 2026-10-27 — Fresh pixel-character workspace and visual asset reset (DEC-015)
+
+**Status:** accepted visual direction; design/implementation pending.
+
+**Context:** DEC-014 removed mandatory RPG styling. The user clarified that the
+existing art should be discarded as a design direction and the desktop should
+receive an entirely new UI/look, with bit/pixel characters that translate into
+the simplified Rust terminal client. The visualizer's project-inspection purpose
+and assistant-owned execution model remain unchanged.
+
+**Decision:** Design a new pixel-character workspace and coherent original asset
+family. Character identities represent assistant/worker sessions; stations show
+task/phase context; explicit links represent dependencies/routing. Selection
+reveals task/run evidence, changes, checks, and output. These are presentation
+concepts, not new workflow node kinds or execution authority. Exact character
+species, layout, palette, and asset technique are design-pass choices.
+
+Use cell-based/block/ASCII equivalents in the terminal, with plain text fallback
+and the same identities, state labels, selection meaning, and evidence. Do not
+force desktop sprite imagery into terminal cells. Keep code, diffs, and interface
+text readable; pixel styling does not require pixelating all content.
+
+The current RPG portraits/sprites/backdrops/fantasy chrome and older pigeon/city
+assets are retired design inputs. Do not reskin or reuse them as the new UI's
+fallback art. Keep existing files only until the legacy implementation is replaced;
+remove active imports/deployed legacy assets during migration, with source/archive
+cleanup handled explicitly. No asset files are deleted in this documentation pass.
+
+**Alternatives considered:** Recoloring the current RPG interface was rejected
+because the user wants a fresh UI and look. Restoring the old pixel-city/pigeon
+system was rejected as an assumption that a previous asset family matches the
+new direction. A generic dashboard without character identity would omit the
+requested bit/pixel theme. Rendering identical raster sprites in every terminal
+would compromise portability and compact layouts.
+
+**Tradeoffs:** Fresh visual design and assets add work and invalidate some old
+layout/art assumptions. Desktop and terminal need separate rendering treatments
+but shared identity/state semantics. Animation must respect reduced motion and
+recording coverage; it cannot imply live work, predicted progress, or spawned
+workers that do not exist in the record.
+
+**Follow-up implications:** Produce paired desktop and terminal design studies
+before building the replacement clients. Establish new assets, static/text
+fallbacks, and tests for native Windows/Linux terminals, narrow layouts, replay,
+stale owner contact, and reduced motion. Update client draft tasks to depend on
+that design work. This refines DEC-014's visual baseline and supersedes its option
+to reuse old art; it does not revive DEC-007/008/013 or alter backend contracts.
+
+**Interaction refinement:** Default node/edge presentation becomes one character
+walking to another, facing them and playing an interaction. Agent A -> declared
+Tool/action -> Agent B is expressed as a visit; a shared station/prop is optional
+context rather than the required mediator. Exact nodes, directed edges,
+conditions, artifacts, and failures remain available through selection and a
+diagnostic relationship view. Action is not a new node taxonomy entry. Movement
+does not invent chatter, concurrency, routing, or outputs. Sequential actors'
+prior contributions remain distinct from current activity. The camera reference
+is Sunnyside World's elevated, square-aligned near-top-down pixel workspace;
+early imagegen character/idle studies are exploration, not deployed sprite assets.
+
+**Animation-runtime refinement:** Target production sprite sheets/atlases with
+idle, walking and interaction clips, consistent frame bounds, anchors, facing,
+timing and two-character offsets. Prototype a small Rust presentation runtime
+against a reusable animation library before choosing implementation. The runtime
+owns positions, visual sequences and frame sampling, separate from execution and
+workflow state machines. Tauri/webview drawing versus a Rust-rendered surface is
+a separate integration choice. Replay seeks, interruption and reduced motion
+reconstruct/settle the scene without delaying work or playing old walking queues.
+
+## DEC-016 — WSL visual prototype baseline: Pixi Canvas and shared Rust sampling
+
+**Date:** 2026-10-27
+
+**Status:** accepted for the WSL prototype and its next iteration. Production
+adoption, physical Linux hardware qualification and native Windows release
+verification remain open. This does not migrate the running application.
+
+**Context:** DEC-015 called for a bounded movement/sprite-sheet experiment before
+selecting playback and drawing integration. The renderer lab compared direct
+Canvas, PixiJS WebGL/Canvas, and native Macroquad using synthetic activity, a fresh
+registered atlas and shared scene geometry. It exercised actual editor exports,
+Rust/native-WASM sampling, private-display WebKit/Tauri, CLI attachment and replay.
+The user accepted pinning the findings for WSL while deferring further work.
+
+**Decision:** Use pinned PixiJS 8.22 with the Canvas backend selected explicitly
+for the WSL scene prototype. Keep inspection controls in HTML/React and keep the
+deterministic visual sampler in Rust, compiled natively and to WASM for webview
+sampling. Use renderer-neutral PNG+JSON clips with explicit durations, logical
+frame bounds, trim offsets, foot anchors and interaction metadata. Viewers remain
+optional observers; animation cannot own execution state or delay outcomes.
+
+The prototype's active-pair and selectable-session-list presentations retain all
+fixture records while avoiding the unreadable 100-sprite crowd. Keep the direct
+Canvas adapter and native Macroquad renderer as experimental references.
+
+**Alternatives considered:** Direct Canvas works and has a smaller payload and
+lower measured submission cost, but Pixi's scene/texture facilities are preferred
+for the intended animated workspace. Pixi WebGL performs well in Windows Edge,
+but its tested WebKit/software path corrupts sprites, including 8.22; feature
+availability alone is insufficient to select it. Native Macroquad renders
+correctly on Linux but introduces separate native inspector/embedding work.
+Bevy was not benchmarked and is unnecessary for the bounded scene requirements.
+
+**Tradeoffs:** Pixi adds an optional viewer dependency and measured 1.4–2.9 ms
+p95 submission cost for the tested 2/20/100-actor workload. Shared Rust/WASM adds
+a build boundary but avoids maintaining separate presentation samplers or sending
+per-actor frame IPC. WSL/Xvfb software captures are reproducible compatibility
+evidence, not physical Linux hardware/DPI/input or native Windows guarantees.
+The WebKit WebGL corruption's upstream cause is still unresolved. Generated
+concept art still needs registered directional/paired production animation.
+
+**Follow-up implications:** Resume from
+[the renderer handoff](../experiments/renderer-lab/HANDOFF.md),
+[full findings](../experiments/renderer-lab/PRODUCT_VERDICT.md), and
+[saved gallery](../experiments/renderer-lab/evidence/product-index.html).
+Keep the package version/backend explicit, version the production asset/WASM
+boundary before adoption, complete directional art, and verify real-platform
+packaging/input/graphics separately. Native Windows helpers still return OS
+error 5 on this machine. No security controls were changed. Existing production
+identifiers, workflow/event schemas and the canonical board are unchanged.
+
+## Open implementation details
+
+The accepted product direction is settled. Exact wire names, versioned payloads,
+local IPC/write coordination, terminal toolkit, packaging layout, and initial
+assistant capture capabilities remain implementation details to specify in their
+respective tasks. They must not be silently presented as already implemented.

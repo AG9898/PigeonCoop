@@ -1,0 +1,131 @@
+{
+  "scope": "Actual WebKitGTK under private WSL/Xvfb display, software graphics; no Tauri shell qualification",
+  "webkit_version": "2.52.6",
+  "variant": "canvas-rust",
+  "renderer_string_note": "WebKit may sanitize renderer identity; Apple GPU is not the machine hardware",
+  "captures": [
+    "03-handoff",
+    "05-contact-lost",
+    "08-reduced"
+  ],
+  "capture_info": {
+    "03-handoff": {
+      "origin": {
+        "x": 189,
+        "y": 193
+      },
+      "scale": 2,
+      "dpr": 1,
+      "scene": {
+        "time_ms": 3700,
+        "phase": "interact",
+        "status": "Running",
+        "coverage": "fixture captured",
+        "scenario": "normal",
+        "reduced_motion": false,
+        "actors": [
+          {
+            "id": "worker-a",
+            "frame": 5,
+            "variant": 0,
+            "facing": "right",
+            "action": "interact",
+            "x": 225,
+            "y": 139
+          },
+          {
+            "id": "worker-b",
+            "frame": 5,
+            "variant": 1,
+            "facing": "left",
+            "action": "receive",
+            "x": 253,
+            "y": 139
+          }
+        ]
+      }
+    },
+    "05-contact-lost": {
+      "origin": {
+        "x": 189,
+        "y": 193
+      },
+      "scale": 2,
+      "dpr": 1,
+      "scene": {
+        "time_ms": 5200,
+        "phase": "interrupted",
+        "status": "Running",
+        "coverage": "owner contact lost; outcome unknown",
+        "scenario": "stale",
+        "reduced_motion": false,
+        "actors": [
+          {
+            "id": "worker-a",
+            "frame": 0,
+            "variant": 0,
+            "facing": "right",
+            "action": "interrupted",
+            "x": 155.18518,
+            "y": 87
+          },
+          {
+            "id": "worker-b",
+            "frame": 0,
+            "variant": 1,
+            "facing": "left",
+            "action": "idle",
+            "x": 253,
+            "y": 139
+          }
+        ]
+      }
+    },
+    "08-reduced": {
+      "origin": {
+        "x": 189,
+        "y": 193
+      },
+      "scale": 2,
+      "dpr": 1,
+      "scene": {
+        "time_ms": 2000,
+        "phase": "walk",
+        "status": "Running",
+        "coverage": "fixture captured",
+        "scenario": "normal",
+        "reduced_motion": true,
+        "actors": [
+          {
+            "id": "worker-a",
+            "frame": 0,
+            "variant": 0,
+            "facing": "right",
+            "action": "walk",
+            "x": 225,
+            "y": 139
+          },
+          {
+            "id": "worker-b",
+            "frame": 0,
+            "variant": 1,
+            "facing": "left",
+            "action": "idle",
+            "x": 253,
+            "y": 139
+          }
+        ]
+      }
+    }
+  },
+  "ready_ms": 386.08311700227205,
+  "renderer": {
+    "kind": "Canvas2D",
+    "dpr": 1,
+    "userAgent": "Mozilla/5.0 (X11; Ubuntu; Linux x86_64) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/60.5 Safari/605.1.15",
+    "pixi_loaded": false,
+    "webgl_required": false,
+    "core": "Rust/WASM",
+    "packed_atlas": true
+  }
+}

@@ -1,0 +1,6 @@
+target/
+node_modules/
+web/pixi.min.js
+web/pixi-8.22.min.js
+web/fixture.json
+# Measured evidence and screenshots are intentionally retained with this experiment.

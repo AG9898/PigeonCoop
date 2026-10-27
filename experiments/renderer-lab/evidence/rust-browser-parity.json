@@ -1,0 +1,13 @@
+{
+  "checked": 3848,
+  "max_position_error": 0.000014286747699543412,
+  "position_tolerance": 0.0001,
+  "exact_fields": [
+    "phase",
+    "status",
+    "coverage",
+    "scenario",
+    "reduced_motion",
+    "actor id/frame/variant/facing/action"
+  ]
+}

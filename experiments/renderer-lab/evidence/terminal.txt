@@ -1,0 +1,5 @@
+SIMULATION / REPLAY  5200 ms
+  [A] worker-a  -- visit / review -->  [B] worker-b
+  action: settled   recorded status: Succeeded
+  coverage: fixture captured
+  evidence: fixture://review-01  (synthetic; no command executed)

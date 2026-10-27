@@ -1,0 +1,29 @@
+{
+  "checked_snapshots": 2328,
+  "max_position_error": 0.000012222222238733593,
+  "binary_bytes": 70683,
+  "sampling_and_json_decode": [
+    {
+      "count": 2,
+      "samples": 500,
+      "p50_ms": 0.0037000000000091404,
+      "p95_ms": 0.004300000000000637,
+      "p99_ms": 0.011499999999983856
+    },
+    {
+      "count": 20,
+      "samples": 500,
+      "p50_ms": 0.01850000000001728,
+      "p95_ms": 0.03710000000000946,
+      "p99_ms": 0.05999999999997385
+    },
+    {
+      "count": 100,
+      "samples": 500,
+      "p50_ms": 0.08200000000002206,
+      "p95_ms": 0.15790000000001214,
+      "p99_ms": 0.22040000000001214
+    }
+  ],
+  "scope": "Local WASM invocation with one bulk scene serialization; no per-actor IPC"
+}

@@ -1,0 +1,22 @@
+{
+  "scope": "Existing native Linux Tauri shell with isolated fixture frontend and data dirs under private WSL/Xvfb display; not native Linux hardware or Windows qualification",
+  "ready_ms": 687.988983,
+  "tauri_internals": true,
+  "renderer": {
+    "packed_atlas": true,
+    "kind": "PixiJS Canvas",
+    "webgl_required": false,
+    "core": "Rust/WASM",
+    "vendor": null,
+    "dpr": 1,
+    "gl_version": "Canvas2D",
+    "userAgent": "Mozilla/5.0 (X11; Ubuntu; Linux x86_64) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/60.5 Safari/605.1.15",
+    "renderer": null,
+    "version": "8.22.0"
+  },
+  "captures": [
+    "handoff",
+    "stale",
+    "reduced"
+  ]
+}

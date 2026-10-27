@@ -44,7 +44,45 @@ Do not use this skill for selecting the next task, executing tasks, or transitio
 
 ## Shared Write Protocol
 
-Run after every command that writes to the board:
+### Preflight: confirm the board is jq-canonical
+
+Run this **before** any write, and read the result before proceeding.
+
+Every `jq ... > /tmp/wb.json && mv` template below re-serializes the **whole file** with jq's
+canonical formatting. jq has no formatting-preserving write. So if the board's on-disk bytes
+differ from jq's canonical output in any way, the first write silently reformats every task —
+a full-file rewrite wearing the disguise of a one-task patch. The task content is unchanged, so
+validation still passes and nothing looks wrong; only the diff gives it away.
+
+Divergences that occur in practice: short arrays kept on one line (jq expands each element onto
+its own line), non-ASCII stored as `\uXXXX` escapes (jq emits literal UTF-8, e.g. `—` becomes
+an em dash), and stray blank lines.
+
+```bash
+diff <(jq '.' docs/workboard.json) docs/workboard.json >/dev/null \
+  && echo "CANONICAL — jq templates below are safe" \
+  || echo "NOT CANONICAL — a jq write would bulk-reformat the whole board"
+```
+
+If it reports NOT CANONICAL, do not run the jq templates as written. Pick one:
+
+- **Preferred — preserve the file's formatting.** Apply the change as a targeted text edit in the
+  board's existing style (for `add-task`, splice the new task object in before the closing `]`,
+  matching the surrounding indentation), then run the validations below. Verify with
+  `git diff --numstat docs/workboard.json`: `add-task` must show **0 deletions**.
+- **Or — normalize deliberately, in its own commit.** Rewrite the file to canonical form
+  (`jq '.' docs/workboard.json > /tmp/wb.json && mv /tmp/wb.json docs/workboard.json`), prove it
+  changed no content, commit that alone, then apply your edit with the jq templates on top:
+  ```bash
+  diff <(git show HEAD:docs/workboard.json | jq -S '.tasks | sort_by(.id)') \
+       <(jq -S '.tasks | sort_by(.id)' docs/workboard.json) \
+    && echo "semantic no-op — safe to commit as a pure normalization"
+  ```
+
+Never let a normalization ride along inside a content commit; it buries the real change and makes
+the board's history unreviewable.
+
+### After every write
 
 1. Apply the targeted patch using the template for that command; never rewrite the full file.
 2. Update `last_updated` in the same jq expression as the patch. Never update it separately.
@@ -58,7 +96,13 @@ Run after every command that writes to the board:
    ```
 5. If schema validation fails due to pre-existing invalid records, isolate responsibility by shape-checking `/tmp/wb.json`; report pre-existing noise separately from your edit result.
 6. If either validation fails due to your change, stop immediately, report the failure, and do not attempt another write.
-7. Print a compact one-line summary of the changed task.
+7. Confirm the write touched only what you intended — deletions must match the lines you meant to change, and must be `0` for `add-task`:
+   ```bash
+   git diff --numstat docs/workboard.json
+   ```
+   If the deletion count exceeds your intended change, the write reformatted the board: revert it
+   (`git checkout docs/workboard.json`) and re-apply as a targeted text edit.
+8. Print a compact one-line summary of the changed task.
 
 ## Commands
 
@@ -275,42 +319,46 @@ ID naming rule: split IDs must use underscore-plus-digit suffixes: `ORIG-ID_1`, 
 
 First split inherits original `depends_on`. Each subsequent split depends on the previous split. All splits inherit `group_id` and `priority` unless explicitly overridden.
 
-Run as one atomic jq expression:
+Write the splits to a temp file first (the quoted heredoc delimiter prevents shell interpolation, so single quotes and special characters in descriptions are safe), then run the atomic jq expression:
 
 ```bash
+cat > /tmp/splits.json << 'SPLITS_EOF'
+[
+  {
+    "id": "ORIG-ID_1",
+    "title": "...",
+    "description": "...",
+    "status": "todo",
+    "priority": "...",
+    "group_id": "...",
+    "depends_on": [],
+    "blocked_by": [],
+    "acceptance_criteria": ["..."],
+    "docs": [],
+    "files": [],
+    "commands": []
+  },
+  {
+    "id": "ORIG-ID_2",
+    "title": "...",
+    "description": "...",
+    "status": "todo",
+    "priority": "...",
+    "group_id": "...",
+    "depends_on": ["ORIG-ID_1"],
+    "blocked_by": [],
+    "acceptance_criteria": ["..."],
+    "docs": [],
+    "files": [],
+    "commands": []
+  }
+]
+SPLITS_EOF
+
 jq \
   --arg orig "ORIG-ID" \
   --arg last "ORIG-ID_2" \
-  --argjson splits '[
-    {
-      "id": "ORIG-ID_1",
-      "title": "...",
-      "description": "...",
-      "status": "todo",
-      "priority": "...",
-      "group_id": "...",
-      "depends_on": [...original depends_on here...],
-      "blocked_by": [],
-      "acceptance_criteria": ["..."],
-      "docs": [],
-      "files": [],
-      "commands": []
-    },
-    {
-      "id": "ORIG-ID_2",
-      "title": "...",
-      "description": "...",
-      "status": "todo",
-      "priority": "...",
-      "group_id": "...",
-      "depends_on": ["ORIG-ID_1"],
-      "blocked_by": [],
-      "acceptance_criteria": ["..."],
-      "docs": [],
-      "files": [],
-      "commands": []
-    }
-  ]' \
+  --slurpfile splits /tmp/splits.json \
 '.last_updated = "YYYY-MM-DD" |
  .tasks = (
    [ .tasks[] |
@@ -318,9 +366,11 @@ jq \
      if (.depends_on | contains([$orig]))
      then .depends_on = (.depends_on | map(if . == $orig then $last else . end))
      else . end
-   ] + $splits
+   ] + $splits[0]
  )' \
 docs/workboard.json > /tmp/wb.json && mv /tmp/wb.json docs/workboard.json
+
+rm -f /tmp/splits.json
 ```
 
 Step 5: Validate using Shared Write Protocol steps 3 and 4.
@@ -329,7 +379,8 @@ Step 6: Report new IDs created, downstream `depends_on` updates, and removal of 
 
 ## Guardrails
 
-- Never rewrite the full file; apply targeted edits only.
+- Never rewrite the full file; apply targeted edits only. A jq write re-serializes the whole file, so on a board that is not already jq-canonical this happens by accident — run the preflight check and confirm `git diff --numstat` before trusting any write.
+- Never let a reformat ride along in a content commit; normalize separately or not at all.
 - Never edit `status` via `edit-task`; use `set-blocked`, `unblock`, or `/start-task`.
 - Never rename an `id`.
 - Warn before writing to an `in_progress` task.

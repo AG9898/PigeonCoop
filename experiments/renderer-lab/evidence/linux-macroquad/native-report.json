@@ -1,0 +1,1425 @@
+{
+  "benchmark": [
+    {
+      "count": 2,
+      "cpu_submit_ms": {
+        "max": 1.827939,
+        "p50": 0.7518670000000001,
+        "p95": 1.0323719999999998,
+        "p99": 1.4649210000000001
+      },
+      "frame_intervals_ms": {
+        "max": 4.961287,
+        "p50": 3.3728719999999996,
+        "p95": 4.340478,
+        "p99": 4.630814
+      },
+      "samples": 210,
+      "stalls_over_33ms": 0
+    },
+    {
+      "count": 20,
+      "cpu_submit_ms": {
+        "max": 1.8236789999999998,
+        "p50": 0.7821739999999999,
+        "p95": 1.0398740000000002,
+        "p99": 1.265644
+      },
+      "frame_intervals_ms": {
+        "max": 4.770979,
+        "p50": 3.344494,
+        "p95": 4.110606,
+        "p99": 4.507618
+      },
+      "samples": 210,
+      "stalls_over_33ms": 0
+    },
+    {
+      "count": 100,
+      "cpu_submit_ms": {
+        "max": 1.26289,
+        "p50": 0.7826299999999999,
+        "p95": 1.0276129999999999,
+        "p99": 1.1887919999999998
+      },
+      "frame_intervals_ms": {
+        "max": 4.664396,
+        "p50": 3.349052,
+        "p95": 4.129872,
+        "p99": 4.348981
+      },
+      "samples": 210,
+      "stalls_over_33ms": 0
+    }
+  ],
+  "scope": "Linux executable under private WSL/Xvfb display; software OpenGL forced; not native Windows or Linux hardware GPU qualification",
+  "snapshots": [
+    {
+      "actors": [
+        {
+          "action": "idle",
+          "facing": "right",
+          "frame": 0,
+          "id": "worker-a",
+          "pos": {
+            "x": 76.0,
+            "y": 139.0
+          },
+          "variant": 0
+        },
+        {
+          "action": "idle",
+          "facing": "left",
+          "frame": 0,
+          "id": "worker-b",
+          "pos": {
+            "x": 253.0,
+            "y": 139.0
+          },
+          "variant": 1
+        }
+      ],
+      "coverage": "fixture captured",
+      "phase": "idle",
+      "reduced_motion": false,
+      "scenario": "normal",
+      "status": "Ready",
+      "time_ms": 0
+    },
+    {
+      "actors": [
+        {
+          "action": "walk",
+          "facing": "right",
+          "frame": 2,
+          "id": "worker-a",
+          "pos": {
+            "x": 136.44444274902344,
+            "y": 87.0
+          },
+          "variant": 0
+        },
+        {
+          "action": "idle",
+          "facing": "left",
+          "frame": 0,
+          "id": "worker-b",
+          "pos": {
+            "x": 253.0,
+            "y": 139.0
+          },
+          "variant": 1
+        }
+      ],
+      "coverage": "fixture captured",
+      "phase": "walk",
+      "reduced_motion": false,
+      "scenario": "normal",
+      "status": "Running",
+      "time_ms": 2000
+    },
+    {
+      "actors": [
+        {
+          "action": "interact",
+          "facing": "right",
+          "frame": 5,
+          "id": "worker-a",
+          "pos": {
+            "x": 225.0,
+            "y": 139.0
+          },
+          "variant": 0
+        },
+        {
+          "action": "receive",
+          "facing": "left",
+          "frame": 5,
+          "id": "worker-b",
+          "pos": {
+            "x": 253.0,
+            "y": 139.0
+          },
+          "variant": 1
+        }
+      ],
+      "coverage": "fixture captured",
+      "phase": "interact",
+      "reduced_motion": false,
+      "scenario": "normal",
+      "status": "Running",
+      "time_ms": 3700
+    },
+    {
+      "actors": [
+        {
+          "action": "settled",
+          "facing": "right",
+          "frame": 0,
+          "id": "worker-a",
+          "pos": {
+            "x": 225.0,
+            "y": 139.0
+          },
+          "variant": 0
+        },
+        {
+          "action": "idle",
+          "facing": "left",
+          "frame": 0,
+          "id": "worker-b",
+          "pos": {
+            "x": 253.0,
+            "y": 139.0
+          },
+          "variant": 1
+        }
+      ],
+      "coverage": "fixture captured",
+      "phase": "settled",
+      "reduced_motion": false,
+      "scenario": "normal",
+      "status": "Succeeded",
+      "time_ms": 5200
+    },
+    {
+      "actors": [
+        {
+          "action": "interrupted",
+          "facing": "right",
+          "frame": 0,
+          "id": "worker-a",
+          "pos": {
+            "x": 155.1851806640625,
+            "y": 87.0
+          },
+          "variant": 0
+        },
+        {
+          "action": "idle",
+          "facing": "left",
+          "frame": 0,
+          "id": "worker-b",
+          "pos": {
+            "x": 253.0,
+            "y": 139.0
+          },
+          "variant": 1
+        }
+      ],
+      "coverage": "owner contact lost; outcome unknown",
+      "phase": "interrupted",
+      "reduced_motion": false,
+      "scenario": "stale",
+      "status": "Running",
+      "time_ms": 5200
+    },
+    {
+      "actors": [
+        {
+          "action": "interrupted",
+          "facing": "right",
+          "frame": 0,
+          "id": "worker-a",
+          "pos": {
+            "x": 155.1851806640625,
+            "y": 87.0
+          },
+          "variant": 0
+        },
+        {
+          "action": "idle",
+          "facing": "left",
+          "frame": 0,
+          "id": "worker-b",
+          "pos": {
+            "x": 253.0,
+            "y": 139.0
+          },
+          "variant": 1
+        }
+      ],
+      "coverage": "fixture captured",
+      "phase": "interrupted",
+      "reduced_motion": false,
+      "scenario": "cancelled",
+      "status": "Cancelled",
+      "time_ms": 5200
+    },
+    {
+      "actors": [
+        {
+          "action": "interrupted",
+          "facing": "right",
+          "frame": 0,
+          "id": "worker-a",
+          "pos": {
+            "x": 155.1851806640625,
+            "y": 87.0
+          },
+          "variant": 0
+        },
+        {
+          "action": "idle",
+          "facing": "left",
+          "frame": 0,
+          "id": "worker-b",
+          "pos": {
+            "x": 253.0,
+            "y": 139.0
+          },
+          "variant": 1
+        }
+      ],
+      "coverage": "fixture captured",
+      "phase": "interrupted",
+      "reduced_motion": false,
+      "scenario": "failure",
+      "status": "Failed",
+      "time_ms": 5200
+    },
+    {
+      "actors": [
+        {
+          "action": "walk",
+          "facing": "right",
+          "frame": 0,
+          "id": "worker-a",
+          "pos": {
+            "x": 225.0,
+            "y": 139.0
+          },
+          "variant": 0
+        },
+        {
+          "action": "idle",
+          "facing": "left",
+          "frame": 0,
+          "id": "worker-b",
+          "pos": {
+            "x": 253.0,
+            "y": 139.0
+          },
+          "variant": 1
+        }
+      ],
+      "coverage": "fixture captured",
+      "phase": "walk",
+      "reduced_motion": true,
+      "scenario": "normal",
+      "status": "Running",
+      "time_ms": 2000
+    },
+    {
+      "actors": [
+        {
+          "action": "interact",
+          "facing": "right",
+          "frame": 5,
+          "id": "worker-a",
+          "pos": {
+            "x": 225.0,
+            "y": 139.0
+          },
+          "variant": 0
+        },
+        {
+          "action": "receive",
+          "facing": "left",
+          "frame": 5,
+          "id": "worker-b",
+          "pos": {
+            "x": 253.0,
+            "y": 139.0
+          },
+          "variant": 1
+        },
+        {
+          "action": "idle",
+          "facing": "right",
+          "frame": 0,
+          "id": "fixture-002",
+          "pos": {
+            "x": 23.0,
+            "y": 174.0
+          },
+          "variant": 0
+        },
+        {
+          "action": "idle",
+          "facing": "right",
+          "frame": 1,
+          "id": "fixture-003",
+          "pos": {
+            "x": 39.0,
+            "y": 174.0
+          },
+          "variant": 1
+        },
+        {
+          "action": "idle",
+          "facing": "right",
+          "frame": 1,
+          "id": "fixture-004",
+          "pos": {
+            "x": 55.0,
+            "y": 174.0
+          },
+          "variant": 0
+        },
+        {
+          "action": "idle",
+          "facing": "right",
+          "frame": 1,
+          "id": "fixture-005",
+          "pos": {
+            "x": 71.0,
+            "y": 174.0
+          },
+          "variant": 1
+        },
+        {
+          "action": "idle",
+          "facing": "right",
+          "frame": 1,
+          "id": "fixture-006",
+          "pos": {
+            "x": 87.0,
+            "y": 174.0
+          },
+          "variant": 0
+        },
+        {
+          "action": "idle",
+          "facing": "right",
+          "frame": 1,
+          "id": "fixture-007",
+          "pos": {
+            "x": 103.0,
+            "y": 174.0
+          },
+          "variant": 1
+        },
+        {
+          "action": "idle",
+          "facing": "right",
+          "frame": 1,
+          "id": "fixture-008",
+          "pos": {
+            "x": 119.0,
+            "y": 174.0
+          },
+          "variant": 0
+        },
+        {
+          "action": "idle",
+          "facing": "right",
+          "frame": 0,
+          "id": "fixture-009",
+          "pos": {
+            "x": 135.0,
+            "y": 174.0
+          },
+          "variant": 1
+        },
+        {
+          "action": "idle",
+          "facing": "right",
+          "frame": 0,
+          "id": "fixture-010",
+          "pos": {
+            "x": 151.0,
+            "y": 174.0
+          },
+          "variant": 0
+        },
+        {
+          "action": "idle",
+          "facing": "right",
+          "frame": 0,
+          "id": "fixture-011",
+          "pos": {
+            "x": 167.0,
+            "y": 174.0
+          },
+          "variant": 1
+        },
+        {
+          "action": "idle",
+          "facing": "right",
+          "frame": 0,
+          "id": "fixture-012",
+          "pos": {
+            "x": 183.0,
+            "y": 174.0
+          },
+          "variant": 0
+        },
+        {
+          "action": "idle",
+          "facing": "right",
+          "frame": 0,
+          "id": "fixture-013",
+          "pos": {
+            "x": 199.0,
+            "y": 174.0
+          },
+          "variant": 1
+        },
+        {
+          "action": "idle",
+          "facing": "right",
+          "frame": 0,
+          "id": "fixture-014",
+          "pos": {
+            "x": 215.0,
+            "y": 174.0
+          },
+          "variant": 0
+        },
+        {
+          "action": "idle",
+          "facing": "right",
+          "frame": 0,
+          "id": "fixture-015",
+          "pos": {
+            "x": 231.0,
+            "y": 174.0
+          },
+          "variant": 1
+        },
+        {
+          "action": "idle",
+          "facing": "right",
+          "frame": 0,
+          "id": "fixture-016",
+          "pos": {
+            "x": 247.0,
+            "y": 174.0
+          },
+          "variant": 0
+        },
+        {
+          "action": "idle",
+          "facing": "right",
+          "frame": 0,
+          "id": "fixture-017",
+          "pos": {
+            "x": 263.0,
+            "y": 174.0
+          },
+          "variant": 1
+        },
+        {
+          "action": "idle",
+          "facing": "right",
+          "frame": 0,
+          "id": "fixture-018",
+          "pos": {
+            "x": 279.0,
+            "y": 174.0
+          },
+          "variant": 0
+        },
+        {
+          "action": "idle",
+          "facing": "right",
+          "frame": 0,
+          "id": "fixture-019",
+          "pos": {
+            "x": 23.0,
+            "y": 182.0
+          },
+          "variant": 1
+        },
+        {
+          "action": "idle",
+          "facing": "right",
+          "frame": 0,
+          "id": "fixture-020",
+          "pos": {
+            "x": 39.0,
+            "y": 182.0
+          },
+          "variant": 0
+        },
+        {
+          "action": "idle",
+          "facing": "right",
+          "frame": 0,
+          "id": "fixture-021",
+          "pos": {
+            "x": 55.0,
+            "y": 182.0
+          },
+          "variant": 1
+        },
+        {
+          "action": "idle",
+          "facing": "right",
+          "frame": 0,
+          "id": "fixture-022",
+          "pos": {
+            "x": 71.0,
+            "y": 182.0
+          },
+          "variant": 0
+        },
+        {
+          "action": "idle",
+          "facing": "right",
+          "frame": 0,
+          "id": "fixture-023",
+          "pos": {
+            "x": 87.0,
+            "y": 182.0
+          },
+          "variant": 1
+        },
+        {
+          "action": "idle",
+          "facing": "right",
+          "frame": 0,
+          "id": "fixture-024",
+          "pos": {
+            "x": 103.0,
+            "y": 182.0
+          },
+          "variant": 0
+        },
+        {
+          "action": "idle",
+          "facing": "right",
+          "frame": 1,
+          "id": "fixture-025",
+          "pos": {
+            "x": 119.0,
+            "y": 182.0
+          },
+          "variant": 1
+        },
+        {
+          "action": "idle",
+          "facing": "right",
+          "frame": 1,
+          "id": "fixture-026",
+          "pos": {
+            "x": 135.0,
+            "y": 182.0
+          },
+          "variant": 0
+        },
+        {
+          "action": "idle",
+          "facing": "right",
+          "frame": 1,
+          "id": "fixture-027",
+          "pos": {
+            "x": 151.0,
+            "y": 182.0
+          },
+          "variant": 1
+        },
+        {
+          "action": "idle",
+          "facing": "right",
+          "frame": 1,
+          "id": "fixture-028",
+          "pos": {
+            "x": 167.0,
+            "y": 182.0
+          },
+          "variant": 0
+        },
+        {
+          "action": "idle",
+          "facing": "right",
+          "frame": 1,
+          "id": "fixture-029",
+          "pos": {
+            "x": 183.0,
+            "y": 182.0
+          },
+          "variant": 1
+        },
+        {
+          "action": "idle",
+          "facing": "right",
+          "frame": 0,
+          "id": "fixture-030",
+          "pos": {
+            "x": 199.0,
+            "y": 182.0
+          },
+          "variant": 0
+        },
+        {
+          "action": "idle",
+          "facing": "right",
+          "frame": 0,
+          "id": "fixture-031",
+          "pos": {
+            "x": 215.0,
+            "y": 182.0
+          },
+          "variant": 1
+        },
+        {
+          "action": "idle",
+          "facing": "right",
+          "frame": 0,
+          "id": "fixture-032",
+          "pos": {
+            "x": 231.0,
+            "y": 182.0
+          },
+          "variant": 0
+        },
+        {
+          "action": "idle",
+          "facing": "right",
+          "frame": 0,
+          "id": "fixture-033",
+          "pos": {
+            "x": 247.0,
+            "y": 182.0
+          },
+          "variant": 1
+        },
+        {
+          "action": "idle",
+          "facing": "right",
+          "frame": 0,
+          "id": "fixture-034",
+          "pos": {
+            "x": 263.0,
+            "y": 182.0
+          },
+          "variant": 0
+        },
+        {
+          "action": "idle",
+          "facing": "right",
+          "frame": 0,
+          "id": "fixture-035",
+          "pos": {
+            "x": 279.0,
+            "y": 182.0
+          },
+          "variant": 1
+        },
+        {
+          "action": "idle",
+          "facing": "right",
+          "frame": 0,
+          "id": "fixture-036",
+          "pos": {
+            "x": 23.0,
+            "y": 190.0
+          },
+          "variant": 0
+        },
+        {
+          "action": "idle",
+          "facing": "right",
+          "frame": 0,
+          "id": "fixture-037",
+          "pos": {
+            "x": 39.0,
+            "y": 190.0
+          },
+          "variant": 1
+        },
+        {
+          "action": "idle",
+          "facing": "right",
+          "frame": 0,
+          "id": "fixture-038",
+          "pos": {
+            "x": 55.0,
+            "y": 190.0
+          },
+          "variant": 0
+        },
+        {
+          "action": "idle",
+          "facing": "right",
+          "frame": 0,
+          "id": "fixture-039",
+          "pos": {
+            "x": 71.0,
+            "y": 190.0
+          },
+          "variant": 1
+        },
+        {
+          "action": "idle",
+          "facing": "right",
+          "frame": 0,
+          "id": "fixture-040",
+          "pos": {
+            "x": 87.0,
+            "y": 190.0
+          },
+          "variant": 0
+        },
+        {
+          "action": "idle",
+          "facing": "right",
+          "frame": 0,
+          "id": "fixture-041",
+          "pos": {
+            "x": 103.0,
+            "y": 190.0
+          },
+          "variant": 1
+        },
+        {
+          "action": "idle",
+          "facing": "right",
+          "frame": 0,
+          "id": "fixture-042",
+          "pos": {
+            "x": 119.0,
+            "y": 190.0
+          },
+          "variant": 0
+        },
+        {
+          "action": "idle",
+          "facing": "right",
+          "frame": 0,
+          "id": "fixture-043",
+          "pos": {
+            "x": 135.0,
+            "y": 190.0
+          },
+          "variant": 1
+        },
+        {
+          "action": "idle",
+          "facing": "right",
+          "frame": 0,
+          "id": "fixture-044",
+          "pos": {
+            "x": 151.0,
+            "y": 190.0
+          },
+          "variant": 0
+        },
+        {
+          "action": "idle",
+          "facing": "right",
+          "frame": 0,
+          "id": "fixture-045",
+          "pos": {
+            "x": 167.0,
+            "y": 190.0
+          },
+          "variant": 1
+        },
+        {
+          "action": "idle",
+          "facing": "right",
+          "frame": 1,
+          "id": "fixture-046",
+          "pos": {
+            "x": 183.0,
+            "y": 190.0
+          },
+          "variant": 0
+        },
+        {
+          "action": "idle",
+          "facing": "right",
+          "frame": 1,
+          "id": "fixture-047",
+          "pos": {
+            "x": 199.0,
+            "y": 190.0
+          },
+          "variant": 1
+        },
+        {
+          "action": "idle",
+          "facing": "right",
+          "frame": 1,
+          "id": "fixture-048",
+          "pos": {
+            "x": 215.0,
+            "y": 190.0
+          },
+          "variant": 0
+        },
+        {
+          "action": "idle",
+          "facing": "right",
+          "frame": 1,
+          "id": "fixture-049",
+          "pos": {
+            "x": 231.0,
+            "y": 190.0
+          },
+          "variant": 1
+        },
+        {
+          "action": "idle",
+          "facing": "right",
+          "frame": 1,
+          "id": "fixture-050",
+          "pos": {
+            "x": 247.0,
+            "y": 190.0
+          },
+          "variant": 0
+        },
+        {
+          "action": "idle",
+          "facing": "right",
+          "frame": 1,
+          "id": "fixture-051",
+          "pos": {
+            "x": 263.0,
+            "y": 190.0
+          },
+          "variant": 1
+        },
+        {
+          "action": "idle",
+          "facing": "right",
+          "frame": 0,
+          "id": "fixture-052",
+          "pos": {
+            "x": 279.0,
+            "y": 190.0
+          },
+          "variant": 0
+        },
+        {
+          "action": "idle",
+          "facing": "right",
+          "frame": 0,
+          "id": "fixture-053",
+          "pos": {
+            "x": 23.0,
+            "y": 198.0
+          },
+          "variant": 1
+        },
+        {
+          "action": "idle",
+          "facing": "right",
+          "frame": 0,
+          "id": "fixture-054",
+          "pos": {
+            "x": 39.0,
+            "y": 198.0
+          },
+          "variant": 0
+        },
+        {
+          "action": "idle",
+          "facing": "right",
+          "frame": 0,
+          "id": "fixture-055",
+          "pos": {
+            "x": 55.0,
+            "y": 198.0
+          },
+          "variant": 1
+        },
+        {
+          "action": "idle",
+          "facing": "right",
+          "frame": 0,
+          "id": "fixture-056",
+          "pos": {
+            "x": 71.0,
+            "y": 198.0
+          },
+          "variant": 0
+        },
+        {
+          "action": "idle",
+          "facing": "right",
+          "frame": 0,
+          "id": "fixture-057",
+          "pos": {
+            "x": 87.0,
+            "y": 198.0
+          },
+          "variant": 1
+        },
+        {
+          "action": "idle",
+          "facing": "right",
+          "frame": 0,
+          "id": "fixture-058",
+          "pos": {
+            "x": 103.0,
+            "y": 198.0
+          },
+          "variant": 0
+        },
+        {
+          "action": "idle",
+          "facing": "right",
+          "frame": 0,
+          "id": "fixture-059",
+          "pos": {
+            "x": 119.0,
+            "y": 198.0
+          },
+          "variant": 1
+        },
+        {
+          "action": "idle",
+          "facing": "right",
+          "frame": 0,
+          "id": "fixture-060",
+          "pos": {
+            "x": 135.0,
+            "y": 198.0
+          },
+          "variant": 0
+        },
+        {
+          "action": "idle",
+          "facing": "right",
+          "frame": 0,
+          "id": "fixture-061",
+          "pos": {
+            "x": 151.0,
+            "y": 198.0
+          },
+          "variant": 1
+        },
+        {
+          "action": "idle",
+          "facing": "right",
+          "frame": 0,
+          "id": "fixture-062",
+          "pos": {
+            "x": 167.0,
+            "y": 198.0
+          },
+          "variant": 0
+        },
+        {
+          "action": "idle",
+          "facing": "right",
+          "frame": 0,
+          "id": "fixture-063",
+          "pos": {
+            "x": 183.0,
+            "y": 198.0
+          },
+          "variant": 1
+        },
+        {
+          "action": "idle",
+          "facing": "right",
+          "frame": 0,
+          "id": "fixture-064",
+          "pos": {
+            "x": 199.0,
+            "y": 198.0
+          },
+          "variant": 0
+        },
+        {
+          "action": "idle",
+          "facing": "right",
+          "frame": 0,
+          "id": "fixture-065",
+          "pos": {
+            "x": 215.0,
+            "y": 198.0
+          },
+          "variant": 1
+        },
+        {
+          "action": "idle",
+          "facing": "right",
+          "frame": 0,
+          "id": "fixture-066",
+          "pos": {
+            "x": 231.0,
+            "y": 198.0
+          },
+          "variant": 0
+        },
+        {
+          "action": "idle",
+          "facing": "right",
+          "frame": 0,
+          "id": "fixture-067",
+          "pos": {
+            "x": 247.0,
+            "y": 198.0
+          },
+          "variant": 1
+        },
+        {
+          "action": "idle",
+          "facing": "right",
+          "frame": 1,
+          "id": "fixture-068",
+          "pos": {
+            "x": 263.0,
+            "y": 198.0
+          },
+          "variant": 0
+        },
+        {
+          "action": "idle",
+          "facing": "right",
+          "frame": 1,
+          "id": "fixture-069",
+          "pos": {
+            "x": 279.0,
+            "y": 198.0
+          },
+          "variant": 1
+        },
+        {
+          "action": "idle",
+          "facing": "right",
+          "frame": 1,
+          "id": "fixture-070",
+          "pos": {
+            "x": 23.0,
+            "y": 206.0
+          },
+          "variant": 0
+        },
+        {
+          "action": "idle",
+          "facing": "right",
+          "frame": 1,
+          "id": "fixture-071",
+          "pos": {
+            "x": 39.0,
+            "y": 206.0
+          },
+          "variant": 1
+        },
+        {
+          "action": "idle",
+          "facing": "right",
+          "frame": 1,
+          "id": "fixture-072",
+          "pos": {
+            "x": 55.0,
+            "y": 206.0
+          },
+          "variant": 0
+        },
+        {
+          "action": "idle",
+          "facing": "right",
+          "frame": 0,
+          "id": "fixture-073",
+          "pos": {
+            "x": 71.0,
+            "y": 206.0
+          },
+          "variant": 1
+        },
+        {
+          "action": "idle",
+          "facing": "right",
+          "frame": 0,
+          "id": "fixture-074",
+          "pos": {
+            "x": 87.0,
+            "y": 206.0
+          },
+          "variant": 0
+        },
+        {
+          "action": "idle",
+          "facing": "right",
+          "frame": 0,
+          "id": "fixture-075",
+          "pos": {
+            "x": 103.0,
+            "y": 206.0
+          },
+          "variant": 1
+        },
+        {
+          "action": "idle",
+          "facing": "right",
+          "frame": 0,
+          "id": "fixture-076",
+          "pos": {
+            "x": 119.0,
+            "y": 206.0
+          },
+          "variant": 0
+        },
+        {
+          "action": "idle",
+          "facing": "right",
+          "frame": 0,
+          "id": "fixture-077",
+          "pos": {
+            "x": 135.0,
+            "y": 206.0
+          },
+          "variant": 1
+        },
+        {
+          "action": "idle",
+          "facing": "right",
+          "frame": 0,
+          "id": "fixture-078",
+          "pos": {
+            "x": 151.0,
+            "y": 206.0
+          },
+          "variant": 0
+        },
+        {
+          "action": "idle",
+          "facing": "right",
+          "frame": 0,
+          "id": "fixture-079",
+          "pos": {
+            "x": 167.0,
+            "y": 206.0
+          },
+          "variant": 1
+        },
+        {
+          "action": "idle",
+          "facing": "right",
+          "frame": 0,
+          "id": "fixture-080",
+          "pos": {
+            "x": 183.0,
+            "y": 206.0
+          },
+          "variant": 0
+        },
+        {
+          "action": "idle",
+          "facing": "right",
+          "frame": 0,
+          "id": "fixture-081",
+          "pos": {
+            "x": 199.0,
+            "y": 206.0
+          },
+          "variant": 1
+        },
+        {
+          "action": "idle",
+          "facing": "right",
+          "frame": 0,
+          "id": "fixture-082",
+          "pos": {
+            "x": 215.0,
+            "y": 206.0
+          },
+          "variant": 0
+        },
+        {
+          "action": "idle",
+          "facing": "right",
+          "frame": 0,
+          "id": "fixture-083",
+          "pos": {
+            "x": 231.0,
+            "y": 206.0
+          },
+          "variant": 1
+        },
+        {
+          "action": "idle",
+          "facing": "right",
+          "frame": 0,
+          "id": "fixture-084",
+          "pos": {
+            "x": 247.0,
+            "y": 206.0
+          },
+          "variant": 0
+        },
+        {
+          "action": "idle",
+          "facing": "right",
+          "frame": 0,
+          "id": "fixture-085",
+          "pos": {
+            "x": 263.0,
+            "y": 206.0
+          },
+          "variant": 1
+        },
+        {
+          "action": "idle",
+          "facing": "right",
+          "frame": 0,
+          "id": "fixture-086",
+          "pos": {
+            "x": 279.0,
+            "y": 206.0
+          },
+          "variant": 0
+        },
+        {
+          "action": "idle",
+          "facing": "right",
+          "frame": 0,
+          "id": "fixture-087",
+          "pos": {
+            "x": 23.0,
+            "y": 214.0
+          },
+          "variant": 1
+        },
+        {
+          "action": "idle",
+          "facing": "right",
+          "frame": 0,
+          "id": "fixture-088",
+          "pos": {
+            "x": 39.0,
+            "y": 214.0
+          },
+          "variant": 0
+        },
+        {
+          "action": "idle",
+          "facing": "right",
+          "frame": 0,
+          "id": "fixture-089",
+          "pos": {
+            "x": 55.0,
+            "y": 214.0
+          },
+          "variant": 1
+        },
+        {
+          "action": "idle",
+          "facing": "right",
+          "frame": 1,
+          "id": "fixture-090",
+          "pos": {
+            "x": 71.0,
+            "y": 214.0
+          },
+          "variant": 0
+        },
+        {
+          "action": "idle",
+          "facing": "right",
+          "frame": 1,
+          "id": "fixture-091",
+          "pos": {
+            "x": 87.0,
+            "y": 214.0
+          },
+          "variant": 1
+        },
+        {
+          "action": "idle",
+          "facing": "right",
+          "frame": 1,
+          "id": "fixture-092",
+          "pos": {
+            "x": 103.0,
+            "y": 214.0
+          },
+          "variant": 0
+        },
+        {
+          "action": "idle",
+          "facing": "right",
+          "frame": 1,
+          "id": "fixture-093",
+          "pos": {
+            "x": 119.0,
+            "y": 214.0
+          },
+          "variant": 1
+        },
+        {
+          "action": "idle",
+          "facing": "right",
+          "frame": 1,
+          "id": "fixture-094",
+          "pos": {
+            "x": 135.0,
+            "y": 214.0
+          },
+          "variant": 0
+        },
+        {
+          "action": "idle",
+          "facing": "right",
+          "frame": 0,
+          "id": "fixture-095",
+          "pos": {
+            "x": 151.0,
+            "y": 214.0
+          },
+          "variant": 1
+        },
+        {
+          "action": "idle",
+          "facing": "right",
+          "frame": 0,
+          "id": "fixture-096",
+          "pos": {
+            "x": 167.0,
+            "y": 214.0
+          },
+          "variant": 0
+        },
+        {
+          "action": "idle",
+          "facing": "right",
+          "frame": 0,
+          "id": "fixture-097",
+          "pos": {
+            "x": 183.0,
+            "y": 214.0
+          },
+          "variant": 1
+        },
+        {
+          "action": "idle",
+          "facing": "right",
+          "frame": 0,
+          "id": "fixture-098",
+          "pos": {
+            "x": 199.0,
+            "y": 214.0
+          },
+          "variant": 0
+        },
+        {
+          "action": "idle",
+          "facing": "right",
+          "frame": 0,
+          "id": "fixture-099",
+          "pos": {
+            "x": 215.0,
+            "y": 214.0
+          },
+          "variant": 1
+        }
+      ],
+      "coverage": "fixture captured",
+      "phase": "interact",
+      "reduced_motion": false,
+      "scenario": "normal",
+      "status": "Running",
+      "time_ms": 3700
+    }
+  ],
+  "startup_to_nine_captures_ms": 213.02943299999998
+}

@@ -5,6 +5,23 @@ The machine-readable schema lives in [`docs/workboard.schema.json`](workboard.sc
 
 Agents and automation that read or write workboard tasks must follow this contract.
 
+## DEC-014 transition status
+
+The current queue has not been replanned for the 2026-10-27 assistant-owned
+product direction. Preserve task history/statuses; do not assume an old desktop
+or visual-polish task still matches current product priorities. Reconcile scope
+explicitly before selecting or inserting implementation work.
+
+Proposed implementation records live in implementation-tasks.draft.json, outside
+the canonical queue. Their IDs/dependencies are provisional until checked against
+the live board using the workboard skills. They are not automatically startable.
+This documentation pass does not mutate the board, its metadata, groups, or schema.
+
+The future built-in template reads this repository-specific board contract; it
+must not hardcode this shape for every user's repository. Skills/workers remain
+the writers. Rust recording/indexing of task snapshots does not itself change a
+task status. A worker report alone does not bypass docs and verification gates.
+
 ## Validation
 
 Minimum structural check:

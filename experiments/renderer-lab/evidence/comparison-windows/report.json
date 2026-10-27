@@ -1,0 +1,455 @@
+{
+  "scope": "Windows Edge, headless, matched atlas/geometry/UI; no forced GPU readbacks; CPU submission and scheduling measured separately",
+  "candidates": [
+    {
+      "name": "canvas",
+      "info": {
+        "kind": "Canvas2D",
+        "dpr": 1,
+        "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/156.0.0.0 Safari/537.36 Edg/156.0.0.0",
+        "pixi_loaded": false,
+        "webgl_required": false
+      },
+      "ready_ms": 114.6866,
+      "baseline_frame_intervals_ms": {
+        "p50": 16.699999999254942,
+        "p95": 17.300000000745058,
+        "p99": 18.400000002235174,
+        "max": 19.099999997764826
+      },
+      "measurements": [
+        {
+          "repetition": 0,
+          "count": 2,
+          "player": "sampler",
+          "samples": 120,
+          "frame_intervals_ms": {
+            "p50": 16.699999999254942,
+            "p95": 16.800000000745058,
+            "p99": 16.899999998509884,
+            "max": 16.899999998509884
+          },
+          "cpu_submit_ms": {
+            "p50": 0.30000000074505806,
+            "p95": 0.5999999977648258,
+            "p99": 0.6999999992549419,
+            "max": 0.6999999992549419
+          },
+          "completion_probe": false,
+          "synchronous_render_ms": null,
+          "stalls_over_33ms": 0
+        },
+        {
+          "repetition": 0,
+          "count": 20,
+          "player": "sampler",
+          "samples": 120,
+          "frame_intervals_ms": {
+            "p50": 16.699999999254942,
+            "p95": 17,
+            "p99": 17.100000001490116,
+            "max": 17.100000001490116
+          },
+          "cpu_submit_ms": {
+            "p50": 0.5,
+            "p95": 1.199999999254942,
+            "p99": 1.3999999985098839,
+            "max": 1.3999999985098839
+          },
+          "completion_probe": false,
+          "synchronous_render_ms": null,
+          "stalls_over_33ms": 0
+        },
+        {
+          "repetition": 0,
+          "count": 100,
+          "player": "sampler",
+          "samples": 120,
+          "frame_intervals_ms": {
+            "p50": 16.699999999254942,
+            "p95": 17,
+            "p99": 17,
+            "max": 17.200000002980232
+          },
+          "cpu_submit_ms": {
+            "p50": 0.5999999977648258,
+            "p95": 1.2999999970197678,
+            "p99": 2,
+            "max": 2.100000001490116
+          },
+          "completion_probe": false,
+          "synchronous_render_ms": null,
+          "stalls_over_33ms": 0
+        },
+        {
+          "repetition": 1,
+          "count": 2,
+          "player": "sampler",
+          "samples": 120,
+          "frame_intervals_ms": {
+            "p50": 16.699999999254942,
+            "p95": 16.900000002235174,
+            "p99": 17.100000001490116,
+            "max": 17.199999999254942
+          },
+          "cpu_submit_ms": {
+            "p50": 0.3999999985098839,
+            "p95": 1,
+            "p99": 1,
+            "max": 1.4000000022351742
+          },
+          "completion_probe": false,
+          "synchronous_render_ms": null,
+          "stalls_over_33ms": 0
+        },
+        {
+          "repetition": 1,
+          "count": 20,
+          "player": "sampler",
+          "samples": 120,
+          "frame_intervals_ms": {
+            "p50": 16.699999999254942,
+            "p95": 17,
+            "p99": 17.100000001490116,
+            "max": 17.199999999254942
+          },
+          "cpu_submit_ms": {
+            "p50": 0.5,
+            "p95": 1.199999999254942,
+            "p99": 1.3999999985098839,
+            "max": 1.4000000022351742
+          },
+          "completion_probe": false,
+          "synchronous_render_ms": null,
+          "stalls_over_33ms": 0
+        },
+        {
+          "repetition": 1,
+          "count": 100,
+          "player": "sampler",
+          "samples": 120,
+          "frame_intervals_ms": {
+            "p50": 16.699999999254942,
+            "p95": 17,
+            "p99": 17.199999999254942,
+            "max": 17.199999999254942
+          },
+          "cpu_submit_ms": {
+            "p50": 0.6999999992549419,
+            "p95": 1.5,
+            "p99": 1.9000000022351742,
+            "max": 2.2000000029802322
+          },
+          "completion_probe": false,
+          "synchronous_render_ms": null,
+          "stalls_over_33ms": 0
+        },
+        {
+          "repetition": 2,
+          "count": 2,
+          "player": "sampler",
+          "samples": 120,
+          "frame_intervals_ms": {
+            "p50": 16.699999999254942,
+            "p95": 16.900000002235174,
+            "p99": 17,
+            "max": 17.099999997764826
+          },
+          "cpu_submit_ms": {
+            "p50": 0.30000000074505806,
+            "p95": 0.7000000029802322,
+            "p99": 1,
+            "max": 1.1000000014901161
+          },
+          "completion_probe": false,
+          "synchronous_render_ms": null,
+          "stalls_over_33ms": 0
+        },
+        {
+          "repetition": 2,
+          "count": 20,
+          "player": "sampler",
+          "samples": 120,
+          "frame_intervals_ms": {
+            "p50": 16.699999999254942,
+            "p95": 16.900000002235174,
+            "p99": 17.099999997764826,
+            "max": 17.199999999254942
+          },
+          "cpu_submit_ms": {
+            "p50": 0.3999999985098839,
+            "p95": 1,
+            "p99": 1.1000000014901161,
+            "max": 1.2000000029802322
+          },
+          "completion_probe": false,
+          "synchronous_render_ms": null,
+          "stalls_over_33ms": 0
+        },
+        {
+          "repetition": 2,
+          "count": 100,
+          "player": "sampler",
+          "samples": 120,
+          "frame_intervals_ms": {
+            "p50": 16.699999999254942,
+            "p95": 16.800000000745058,
+            "p99": 16.900000002235174,
+            "max": 17
+          },
+          "cpu_submit_ms": {
+            "p50": 0.5,
+            "p95": 1.4000000022351742,
+            "p99": 1.699999999254942,
+            "max": 2.5
+          },
+          "completion_probe": false,
+          "synchronous_render_ms": null,
+          "stalls_over_33ms": 0
+        }
+      ],
+      "checks": {
+        "seek": true,
+        "page_errors": []
+      }
+    },
+    {
+      "name": "pixi-8.22",
+      "info": {
+        "kind": "PixiJS",
+        "version": "8.22.0",
+        "gl_version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+        "vendor": "Google Inc. (NVIDIA)",
+        "renderer": "ANGLE (NVIDIA, NVIDIA GeForce RTX 3080 (0x00002216) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+        "dpr": 1,
+        "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/156.0.0.0 Safari/537.36 Edg/156.0.0.0"
+      },
+      "ready_ms": 299.0339000000022,
+      "baseline_frame_intervals_ms": {
+        "p50": 16.699999999254942,
+        "p95": 17,
+        "p99": 17.400000002235174,
+        "max": 17.5
+      },
+      "measurements": [
+        {
+          "repetition": 0,
+          "count": 2,
+          "player": "sampler",
+          "samples": 120,
+          "frame_intervals_ms": {
+            "p50": 16.699999999254942,
+            "p95": 17,
+            "p99": 17.100000001490116,
+            "max": 17.100000001490116
+          },
+          "cpu_submit_ms": {
+            "p50": 0.5999999977648258,
+            "p95": 1.3999999985098839,
+            "p99": 1.699999999254942,
+            "max": 1.7999999970197678
+          },
+          "completion_probe": false,
+          "synchronous_render_ms": null,
+          "stalls_over_33ms": 0
+        },
+        {
+          "repetition": 0,
+          "count": 20,
+          "player": "sampler",
+          "samples": 120,
+          "frame_intervals_ms": {
+            "p50": 16.699999999254942,
+            "p95": 17,
+            "p99": 17,
+            "max": 17.199999999254942
+          },
+          "cpu_submit_ms": {
+            "p50": 0.5,
+            "p95": 1,
+            "p99": 1.1000000014901161,
+            "max": 1.1000000014901161
+          },
+          "completion_probe": false,
+          "synchronous_render_ms": null,
+          "stalls_over_33ms": 0
+        },
+        {
+          "repetition": 0,
+          "count": 100,
+          "player": "sampler",
+          "samples": 120,
+          "frame_intervals_ms": {
+            "p50": 16.699999999254942,
+            "p95": 16.900000002235174,
+            "p99": 17.099999997764826,
+            "max": 17.199999999254942
+          },
+          "cpu_submit_ms": {
+            "p50": 0.6000000014901161,
+            "p95": 1.300000000745058,
+            "p99": 2,
+            "max": 2.100000001490116
+          },
+          "completion_probe": false,
+          "synchronous_render_ms": null,
+          "stalls_over_33ms": 0
+        },
+        {
+          "repetition": 1,
+          "count": 2,
+          "player": "sampler",
+          "samples": 120,
+          "frame_intervals_ms": {
+            "p50": 16.699999999254942,
+            "p95": 16.900000002235174,
+            "p99": 17.200000002980232,
+            "max": 17.5
+          },
+          "cpu_submit_ms": {
+            "p50": 0.4000000022351742,
+            "p95": 1.1000000014901161,
+            "p99": 1.5,
+            "max": 2.900000002235174
+          },
+          "completion_probe": false,
+          "synchronous_render_ms": null,
+          "stalls_over_33ms": 0
+        },
+        {
+          "repetition": 1,
+          "count": 20,
+          "player": "sampler",
+          "samples": 120,
+          "frame_intervals_ms": {
+            "p50": 16.699999999254942,
+            "p95": 17,
+            "p99": 17.099999997764826,
+            "max": 17.199999999254942
+          },
+          "cpu_submit_ms": {
+            "p50": 0.5,
+            "p95": 1.199999999254942,
+            "p99": 1.300000000745058,
+            "max": 1.300000000745058
+          },
+          "completion_probe": false,
+          "synchronous_render_ms": null,
+          "stalls_over_33ms": 0
+        },
+        {
+          "repetition": 1,
+          "count": 100,
+          "player": "sampler",
+          "samples": 120,
+          "frame_intervals_ms": {
+            "p50": 16.699999999254942,
+            "p95": 16.800000000745058,
+            "p99": 16.899999998509884,
+            "max": 16.900000002235174
+          },
+          "cpu_submit_ms": {
+            "p50": 0.5,
+            "p95": 0.7999999970197678,
+            "p99": 0.9000000022351742,
+            "max": 1
+          },
+          "completion_probe": false,
+          "synchronous_render_ms": null,
+          "stalls_over_33ms": 0
+        },
+        {
+          "repetition": 2,
+          "count": 2,
+          "player": "sampler",
+          "samples": 120,
+          "frame_intervals_ms": {
+            "p50": 16.699999999254942,
+            "p95": 17,
+            "p99": 17.200000002980232,
+            "max": 17.200000002980232
+          },
+          "cpu_submit_ms": {
+            "p50": 0.4000000022351742,
+            "p95": 1,
+            "p99": 1.199999999254942,
+            "max": 1.4000000022351742
+          },
+          "completion_probe": false,
+          "synchronous_render_ms": null,
+          "stalls_over_33ms": 0
+        },
+        {
+          "repetition": 2,
+          "count": 20,
+          "player": "sampler",
+          "samples": 120,
+          "frame_intervals_ms": {
+            "p50": 16.699999999254942,
+            "p95": 17.099999997764826,
+            "p99": 17.199999999254942,
+            "max": 17.300000000745058
+          },
+          "cpu_submit_ms": {
+            "p50": 0.5,
+            "p95": 1.1000000014901161,
+            "p99": 1.2999999970197678,
+            "max": 1.300000000745058
+          },
+          "completion_probe": false,
+          "synchronous_render_ms": null,
+          "stalls_over_33ms": 0
+        },
+        {
+          "repetition": 2,
+          "count": 100,
+          "player": "sampler",
+          "samples": 120,
+          "frame_intervals_ms": {
+            "p50": 16.699999999254942,
+            "p95": 17.100000001490116,
+            "p99": 17.299999997019768,
+            "max": 17.799999997019768
+          },
+          "cpu_submit_ms": {
+            "p50": 0.5,
+            "p95": 1.3999999985098839,
+            "p99": 1.7999999970197678,
+            "max": 1.800000000745058
+          },
+          "completion_probe": false,
+          "synchronous_render_ms": null,
+          "stalls_over_33ms": 0
+        }
+      ],
+      "checks": {
+        "seek": true,
+        "page_errors": []
+      }
+    },
+    {
+      "name": "pixi-8.21",
+      "info": {
+        "kind": "PixiJS",
+        "version": "8.21.0",
+        "gl_version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+        "vendor": "Google Inc. (NVIDIA)",
+        "renderer": "ANGLE (NVIDIA, NVIDIA GeForce RTX 3080 (0x00002216) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+        "dpr": 1,
+        "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/156.0.0.0 Safari/537.36 Edg/156.0.0.0"
+      },
+      "ready_ms": 251.96110000000044,
+      "baseline_frame_intervals_ms": {
+        "p50": 16.699999999254942,
+        "p95": 17.699999999254942,
+        "p99": 18.300000000745058,
+        "max": 18.599999997764826
+      },
+      "measurements": [],
+      "checks": {
+        "seek": true,
+        "page_errors": []
+      }
+    }
+  ]
+}
